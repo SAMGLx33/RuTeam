@@ -1,0 +1,21 @@
+# Pruebas
+
+`npm run db:test:setup` prepara migraciones+seed sin borrar datos. Usa base distinta
+con sufijo _test. Jest y Playwright requieren esa separación; no ejecutar ambos a la
+vez en la misma base. No se utilizan mocks de Prisma para las pruebas HTTP.
+
+- `npm test`: compila API y ejecuta Jest ESM/Supertest con PostgreSQL real; política
+  de vigencia, login activo/inactivo, sesión/hash/revocación/expiración, afiliación
+  cambiada, DTOperfil, cookie web/CSRF, modo demo apagado, catálogo y404 futuro.
+- `npm run test:e2e`: Chromium escritorio e iPhone13 viewport (web). Dos contextos,
+  error inactivo, auth/me200, guardado/recarga PostgreSQL, catálogo ylogout.
+  Inicia API3100/Expo8082; no usa servidores existentes. Browser plugin no disponible.
+- `npm run smoke`: seis aserciones HTTP sobre API configurada; no imprime token.
+- `npm run lint`, `npm run typecheck`: verificaciones estáticas, no ejecuciones de negocio.
+- `npm run build:web`; export Android/iOS en EVIDENCE: bundle, no prueba física.
+- `npx expo install --fix` y `npx expo-doctor` desde apps/client.
+
+Pendientes: Expo Go físico versión/dispositivo, cámara/GPS/SecureStore, Windows,
+concurrencia cupos (módulo aún no implementado), pruebas de carga/RNF/seguridad
+productiva. No añadir tests que sólo comprueben carpetas o reproduzcan implementación.
+CI ejecuta mismos comandos; workflow creado no significa ejecución remota ya probada.

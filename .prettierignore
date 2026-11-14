@@ -1,0 +1,10 @@
+node_modules
+**/dist
+**/generated
+**/.expo
+coverage
+test-results
+package-lock.json
+reference/*.pdf
+reference/*.drawio
+.env

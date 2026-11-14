@@ -1,0 +1,40 @@
+name: RuTeam CI
+on:
+  push:
+    branches: [main, dev, feature, 'task/**']
+  pull_request:
+    branches: [main, dev, feature]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: ruteam
+          POSTGRES_PASSWORD: ruteam_demo_local
+          POSTGRES_DB: ruteam
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ruteam -d ruteam"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.3'
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env
+      - run: npm run db:generate
+      - run: npm run db:migrate
+      - run: npm run db:seed
+      - run: npm run db:test:setup
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build:web
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
