@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
@@ -78,6 +79,20 @@ export function ProfileScreen({ user }: { user: CurrentUser }) {
         Rol: {user.role === 'ADMIN' ? 'Administración' : 'Miembro'}
         {user.capabilities.driver ? ' · Conductor demo' : ' · Pasajero'}
       </Text>
+      <Link href="/vehicles" style={styles.label}>
+        Vehículos y licencia DEMO
+      </Link>
+      <Link href="/publish" style={styles.label}>
+        Publicar viaje hacia USC
+      </Link>
+      <Link href="/my-trips" style={styles.label}>
+        Mis viajes publicados
+      </Link>
+      {user.role === 'ADMIN' && (
+        <Link href="/document-reviews" style={styles.label}>
+          Revisar documentos DEMO
+        </Link>
+      )}
       <Text style={styles.label}>Nombre para mostrar</Text>
       <Controller
         name="displayName"
@@ -152,8 +167,8 @@ export function ProfileScreen({ user }: { user: CurrentUser }) {
           </Text>
         ))}
         <Text style={styles.note}>
-          Vehículos, viajes y reservas están planificados para la siguiente
-          fase.
+          Reservas, recorrido y compensaciones están planificados para fases
+          posteriores.
         </Text>
       </View>
     </View>

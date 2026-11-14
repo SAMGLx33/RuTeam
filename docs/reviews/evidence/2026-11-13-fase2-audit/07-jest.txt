@@ -1,0 +1,18 @@
+COMMAND: npm run test
+UTC: 2026-11-14T02:25:02.633Z
+EXIT: 0
+
+npm notice run ruteam@0.1.0 test
+npm notice run npm run test -w @ruteam/api
+npm notice run @ruteam/api@0.1.0 test
+npm notice run npm run build && node --env-file=../../.env --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand
+npm notice run @ruteam/api@0.1.0 build
+npm notice run tsc -p tsconfig.json
+(node:72255) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:72255) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+Test Suites: 5 passed, 5 total
+Tests:       71 passed, 71 total
+Snapshots:   0 total
+Time:        2.612 s, estimated 3 s
+Ran all test suites.

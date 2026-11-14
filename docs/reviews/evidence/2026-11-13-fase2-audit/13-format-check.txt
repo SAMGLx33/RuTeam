@@ -1,0 +1,7 @@
+$ npm run format:check
+Checking formatting...
+All matched files use Prettier code style!
+npm notice run ruteam@0.1.0 format:check
+npm notice run prettier --check .
+
+exitCode=0

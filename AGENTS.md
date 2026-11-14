@@ -41,3 +41,16 @@ No declares INTEGRADO un cambio no fusionado y comprobado en dev.
 - .gitkeep sólo en hojas planificadas vacías; quitarlo al agregar contenido útil.
 - DoD: código + pruebas reales + contrato + trazabilidad + ADR si cambia decisión +
   nuevo handoff + PROGRESS en el mismo commit; si falta algo, PARCIAL.
+
+## Continuidad de Fase 2
+
+Fuentes privadas leídas en `docs/RuTeam_Referencias_Codex_PRIVADO/reference-private/`
+(ubicación recibida) o `reference-private/` (ubicación esperada). Ambas están ignoradas.
+No versionar el paquete, conversiones ni PII; sólo derivados en ERS_CATALOG/TRACEABILITY
+y requirements/UML_CROSSWALK. IDs oficiales RF-001..030 y RNF-031..050 cotejados;
+RF-001 sin prioridad unívoca en la matriz original. No inventarla.
+
+Fase2 en task/trips-publicacion: registro/listado propios, documentos DEMO pendientes,
+revisión ADMIN versionada, publicación/listado de viajes USC. No reservas ni transiciones
+operativas todavía. Verificar código+tests+docs+handoff antes de cierre; este corte no
+autoriza commit/push/PR/merge. Mantener los cambios revisables sin stage si no hay permiso.

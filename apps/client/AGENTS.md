@@ -14,3 +14,13 @@ expo-location foreground. No simular pruebas físicas, pagos o afiliación ofici
 Verificar typecheck, lint, expo install --fix, expo-doctor, export y Playwright;
 Expo Go físico debe etiquetarse NO VERIFICADO hasta probar dispositivo real y versión.
 Actualizar docs y nuevo handoff en cada avance.
+
+## Rutas Fase 2
+
+/vehicles, /publish, /my-trips y /document-reviews comparten componentes React Native/Web.
+ProtectedPage orienta navegación; backend sigue siendo autoridad. Las categorías CAR/
+MOTORCYCLE/BOTH son sintéticas de licencia, no categorías oficiales verificadas.
+Ubicaciones/duración y vigencias DEMO se rotulan; no mapa/GPS/background real. No convertir
+coordenada vacía en cero. RHF useWatch para campos reactivos; validación final en DTO/servicio.
+Revisión admin envía revisión exacta de la tarjeta y maneja409 al cambiar el documento.
+E2E corre Node/Prisma en fixture de pruebas, nunca Prisma dentro del código React.

@@ -14,3 +14,18 @@ con PostgreSQL real antes de declarar completitud. No sustituirla por mocks.
 
 Verificar npm run db:generate, db:test:setup, typecheck, lint, test y actualizar
 API.md, TRACEABILITY, decisiones/handoff/PROGRESS. No agregar endpoints de éxito falso.
+
+## Vehículos y publicación
+
+VehiculoController/Service/Repository y ViajeController/Service/Repository siguen MVC.
+Reglas puras VehiculoPolicy/Viaje; DomainPolicyError se traduce a400 en filtro.
+ViajeRepository expone unidad de publicación sin cliente Prisma a pantallas; aplicación
+orquesta permisos/documentos/catálogo/intervalos dentro de withDriverLock. Lecturas de
+User/Vehicle/Campus en esa unidad son la vista del agregado transaccional, no escrituras
+en módulos ajenos. SELECT FOR UPDATE parametrizado sobre conductor serializa publicación
+y cambios de documentos; no mover verificación fuera de la transacción.
+Revisión admin lleva revision, compara dentro del bloqueo y devuelve409 si quedó obsoleta.
+Nunca aprobar una presentación nueva desde una tarjeta vieja. Nuevas licencias revocan
+aprobación al volver a PENDING. Vigencia se exige hasta expectedEndAt del viaje DEMO.
+Cupos/estado/actor no se reciben del cliente como campos autoritativos. Reservas posteriores
+necesitan su propia prueba de último cupo; prueba de solapamiento no la sustituye.

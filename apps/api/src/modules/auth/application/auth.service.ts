@@ -95,7 +95,9 @@ export class AuthService {
       role: user.role,
       capabilities: {
         passenger: true as const,
-        driver: user.driverDemoApproved,
+        driver:
+          user.driverEligibility?.reviewStatus === 'APPROVED' &&
+          user.driverEligibility.expiresAt.getTime() > Date.now(),
       },
       profile: { displayName: user.profile.displayName },
       membership: {

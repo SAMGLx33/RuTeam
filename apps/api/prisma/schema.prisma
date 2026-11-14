@@ -36,6 +36,12 @@ model User {
   membership InstitutionalMembership?
   sessions AuthSession[]
   verificationAttempts VerificationAttempt[]
+  vehicles Vehicle[]
+  driverEligibility DriverEligibility? @relation("DriverLicenseOwner")
+  reviewedLicenses DriverEligibility[] @relation("DriverLicenseReviewer")
+  reviewedVehicleDocuments VehicleDocument[] @relation("VehicleDocumentReviewer")
+  trips Trip[]
+  tripEvents TripEvent[]
 }
 model Profile {
   id String @id @default(uuid()) @db.Uuid
@@ -74,6 +80,7 @@ model VerificationAttempt {
   @@index([userId, createdAt])
 }
 model CampusDestination {
+  trips Trip[]
   id String @id @default(uuid()) @db.Uuid
   code String @unique @db.VarChar(40)
   name String @db.VarChar(100)
@@ -82,4 +89,126 @@ model CampusDestination {
   longitude Decimal @db.Decimal(9, 6)
   demo Boolean @default(true)
   active Boolean @default(true)
+}
+
+enum VehicleType {
+  CAR
+  MOTORCYCLE
+}
+enum DocumentReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+enum DemoLicenseCategory {
+  CAR
+  MOTORCYCLE
+  BOTH
+}
+enum TripStatus {
+  PROGRAMADO
+  EN_CURSO
+  COMPLETADO
+  CANCELADO
+}
+model DriverEligibility {
+  revision Int @default(1)
+  userId String @id @db.Uuid
+  category DemoLicenseCategory
+  expiresAt DateTime @db.Timestamptz(3)
+  reviewStatus DocumentReviewStatus @default(PENDING)
+  demo Boolean @default(true)
+  reviewedById String? @db.Uuid
+  reviewedAt DateTime? @db.Timestamptz(3)
+  user User @relation("DriverLicenseOwner", fields: [userId], references: [id])
+  reviewedBy User? @relation("DriverLicenseReviewer", fields: [reviewedById], references: [id])
+}
+model Vehicle {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @db.Uuid
+  plate String @unique @db.VarChar(6)
+  type VehicleType
+  passengerCapacity Int
+  brand String @db.VarChar(60)
+  modelYear Int
+  color String @db.VarChar(20)
+  demo Boolean @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  owner User @relation(fields: [ownerId], references: [id])
+  document VehicleDocument?
+  trips Trip[]
+  @@index([ownerId, createdAt])
+}
+model VehicleDocument {
+  revision Int @default(1)
+  id String @id @default(uuid()) @db.Uuid
+  vehicleId String @unique @db.Uuid
+  kind String @default("SOAT_DEMO") @db.VarChar(20)
+  expiresAt DateTime @db.Timestamptz(3)
+  reviewStatus DocumentReviewStatus @default(PENDING)
+  demo Boolean @default(true)
+  reviewedById String? @db.Uuid
+  reviewedAt DateTime? @db.Timestamptz(3)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("VehicleDocumentReviewer", fields: [reviewedById], references: [id])
+}
+model TripRuleDefinition {
+  id String @id @default(uuid()) @db.Uuid
+  code String @unique @db.VarChar(32)
+  description String @db.VarChar(100)
+  active Boolean @default(true)
+  selections TripRuleSelection[]
+}
+model Trip {
+  id String @id @default(uuid()) @db.Uuid
+  driverId String @db.Uuid
+  vehicleId String @db.Uuid
+  destinationId String @db.Uuid
+  originLabel String @db.VarChar(100)
+  originLatitude Decimal @db.Decimal(9,6)
+  originLongitude Decimal @db.Decimal(9,6)
+  departureAt DateTime @db.Timestamptz(3)
+  estimatedDurationMinutes Int
+  expectedEndAt DateTime @db.Timestamptz(3)
+  offeredSeats Int
+  occupiedSeats Int @default(0)
+  version Int @default(0)
+  status TripStatus @default(PROGRAMADO)
+  providesHelmet Boolean?
+  locationMode String @default("DEMO") @db.VarChar(8)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  driver User @relation(fields: [driverId], references: [id])
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  destination CampusDestination @relation(fields: [destinationId], references: [id])
+  stops TripStop[]
+  rules TripRuleSelection[]
+  events TripEvent[]
+  @@index([driverId, departureAt, expectedEndAt])
+}
+model TripStop {
+  id String @id @default(uuid()) @db.Uuid
+  tripId String @db.Uuid
+  position Int
+  label String @db.VarChar(100)
+  latitude Decimal @db.Decimal(9,6)
+  longitude Decimal @db.Decimal(9,6)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  @@unique([tripId, position])
+}
+model TripRuleSelection {
+  tripId String @db.Uuid
+  ruleId String @db.Uuid
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  rule TripRuleDefinition @relation(fields: [ruleId], references: [id])
+  @@id([tripId, ruleId])
+}
+model TripEvent {
+  id String @id @default(uuid()) @db.Uuid
+  tripId String @db.Uuid
+  actorId String @db.Uuid
+  type String @db.VarChar(32)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  actor User @relation(fields: [actorId], references: [id])
+  @@index([tripId, createdAt])
 }

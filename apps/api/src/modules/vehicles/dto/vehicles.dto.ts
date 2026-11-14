@@ -1,0 +1,53 @@
+import { Transform } from 'class-transformer';
+import {
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsString,
+  Length,
+  Max,
+  Min,
+} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { VEHICLE_COLORS } from '../domain/policies/vehiculo.policy.js';
+export class RegisterVehicleDto {
+  @ApiProperty({ example: 'DEM123' })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Length(6, 6)
+  plate!: string;
+  @ApiProperty({ enum: ['CAR', 'MOTORCYCLE'] })
+  @IsIn(['CAR', 'MOTORCYCLE'])
+  type!: 'CAR' | 'MOTORCYCLE';
+  @ApiProperty({ minimum: 1, maximum: 4 })
+  @IsInt()
+  @Min(1)
+  @Max(4)
+  passengerCapacity!: number;
+  @ApiProperty() @IsString() @Length(2, 60) brand!: string;
+  @ApiProperty({ minimum: 1991 })
+  @IsInt()
+  @Min(1991)
+  @Max(new Date().getUTCFullYear() + 1)
+  modelYear!: number;
+  @ApiProperty({ enum: VEHICLE_COLORS }) @IsIn(VEHICLE_COLORS) color!: string;
+  @ApiProperty({ format: 'date-time' })
+  @IsDateString({ strict: true })
+  soatExpiresAt!: string;
+}
+export class RegisterLicenseDto {
+  @ApiProperty({ enum: ['CAR', 'MOTORCYCLE', 'BOTH'] })
+  @IsIn(['CAR', 'MOTORCYCLE', 'BOTH'])
+  category!: 'CAR' | 'MOTORCYCLE' | 'BOTH';
+  @ApiProperty({ format: 'date-time' })
+  @IsDateString({ strict: true })
+  expiresAt!: string;
+}
+export class ReviewDocumentDto {
+  @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) revision!: number;
+  @ApiProperty({ enum: ['APPROVED', 'REJECTED'] })
+  @IsIn(['APPROVED', 'REJECTED'])
+  decision!: 'APPROVED' | 'REJECTED';
+}

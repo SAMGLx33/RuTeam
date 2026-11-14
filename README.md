@@ -77,3 +77,15 @@ Leer [AGENTS](AGENTS.md), [CONTRIBUTING](CONTRIBUTING.md),
 remoto inicial7967674. La fundación local no equivale a integración revisada en dev.
 [TRACEABILITY](docs/requirements/TRACEABILITY.md) conserva30+20 posiciones sin inventar
 la ERS ausente; [OPEN_DECISIONS](docs/decisions/OPEN_DECISIONS.md) registra bloqueos.
+
+## Continuidad local — Fase 2
+
+Rama task/trips-publicacion: vehículos/licencia DEMO, revisión ADMIN versionada, publicación
+hacia USC con recogidas ordenadas, listado propio. Migrar/seed con los mismos comandos
+antes de arrancar; Diego tiene vehículoDEM123 y licencia sintética revisados en seed.
+Un vehículo nuevo quedaPENDING: Administración revisa desde «Revisar documentos DEMO».
+Nada consulta fuentes oficiales. Desde perfil: «Vehículos y licencia DEMO», «Publicar viaje
+hacia USC», «Mis viajes publicados». Mapas/GPS/routing/reservas/costos siguen pendientes.
+Fuentes oficiales del proyecto cotejadas en ERS_CATALOG/TRACEABILITY/UML_CROSSWALK;
+fuentes originales privadas ignoradas. Ver último PROGRESS/handoff para evidencia actual.
+Sin commit autorizado, PR, merge ni push en esta intervención; no integrado en dev.

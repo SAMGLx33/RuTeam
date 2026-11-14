@@ -19,3 +19,15 @@ Pendientes: Expo Go físico versión/dispositivo, cámara/GPS/SecureStore, Windo
 concurrencia cupos (módulo aún no implementado), pruebas de carga/RNF/seguridad
 productiva. No añadir tests que sólo comprueben carpetas o reproduzcan implementación.
 CI ejecuta mismos comandos; workflow creado no significa ejecución remota ya probada.
+
+## Extensión Fase 2
+
+phase2.e2e.test.mjs usa PostgreSQL real y limpia sólo UUIDs creados por esa suite; no
+reset ni borrado global. Cubre placa409, capacidad/tipo/año/color, permisos, documentos
+pendientes/vencidos, destino ajeno/deshabilitado, fechas, reglas, paradas, DTO origenarray,
+versión de revisión y simultaneidad de publicaciones. Políticas en phase2-policy.
+publication.spec.ts prueba en dos viewports: registro→revisión admin en segundo contexto
+→rechazo fecha pasada→publicaciónUSC con2recogidas→listado persistido tras recarga.
+Fixtures Node de E2E usan Prisma y BD_test; tests/package.json habilita ESM (Prisma usa
+import.meta), sin alterar el frontend ni crear servicios de test accesibles públicamente.
+Ejecutar Jest y Playwright SECUENCIALMENTE sobre esa BD. No prueba de reservas aún.

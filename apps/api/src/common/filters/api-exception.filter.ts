@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { DomainPolicyError } from '../errors/domain-policy.error.js';
 import type { Response } from 'express';
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
@@ -13,9 +14,11 @@ export class ApiExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();
     const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+      exception instanceof DomainPolicyError
+        ? HttpStatus.BAD_REQUEST
+        : exception instanceof HttpException
+          ? exception.getStatus()
+          : HttpStatus.INTERNAL_SERVER_ERROR;
     if (status >= 500)
       this.logger.error(
         `Error HTTP ${status}; tipo ${exception instanceof Error ? exception.name : 'unknown'}`,
@@ -23,7 +26,9 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const detail =
       exception instanceof HttpException
         ? exception.getResponse()
-        : 'Error interno';
+        : exception instanceof DomainPolicyError
+          ? exception.message
+          : 'Error interno';
     response.status(status).json({
       statusCode: status,
       ...(typeof detail === 'object' ? detail : { message: detail }),

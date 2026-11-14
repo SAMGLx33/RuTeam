@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
-const userInclude = { profile: true, membership: true } as const;
+const userInclude = {
+  profile: true,
+  membership: true,
+  driverEligibility: true,
+} as const;
 @Injectable()
 export class AuthRepository {
   constructor(private readonly db: PrismaService) {}

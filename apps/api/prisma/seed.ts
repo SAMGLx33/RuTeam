@@ -75,6 +75,67 @@ try {
         },
       });
     }
+    const driver = await tx.user.findUniqueOrThrow({
+      where: { demoIdentity: 'diego' },
+    });
+    const admin = await tx.user.findUniqueOrThrow({
+      where: { demoIdentity: 'admin' },
+    });
+    await tx.driverEligibility.upsert({
+      where: { userId: driver.id },
+      update: {},
+      create: {
+        userId: driver.id,
+        category: 'BOTH',
+        expiresAt: new Date('2030-12-31T23:59:59Z'),
+        reviewStatus: 'APPROVED',
+        reviewedById: admin.id,
+        reviewedAt: new Date('2026-11-13T12:00:00Z'),
+      },
+    });
+    await tx.vehicle.upsert({
+      where: { plate: 'DEM123' },
+      update: {},
+      create: {
+        ownerId: driver.id,
+        plate: 'DEM123',
+        type: 'CAR',
+        passengerCapacity: 3,
+        brand: 'Marca Demo',
+        modelYear: 2020,
+        color: 'GRIS',
+        document: {
+          create: {
+            expiresAt: new Date('2030-12-31T23:59:59Z'),
+            reviewStatus: 'APPROVED',
+            reviewedById: admin.id,
+            reviewedAt: new Date('2026-11-13T12:00:00Z'),
+          },
+        },
+      },
+    });
+    for (const rule of [
+      { code: 'DEFAULT', description: 'Acuerdo general de convivencia DEMO' },
+      { code: 'NO_SMOKING', description: 'No fumar durante el viaje' },
+      { code: 'NO_PETS', description: 'Sin mascotas en este viaje' },
+    ]) {
+      await tx.tripRuleDefinition.upsert({
+        where: { code: rule.code },
+        update: {},
+        create: rule,
+      });
+    }
+    await tx.campusDestination.upsert({
+      where: { code: 'USC-DEMO-PARQUEADERO' },
+      update: {},
+      create: {
+        code: 'USC-DEMO-PARQUEADERO',
+        name: 'Parqueadero USC · ejemplo no certificado',
+        latitude: '3.403900',
+        longitude: '-76.548900',
+        demo: true,
+      },
+    });
     await tx.campusDestination.upsert({
       where: { code: 'USC-DEMO-ENTRADA' },
       update: {},
@@ -89,7 +150,7 @@ try {
     });
   });
   console.log(
-    'Seed idempotente: cuatro identidades sintéticas y un destino DEMO; conserva registros existentes.',
+    'Seed idempotente: cuatro identidades, licencia/vehículo sintéticos y catálogo USC/reglas DEMO; conserva registros existentes.',
   );
 } finally {
   await db.$disconnect();

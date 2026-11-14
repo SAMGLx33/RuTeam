@@ -1,0 +1,114 @@
+{
+  "startedAt": "2026-11-14T02:24:42.062Z",
+  "environment": {
+    "node": "v22.22.3",
+    "platform": "linux",
+    "devDatabase": "ruteam",
+    "testDatabase": "ruteam_test",
+    "databasePort": "55432",
+    "demoMode": "true"
+  },
+  "runs": [
+    {
+      "label": "01-db-generate",
+      "command": "npm run db:generate",
+      "exitCode": 0,
+      "durationMs": 1421,
+      "log": "01-db-generate.txt"
+    },
+    {
+      "label": "02-db-migrate",
+      "command": "npm run db:migrate",
+      "exitCode": 0,
+      "durationMs": 1287,
+      "log": "02-db-migrate.txt"
+    },
+    {
+      "label": "03-db-seed",
+      "command": "npm run db:seed",
+      "exitCode": 0,
+      "durationMs": 1037,
+      "log": "03-db-seed.txt"
+    },
+    {
+      "label": "04-db-test-setup",
+      "command": "npm run db:test:setup",
+      "exitCode": 0,
+      "durationMs": 2360,
+      "log": "04-db-test-setup.txt"
+    },
+    {
+      "label": "05-typecheck",
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "durationMs": 6539,
+      "log": "05-typecheck.txt"
+    },
+    {
+      "label": "06-lint",
+      "command": "npm run lint",
+      "exitCode": 0,
+      "durationMs": 2106,
+      "log": "06-lint.txt"
+    },
+    {
+      "label": "07-jest",
+      "command": "npm run test",
+      "exitCode": 0,
+      "durationMs": 5638,
+      "log": "07-jest.txt"
+    },
+    {
+      "label": "08-playwright",
+      "command": "npm run test:e2e",
+      "exitCode": 0,
+      "durationMs": 20810,
+      "log": "08-playwright.txt"
+    },
+    {
+      "label": "09-smoke",
+      "command": "npm run smoke",
+      "exitCode": 0,
+      "durationMs": 314,
+      "log": "09-smoke.txt"
+    },
+    {
+      "label": "10-expo-doctor",
+      "command": "npx expo-doctor apps/client",
+      "exitCode": 0,
+      "durationMs": 4932,
+      "log": "10-expo-doctor.txt"
+    },
+    {
+      "label": "11-diff-check",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMs": 14,
+      "log": "11-diff-check.txt"
+    },
+    {
+      "label": "12-npm-audit",
+      "command": "npm audit --json",
+      "exitCode": 1,
+      "durationMs": 5415,
+      "log": "12-npm-audit.txt"
+    }
+  ],
+  "seedIdempotent": true,
+  "seedCounts": {
+    "user": 4,
+    "profile": 4,
+    "institutionalMembership": 4,
+    "driverEligibility": 1,
+    "vehicle": 1,
+    "vehicleDocument": 1,
+    "tripRuleDefinition": 3,
+    "campusDestination": 2,
+    "trip": 0,
+    "tripStop": 0,
+    "tripRuleSelection": 0,
+    "tripEvent": 0
+  },
+  "envUnchanged": true,
+  "finishedAt": "2026-11-14T02:25:34.123Z"
+}

@@ -8,3 +8,7 @@ package-lock.json
 reference/*.pdf
 reference/*.drawio
 .env
+
+reference-private
+
+docs/RuTeam_Referencias_Codex_PRIVADO
