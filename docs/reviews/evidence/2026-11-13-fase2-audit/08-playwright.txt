@@ -1,0 +1,33 @@
+COMMAND: npm run test:e2e
+UTC: 2026-11-14T02:25:23.444Z
+EXIT: 0
+
+
+Running 4 tests using 1 worker
+
+  ✓  1 [desktop] › tests/web/auth.spec.ts:2:1 › inactiva denegada; pasajera y conductor editan perfil con API real (4.0s)
+  ✓  2 [desktop] › tests/web/publication.spec.ts:5:1 › registra vehículo, admin revisa y conductor publica hacia USC con dos recogidas (3.0s)
+  ✓  3 [mobile-web] › tests/web/auth.spec.ts:2:1 › inactiva denegada; pasajera y conductor editan perfil con API real (2.4s)
+  ✓  4 [mobile-web] › tests/web/publication.spec.ts:5:1 › registra vehículo, admin revisa y conductor publica hacia USC con dos recogidas (2.9s)
+
+  4 passed (20.3s)
+npm notice run ruteam@0.1.0 test:e2e
+npm notice run playwright test
+[WebServer] npm notice run ruteam@0.1.0 dev:api
+[WebServer] npm notice run npm run dev -w @ruteam/api
+[WebServer] npm notice run @ruteam/api@0.1.0 dev
+[WebServer] npm notice run npm run build && node --env-file=../../.env dist/src/main.js
+[WebServer] npm notice run @ruteam/api@0.1.0 build
+[WebServer] npm notice run tsc -p tsconfig.json
+[WebServer] (node:72381) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm notice run ruteam@0.1.0 npx
+[WebServer] npm notice run 'expo' start --web --port 8082
+[WebServer] (node:72394) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+(node:72427) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:72371) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+[WebServer] (Use `node --trace-deprecation ...` to show where the warning was created)
+(node:72621) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

@@ -1,0 +1,41 @@
+{
+  "scope": "Only files added/changed in this recovery, versus full preflight hashes of existing worktree; pattern scan not universal PII detection",
+  "newFiles": [
+    "docs/handoffs/2026-11-14_task-refactor-monorepo-structure_recuperacion-postgresql.md",
+    "docs/reviews/POSTGRESQL_RECOVERY_DIAGNOSIS.md",
+    "docs/reviews/POSTGRESQL_RECOVERY_VALIDATION.md",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/architecture-validation-after-database.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/architecture-validation.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/bootstrap.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/browser-8081-before-command-restart.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/browser-8081.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/closeout.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/concurrency.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/connectivity-before.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/container-inspection.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/database-validation.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/diagnosis.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/final-checks.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/functional-validation-after-cache-fix.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/functional-validation.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/independent-checks.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/live-services.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/metadata-format-attempt.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/metro-cache-diagnosis.json",
+    "docs/reviews/evidence/2026-11-14-postgresql-recovery/privacy-and-links.json"
+  ],
+  "changedPreexistingFiles": [
+    "docs/reviews/ARCH_REFACTOR_REVIEW.md",
+    "README.md",
+    "docs/coordination/CURRENT_STATUS.md",
+    "docs/coordination/WORKSTREAMS.md",
+    "docs/demo/EVIDENCE.md",
+    "docs/development/PROGRESS.md",
+    "docs/development/SETUP.md",
+    "package.json",
+    "playwright.config.ts"
+  ],
+  "commonSecretOrNonDemoEmailFindings": [],
+  "forbiddenNewPaths": [],
+  "missingLocalMarkdownLinkTargets": []
+}

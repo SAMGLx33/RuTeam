@@ -1,0 +1,50 @@
+{
+  "startedAt": "2026-11-15T02:11:59.705Z",
+  "environment": "Linux Node22.22.3 npm12.2.2; authorized PostgreSQL18 development ruteam/test ruteam_test127.0.0.1:55432; unchanged .env",
+  "runs": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "durationMs": 7359,
+      "summary": []
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "durationMs": 2387,
+      "summary": []
+    },
+    {
+      "command": "npm run format:check",
+      "exitCode": 0,
+      "durationMs": 4048,
+      "summary": ["All matched files use Prettier code style!"]
+    },
+    {
+      "command": "npm test",
+      "exitCode": 0,
+      "durationMs": 7145,
+      "summary": [
+        "Test Suites: 5 passed, 5 total",
+        "Tests:       71 passed, 71 total"
+      ]
+    },
+    {
+      "command": "npm run test:e2e",
+      "exitCode": 1,
+      "durationMs": 133757,
+      "summary": [
+        "    Error: expect(locator).toContainText(expected) failed",
+        "    Error: strict mode violation: getByRole('alert') resolved to 2 elements:",
+        "    Error: locator.click: Test timeout of 60000ms exceeded.",
+        "    Error: expect(locator).toContainText(expected) failed",
+        "    Error: strict mode violation: getByRole('alert') resolved to 2 elements:",
+        "    Error: locator.click: Test timeout of 60000ms exceeded.",
+        "  4 failed"
+      ]
+    }
+  ],
+  "stoppedAtFailure": "playwright",
+  "envUnchanged": true,
+  "finishedAt": "2026-11-15T02:14:34.407Z"
+}

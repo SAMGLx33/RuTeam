@@ -1,0 +1,64 @@
+{
+  "counts": {
+    "info": 0,
+    "low": 1,
+    "moderate": 34,
+    "high": 5,
+    "critical": 0,
+    "total": 40
+  },
+  "highPackages": [
+    {
+      "name": "decode-uri-component",
+      "via": [
+        "https://github.com/advisories/GHSA-vcc3-ghjq-m6fr",
+        "https://github.com/advisories/GHSA-qr28-fpjm-wq7f"
+      ],
+      "fixAvailable": {
+        "name": "expo-router",
+        "version": "58.0.31",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "expo-router",
+      "via": ["expo-constants", "expo-linking", "query-string"],
+      "fixAvailable": {
+        "name": "expo-router",
+        "version": "58.0.31",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "image-size",
+      "via": [
+        "https://github.com/advisories/GHSA-5p2g-fcmc-qvqq",
+        "https://github.com/advisories/GHSA-w3rx-r6r6-pgpr"
+      ],
+      "fixAvailable": true
+    },
+    {
+      "name": "postcss",
+      "via": [
+        "https://github.com/advisories/GHSA-qx2v-qp2m-jg93",
+        "https://github.com/advisories/GHSA-6g55-p6wh-862q",
+        "https://github.com/advisories/GHSA-fxqj-rqcc-2cmp",
+        "https://github.com/advisories/GHSA-r28c-9q8g-f849"
+      ],
+      "fixAvailable": {
+        "name": "expo",
+        "version": "58.0.25",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "query-string",
+      "via": ["decode-uri-component"],
+      "fixAvailable": {
+        "name": "expo-router",
+        "version": "58.0.31",
+        "isSemVerMajor": true
+      }
+    }
+  ]
+}

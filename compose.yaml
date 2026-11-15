@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ruteam
+      POSTGRES_PASSWORD: ruteam_demo_local
+      POSTGRES_DB: ruteam
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - ruteam_pg:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ruteam -d ruteam']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  ruteam_pg:

@@ -1,0 +1,77 @@
+{
+  "startedAt": "2026-11-15T02:24:27.944Z",
+  "environment": "Linux Node22.22.3 npm12.2.2; authorized PostgreSQL18 development ruteam/test ruteam_test127.0.0.1:55432; unchanged .env",
+  "runs": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "durationMs": 7098,
+      "summary": []
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "durationMs": 2450,
+      "summary": []
+    },
+    {
+      "command": "npm run format:check",
+      "exitCode": 0,
+      "durationMs": 4082,
+      "summary": ["All matched files use Prettier code style!"]
+    },
+    {
+      "command": "npm test",
+      "exitCode": 0,
+      "durationMs": 6184,
+      "summary": [
+        "Test Suites: 5 passed, 5 total",
+        "Tests:       71 passed, 71 total"
+      ]
+    },
+    {
+      "command": "npm run test:e2e",
+      "exitCode": 0,
+      "durationMs": 26866,
+      "summary": ["  4 passed (26.1s)"]
+    },
+    {
+      "command": "npm run smoke",
+      "exitCode": 0,
+      "durationMs": 389,
+      "summary": ["Smoke: 6/6 comprobaciones."]
+    },
+    {
+      "command": "npm run build:api",
+      "exitCode": 0,
+      "durationMs": 2875,
+      "summary": []
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "durationMs": 19263,
+      "summary": ["Exported: dist"]
+    },
+    {
+      "command": "npx expo-doctor frontend",
+      "exitCode": 0,
+      "durationMs": 5661,
+      "summary": ["18/18 checks passed. No issues detected!"]
+    },
+    {
+      "command": "node scripts/verify-workspace-move.mjs",
+      "exitCode": 0,
+      "durationMs": 137,
+      "summary": []
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMs": 25,
+      "summary": []
+    }
+  ],
+  "envUnchanged": true,
+  "finishedAt": "2026-11-15T02:25:43.108Z"
+}

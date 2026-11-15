@@ -1,0 +1,76 @@
+[
+  {
+    "database": "ruteam",
+    "migrations": [
+      {
+        "migration_name": "20261114003554_foundation",
+        "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "finished_at": "2026-11-14T00:35:54.314Z",
+        "rolled_back_at": null,
+        "localSha256": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "matchesLocal": true
+      },
+      {
+        "migration_name": "20261114004000_domain_constraints",
+        "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "finished_at": "2026-11-14T00:39:09.018Z",
+        "rolled_back_at": null,
+        "localSha256": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "matchesLocal": true
+      },
+      {
+        "migration_name": "20261114014345_phase2_vehicle_publication",
+        "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "finished_at": "2026-11-14T01:44:57.971Z",
+        "rolled_back_at": null,
+        "localSha256": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "matchesLocal": true
+      },
+      {
+        "migration_name": "20261114015557_phase2_document_revisions",
+        "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "finished_at": "2026-11-14T01:55:57.978Z",
+        "rolled_back_at": null,
+        "localSha256": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "matchesLocal": true
+      }
+    ]
+  },
+  {
+    "database": "ruteam_test",
+    "migrations": [
+      {
+        "migration_name": "20261114003554_foundation",
+        "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "finished_at": "2026-11-14T00:36:05.285Z",
+        "rolled_back_at": null,
+        "localSha256": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "matchesLocal": true
+      },
+      {
+        "migration_name": "20261114004000_domain_constraints",
+        "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "finished_at": "2026-11-14T00:39:10.237Z",
+        "rolled_back_at": null,
+        "localSha256": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "matchesLocal": true
+      },
+      {
+        "migration_name": "20261114014345_phase2_vehicle_publication",
+        "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "finished_at": "2026-11-14T01:45:00.478Z",
+        "rolled_back_at": null,
+        "localSha256": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "matchesLocal": true
+      },
+      {
+        "migration_name": "20261114015557_phase2_document_revisions",
+        "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "finished_at": "2026-11-14T01:55:59.322Z",
+        "rolled_back_at": null,
+        "localSha256": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "matchesLocal": true
+      }
+    ]
+  }
+]

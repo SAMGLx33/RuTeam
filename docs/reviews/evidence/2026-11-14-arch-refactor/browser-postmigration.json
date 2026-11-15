@@ -1,0 +1,86 @@
+{
+  "phase": "postmigration",
+  "browserPlugin": "not available; Playwright fallback",
+  "results": [
+    {
+      "label": "desktop",
+      "url": "http://localhost:8081/",
+      "title": "RuTeam",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "meaningfulScreen": true,
+      "alert": ["Error interno"],
+      "requests": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "method": "POST"
+        }
+      ],
+      "responses": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "status": 401
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "status": 500
+        }
+      ],
+      "failed": [],
+      "pageErrors": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "overflow": false,
+      "screenshotOutsideGit": "/home/darik/RuTeam/review-artifacts/2026-11-14-architecture/postmigration-desktop.png",
+      "limitation": "Network-error/login failure observation only; no PostgreSQL flow or native device verified"
+    },
+    {
+      "label": "mobile-web",
+      "url": "http://localhost:8081/",
+      "title": "RuTeam",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "meaningfulScreen": true,
+      "alert": ["Error interno"],
+      "requests": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "method": "POST"
+        }
+      ],
+      "responses": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "status": 401
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "status": 500
+        }
+      ],
+      "failed": [],
+      "pageErrors": [],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "overflow": false,
+      "screenshotOutsideGit": "/home/darik/RuTeam/review-artifacts/2026-11-14-architecture/postmigration-mobile-web.png",
+      "limitation": "Network-error/login failure observation only; no PostgreSQL flow or native device verified"
+    }
+  ]
+}
