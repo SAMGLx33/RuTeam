@@ -1,0 +1,540 @@
+{
+  "branch": "task/trips-publicacion",
+  "head": "e3841bc189ac1661210adf920cd3f8fb3db6a8ce",
+  "against": "feature",
+  "operation": "PROPOSAL_ONLY_NO_STAGE",
+  "count": 103,
+  "files": [
+    {
+      "status": "M",
+      "path": ".gitignore",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": ".prettierignore",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "AGENTS.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "README.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/api/AGENTS.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/prisma/migrations/20261114014345_phase2_vehicle_publication/migration.sql",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/prisma/migrations/20261114015557_phase2_document_revisions/migration.sql",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/api/prisma/schema.prisma",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/api/prisma/seed.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/api/src/app.module.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/common/errors/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/common/errors/domain-policy.error.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/api/src/common/filters/api-exception.filter.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/api/src/modules/auth/application/auth.service.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/api/src/modules/auth/infrastructure/repositories/auth.repository.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/application/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/trips/application/trips.service.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/controllers/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/trips/controllers/trips.controller.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/domain/models/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/trips/domain/models/viaje.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/dto/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/trips/dto/publish-trip.dto.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/infrastructure/repositories/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/trips/infrastructure/repositories/trips.repository.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/trips/trips.module.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/application/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/vehicles/application/vehicles.service.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/controllers/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/vehicles/controllers/vehicles.controller.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/domain/policies/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/vehicles/domain/policies/vehiculo.policy.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/dto/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/vehicles/dto/vehicles.dto.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/infrastructure/repositories/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/vehicles/infrastructure/repositories/vehicles.repository.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/src/modules/vehicles/vehicles.module.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/test/phase2-policy.test.mjs",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/api/test/phase2.e2e.test.mjs",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/client/AGENTS.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/(admin)/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/app/(admin)/document-reviews.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/(driver)/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/app/(driver)/my-trips.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/app/(driver)/publish.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/app/(driver)/vehicles.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/components/forms/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/src/components/forms/field.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/src/components/ui/protected-page.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/admin/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/src/features/admin/document-reviews-screen.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "apps/client/src/features/auth/profile-screen.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/trips/.gitkeep",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/src/features/trips/my-trips-screen.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/src/features/trips/publish-screen.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "apps/client/src/features/trips/vehicles-screen.tsx",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/DATA_MODEL.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/MODULES.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/UML-CROSSWALK.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/coordination/CURRENT_STATUS.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/coordination/WORKSTREAMS.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/decisions/OPEN_DECISIONS.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/demo/DEMO_SCRIPT.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/demo/EVIDENCE.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/API.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/BRANCHING.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "docs/development/DEPENDENCY_REVIEW.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "docs/development/FASE3_RESERVAS_PLAN.md",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/PROGRESS.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/TEST_PLAN.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "docs/handoffs/2026-11-13_task-trips-publicacion_auditoria-fase2-reservas-plan.md",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/handoffs/2026-11-13_task-trips-publicacion_fase2.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "docs/requirements/ERS_CATALOG.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "docs/requirements/TRACEABILITY.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "docs/requirements/UML_CROSSWALK.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/FASE2_COMMIT_MANIFEST.json",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/FASE2_COMMIT_PROPOSAL.md",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/FASE2_REVIEW.md",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/01-db-generate.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/02-db-migrate.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/03-db-seed.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/04-db-test-setup.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/05-typecheck.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/06-lint.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/07-jest.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/08-playwright.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/09-smoke.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/10-expo-doctor.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/11-diff-check.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/12-npm-audit.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/13-format-check.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/14-final-diff-check.txt",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/input-manifest.json",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/migration-checksums.json",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/npm-audit.json",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/privacy-and-scope.json",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/results.json",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/reviews/evidence/2026-11-13-fase2-audit/seed-idempotence.json",
+      "origin": "auditoria-documental"
+    },
+    {
+      "status": "A",
+      "path": "docs/superpowers/plans/2026-11-13-phase2.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "packages/contracts/src/index.ts",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "M",
+      "path": "reference/README.md",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "tests/package.json",
+      "origin": "fase2-preexistente"
+    },
+    {
+      "status": "A",
+      "path": "tests/web/publication.spec.ts",
+      "origin": "fase2-preexistente"
+    }
+  ],
+  "exclusions": [
+    ".env y .env.* (excepto ejemplos ya rastreados sin cambios)",
+    "reference-private/**",
+    "docs/RuTeam_Referencias_Codex_PRIVADO/**",
+    "node_modules/**",
+    "**/generated/**",
+    "**/dist/**",
+    "**/.expo/**",
+    "coverage/**",
+    "test-results/**",
+    "playwright-report/**",
+    "*.log",
+    "dumps/bases/caches/secretos/PII",
+    "/tmp/**",
+    "artefactos externos del plugin Codex Security"
+  ]
+}

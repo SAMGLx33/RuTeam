@@ -1,0 +1,104 @@
+{
+  "expectedE2eApi": "http://localhost:3100/api/v1",
+  "observedWrongCachedApi": "http://localhost:3000/api/v1",
+  "firstFullE2eResult": "4 failed",
+  "singleCaseWithClearResult": "1 passed",
+  "causeEvidence": "Expo SDK54 Babel inline-manifest plugin inlines APP_MANIFEST; cached web transform retained extra.apiUrl for the other process environment. Config public override itself was correct.",
+  "correction": [
+    "Root dev:web and dev:client add --clear through existing npm scripts.",
+    "Playwright webServer Expo8082 adds --clear; same endpoints, assertions, DB separation and environment values."
+  ],
+  "rawTracesExcludedFromGit": true,
+  "sanitizedNetwork": [
+    {
+      "phase": "failed-with-cache",
+      "requests": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "method": "GET",
+          "status": -1
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "method": "POST",
+          "status": -1
+        }
+      ]
+    },
+    {
+      "phase": "passed-after-clear",
+      "requests": [
+        {
+          "url": "http://localhost:3100/api/v1/auth/me",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/demo/login",
+          "method": "POST",
+          "status": 403
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/demo/login",
+          "method": "POST",
+          "status": 201
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/me",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "url": "http://localhost:3100/api/v1/campus/destinations",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "url": "http://localhost:3100/api/v1/me/profile",
+          "method": "PATCH",
+          "status": 200
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/me",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "url": "http://localhost:3100/api/v1/campus/destinations",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/logout",
+          "method": "POST",
+          "status": 204
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/me",
+          "method": "GET",
+          "status": 401
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/demo/login",
+          "method": "POST",
+          "status": 201
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/me",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "url": "http://localhost:3100/api/v1/campus/destinations",
+          "method": "GET",
+          "status": 200
+        },
+        {
+          "url": "http://localhost:3100/api/v1/auth/logout",
+          "method": "POST",
+          "status": 204
+        }
+      ]
+    }
+  ]
+}

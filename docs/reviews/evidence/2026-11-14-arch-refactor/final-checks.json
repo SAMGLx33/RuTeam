@@ -1,0 +1,1974 @@
+{
+  "branch": "task/refactor-monorepo-structure",
+  "head": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+  "base": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+  "physicalMoves": 216,
+  "indexedRenames": 0,
+  "indexStillTracksOldDeletedPathsUntilAuthorizedStage": true,
+  "trackedChanges": 238,
+  "trackedModified": 22,
+  "trackedDeleted": 216,
+  "untrackedFiles": 236,
+  "allChangedPaths": [
+    {
+      "status": "M",
+      "path": ".github/workflows/ci.yml"
+    },
+    {
+      "status": "M",
+      "path": ".gitignore"
+    },
+    {
+      "status": "M",
+      "path": "AGENTS.md"
+    },
+    {
+      "status": "M",
+      "path": "CONTRIBUTING.md"
+    },
+    {
+      "status": "M",
+      "path": "README.md"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/AGENTS.md"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/jest.config.mjs"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/package.json"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/prisma.config.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/prisma/migrations/20261114003554_foundation/migration.sql"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/prisma/migrations/20261114004000_domain_constraints/migration.sql"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/prisma/migrations/20261114014345_phase2_vehicle_publication/migration.sql"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/prisma/migrations/20261114015557_phase2_document_revisions/migration.sql"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/prisma/migrations/migration_lock.toml"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/prisma/seed.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/app.module.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/bootstrap.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/common/decorators/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/common/errors/domain-policy.error.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/common/filters/api-exception.filter.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/common/guards/client-origin.guard.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/common/guards/session.guard.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/common/pipes/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/config/environment.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/infrastructure/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/infrastructure/infrastructure.module.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/infrastructure/prisma/prisma.service.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/infrastructure/routing/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/infrastructure/verification/demo-institutional-verification.provider.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/infrastructure/verification/institutional-verification.provider.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/infrastructure/verification/official-usc-verification.provider.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/main.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/administration/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/administration/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/administration/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/administration/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/administration/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/administration/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/administration/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/administration/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/application/auth.service.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/auth.module.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/controllers/auth.controller.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/dto/demo-login.dto.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/infrastructure/repositories/auth.repository.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/auth/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/boarding/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/boarding/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/boarding/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/boarding/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/boarding/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/boarding/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/boarding/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/boarding/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/application/campus.service.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/campus.module.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/controllers/campus.controller.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/infrastructure/repositories/campus.repository.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/campus/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/chat/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/chat/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/chat/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/chat/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/chat/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/chat/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/chat/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/chat/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/compensations/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/compensations/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/compensations/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/compensations/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/compensations/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/compensations/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/compensations/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/compensations/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/costs/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/costs/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/costs/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/costs/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/costs/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/costs/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/costs/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/costs/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/health/health.controller.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/domain/membership.policy.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/institutional-membership/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/matching/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/matching/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/matching/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/matching/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/matching/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/matching/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/matching/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/matching/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/application/profiles.service.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/controllers/profiles.controller.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/dto/update-profile.dto.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/infrastructure/repositories/profile.repository.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/profiles.module.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/profiles/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ratings/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ratings/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ratings/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ratings/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ratings/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ratings/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ratings/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ratings/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/reservations/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/reservations/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/reservations/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/reservations/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/reservations/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/reservations/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/reservations/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/reservations/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ride-execution/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ride-execution/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ride-execution/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ride-execution/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ride-execution/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ride-execution/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ride-execution/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/ride-execution/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/safety/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/safety/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/safety/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/safety/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/safety/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/safety/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/safety/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/safety/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/application/trips.service.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/controllers/trips.controller.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/domain/models/viaje.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/dto/publish-trip.dto.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/infrastructure/repositories/trips.repository.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/trips/trips.module.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/users/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/users/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/users/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/users/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/users/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/users/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/users/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/users/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/application/vehicles.service.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/controllers/vehicles.controller.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/domain/policies/vehiculo.policy.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/dto/vehicles.dto.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/infrastructure/repositories/vehicles.repository.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/tests/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/src/modules/vehicles/vehicles.module.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/test/auth.e2e.test.mjs"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/test/membership.test.mjs"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/test/phase2-policy.test.mjs"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/test/phase2.e2e.test.mjs"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/test/providers.test.mjs"
+    },
+    {
+      "status": "D",
+      "path": "apps/api/tsconfig.json"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/AGENTS.md"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app.config.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/(admin)/document-reviews.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/(driver)/my-trips.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/(driver)/publish.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/(driver)/vehicles.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/(passenger)/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/(public)/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/_layout.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/app/index.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/assets/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/package.json"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/components/forms/field.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/components/maps/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/components/ui/button.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/components/ui/protected-page.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/config/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/admin/document-reviews-screen.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/auth/login-screen.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/auth/profile-screen.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/chat/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/ratings/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/reservations/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/ride/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/trips/my-trips-screen.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/trips/publish-screen.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/features/trips/vehicles-screen.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/hooks/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/providers/session-provider.tsx"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/services/api/client.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/services/api/session-storage.native.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/services/api/session-storage.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/services/api/session-storage.web.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/services/location/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/services/realtime/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/theme/tokens.ts"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/types/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/src/utils/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "apps/client/tsconfig.json"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/AGENTS.md"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/jest.config.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/package.json"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma.config.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/migrations/20261114003554_foundation/migration.sql"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/migrations/20261114004000_domain_constraints/migration.sql"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/migrations/20261114014345_phase2_vehicle_publication/migration.sql"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/migrations/20261114015557_phase2_document_revisions/migration.sql"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/migrations/migration_lock.toml"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/schema.prisma"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/seed.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/app.module.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/bootstrap.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/common/decorators/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/common/errors/domain-policy.error.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/common/filters/api-exception.filter.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/common/guards/client-origin.guard.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/common/guards/session.guard.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/common/pipes/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/config/environment.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/infrastructure/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/infrastructure/infrastructure.module.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/infrastructure/prisma/prisma.service.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/infrastructure/routing/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/infrastructure/verification/demo-institutional-verification.provider.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/infrastructure/verification/institutional-verification.provider.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/infrastructure/verification/official-usc-verification.provider.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/main.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/administration/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/administration/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/administration/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/administration/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/administration/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/administration/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/administration/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/administration/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/application/auth.service.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/auth.module.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/controllers/auth.controller.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/dto/demo-login.dto.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/infrastructure/repositories/auth.repository.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/auth/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/boarding/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/boarding/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/boarding/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/boarding/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/boarding/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/boarding/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/boarding/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/boarding/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/application/campus.service.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/campus.module.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/controllers/campus.controller.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/infrastructure/repositories/campus.repository.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/campus/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/chat/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/chat/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/chat/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/chat/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/chat/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/chat/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/chat/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/chat/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/compensations/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/compensations/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/compensations/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/compensations/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/compensations/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/compensations/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/compensations/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/compensations/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/costs/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/costs/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/costs/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/costs/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/costs/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/costs/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/costs/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/costs/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/health/health.controller.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/domain/membership.policy.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/institutional-membership/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/matching/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/matching/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/matching/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/matching/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/matching/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/matching/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/matching/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/matching/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/application/profiles.service.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/controllers/profiles.controller.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/dto/update-profile.dto.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/infrastructure/repositories/profile.repository.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/profiles.module.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/profiles/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ratings/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ratings/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ratings/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ratings/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ratings/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ratings/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ratings/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ratings/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/reservations/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/reservations/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/reservations/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/reservations/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/reservations/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/reservations/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/reservations/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/reservations/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ride-execution/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ride-execution/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ride-execution/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ride-execution/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ride-execution/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ride-execution/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ride-execution/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/ride-execution/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/safety/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/safety/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/safety/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/safety/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/safety/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/safety/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/safety/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/safety/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/application/trips.service.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/controllers/trips.controller.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/domain/models/viaje.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/dto/publish-trip.dto.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/infrastructure/repositories/trips.repository.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/trips.module.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/users/application/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/users/controllers/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/users/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/users/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/users/domain/policies/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/users/dto/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/users/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/users/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/application/vehicles.service.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/controllers/vehicles.controller.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/domain/events/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/domain/models/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/domain/policies/vehiculo.policy.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/dto/vehicles.dto.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/infrastructure/repositories/vehicles.repository.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/tests/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/vehicles/vehicles.module.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/auth.e2e.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/membership.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/phase2-policy.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/phase2.e2e.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/providers.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/tsconfig.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/architecture/REPOSITORY_STRUCTURE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/coordination/CURRENT_STATUS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/coordination/MODULE_OWNERSHIP.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/coordination/WORKSTREAMS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/demo/EVIDENCE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/API.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/BRANCHING.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/FASE3_RESERVAS_PLAN.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/PROGRESS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/SETUP.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/TEST_PLAN.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/handoffs/2026-11-14_task-refactor-monorepo-structure.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/requirements/TRACEABILITY.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/requirements/UML_CROSSWALK.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/ARCH_REFACTOR_BASELINE.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/ARCH_REFACTOR_PLAN.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/ARCH_REFACTOR_REVIEW.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/reviews/FASE2_REVIEW.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/audit-summary.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/baseline.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/browser-baseline.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/browser-postmigration.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/final-checks.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/final-static.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/http-and-env.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/installation.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/inventory-after.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/inventory-before.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/metro-lan.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/path-audit.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-14-arch-refactor/postmigration.json"
+    },
+    {
+      "status": "M",
+      "path": "eslint.config.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/.env.example"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/AGENTS.md"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app.config.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app/(admin)/document-reviews.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app/(driver)/my-trips.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app/(driver)/publish.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app/(driver)/vehicles.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app/(passenger)/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app/(public)/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app/_layout.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/app/index.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/assets/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/package.json"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/components/forms/field.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/components/maps/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/components/ui/button.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/components/ui/protected-page.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/config/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/admin/document-reviews-screen.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/auth/login-screen.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/auth/profile-screen.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/chat/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/ratings/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/reservations/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/ride/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/trips/my-trips-screen.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/trips/publish-screen.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/trips/vehicles-screen.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/hooks/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/providers/session-provider.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/services/api/client.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/services/api/session-storage.native.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/services/api/session-storage.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/services/api/session-storage.web.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/services/location/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/services/realtime/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/theme/tokens.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/types/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/utils/.gitkeep"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/tsconfig.json"
+    },
+    {
+      "status": "M",
+      "path": "package-lock.json"
+    },
+    {
+      "status": "M",
+      "path": "package.json"
+    },
+    {
+      "status": "untracked",
+      "path": "scripts/verify-workspace-move.mjs"
+    },
+    {
+      "status": "M",
+      "path": "tests/web/publication.spec.ts"
+    }
+  ],
+  "stageEmpty": true,
+  "envUnchanged": true,
+  "privacyReview": {
+    "commonSecretAndEmailPatterns": [],
+    "forbiddenNewPaths": [],
+    "privateOriginalsTracked": [],
+    "scope": "all changed existing files read; common secret patterns, not universal PII detection",
+    "triagedInheritedRegistryMetadata": {
+      "matches": 4,
+      "field": "deprecated",
+      "package": "glob nested entries",
+      "unchangedFromBase": true,
+      "decision": "Public upstream deprecation contact metadata already in lockfile; no team/user PII introduced, preserve exact dependency metadata. Addresses not reproduced in reports."
+    }
+  },
+  "historicalPrefixesPreserved": {
+    "docs/demo/EVIDENCE.md": true,
+    "docs/development/PROGRESS.md": true,
+    "docs/coordination/CURRENT_STATUS.md": true,
+    "docs/coordination/WORKSTREAMS.md": true,
+    "docs/requirements/TRACEABILITY.md": true,
+    "docs/requirements/UML_CROSSWALK.md": true
+  },
+  "frontendPrismaOrBackendImports": [],
+  "workspaces": ["backend", "frontend", "packages/*"],
+  "oldAppDirectoriesAbsent": true,
+  "rootAppAbsent": true,
+  "parallelStructureAbsent": true,
+  "servicePorts": {
+    "3000": {
+      "listening": true,
+      "pids": [15635]
+    },
+    "8081": {
+      "listening": true,
+      "pids": [20483]
+    },
+    "3100": {
+      "listening": false,
+      "pids": []
+    },
+    "8082": {
+      "listening": false,
+      "pids": []
+    },
+    "55432": {
+      "listening": false,
+      "pids": []
+    },
+    "5432": {
+      "listening": true,
+      "pids": []
+    }
+  },
+  "repositoryTrackedFilesAtBase": 298,
+  "refs": {
+    "main": "e3841bc189ac1661210adf920cd3f8fb3db6a8ce",
+    "dev": "e3841bc189ac1661210adf920cd3f8fb3db6a8ce",
+    "feature": "e3841bc189ac1661210adf920cd3f8fb3db6a8ce",
+    "task/trips-publicacion": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+    "origin/task/trips-publicacion": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+    "task/docs-foundation-checkpoint": "f637499113a9094f588f73fc880d25ab7071b002"
+  },
+  "missingLocalMarkdownLinkTargets": []
+}

@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-14",
+  "timezone": "America/Bogota",
+  "branch": "task/refactor-monorepo-structure",
+  "head": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+  "oldCluster": "/tmp/ruteam-pg-20261113",
+  "oldClusterExists": false,
+  "oldPGVersionExists": false,
+  "configuredDevelopment": {
+    "host": "127.0.0.1",
+    "port": 55432,
+    "database": "ruteam"
+  },
+  "configuredTest": {
+    "host": "127.0.0.1",
+    "port": 55432,
+    "database": "ruteam_test"
+  },
+  "distinctDatabases": true,
+  "search": [
+    {
+      "root": "/home/darik/RuTeam",
+      "exists": true,
+      "maxDepth": 8,
+      "candidates": [],
+      "unreadableDirectories": 0
+    },
+    {
+      "root": "/tmp",
+      "exists": true,
+      "maxDepth": 4,
+      "candidates": [],
+      "unreadableDirectories": 13
+    },
+    {
+      "root": "/var/backups",
+      "exists": true,
+      "maxDepth": 3,
+      "candidates": [],
+      "unreadableDirectories": 0
+    },
+    {
+      "root": "/home/darik/backups",
+      "exists": false,
+      "maxDepth": 4,
+      "candidates": [],
+      "unreadableDirectories": 0
+    },
+    {
+      "root": "/home/darik/Backups",
+      "exists": false,
+      "maxDepth": 4,
+      "candidates": [],
+      "unreadableDirectories": 0
+    },
+    {
+      "root": "/home/darik/.local/share/RuTeam",
+      "exists": false,
+      "maxDepth": 4,
+      "candidates": [],
+      "unreadableDirectories": 0
+    },
+    {
+      "root": "/home/darik/.local/state/RuTeam",
+      "exists": false,
+      "maxDepth": 4,
+      "candidates": [],
+      "unreadableDirectories": 0
+    }
+  ],
+  "limitations": [
+    "Bounded search; 13 unreadable directories under /tmp; no external disks/cloud or forensic scan inspected.",
+    "No accessible local backup candidate found; does not prove no external backup exists."
+  ],
+  "systemCluster": {
+    "version": "18",
+    "name": "main",
+    "port": 5432,
+    "owner": "postgres",
+    "status": "online",
+    "dataDirectory": "/var/lib/postgresql/18/main",
+    "databaseConnectionAttempted": false,
+    "authorizedForUse": false
+  },
+  "services": {
+    "api3000": {
+      "pid": 15635,
+      "cwd": "backend"
+    },
+    "expo8081": {
+      "pid": 20483,
+      "cwd": "frontend"
+    },
+    "postgres55432": {
+      "listening": false
+    }
+  },
+  "newEnvironmentCreated": false,
+  "approval": "PENDING_EXPLICIT_USER_AUTHORIZATION",
+  "plannedDataRoot": "/home/darik/RuTeam/.local-data/postgresql-18-demo",
+  "schemaSqlChecksums": {
+    "backend/prisma/migrations/20261114003554_foundation/migration.sql": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+    "backend/prisma/migrations/20261114004000_domain_constraints/migration.sql": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+    "backend/prisma/migrations/20261114014345_phase2_vehicle_publication/migration.sql": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+    "backend/prisma/migrations/20261114015557_phase2_document_revisions/migration.sql": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303"
+  }
+}

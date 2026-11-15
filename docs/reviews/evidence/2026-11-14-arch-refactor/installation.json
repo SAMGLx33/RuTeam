@@ -1,0 +1,25 @@
+{
+  "commands": [
+    {
+      "command": "npm install --package-lock-only --ignore-scripts --audit=false --fund=false",
+      "cwd": "repository root",
+      "exitCode": 0
+    },
+    {
+      "command": "npm install --ignore-scripts --audit=false --fund=false",
+      "cwd": "repository root",
+      "exitCode": 0,
+      "effect": "changed two local workspace links"
+    },
+    {
+      "command": "npm ci --prefix /tmp/ruteam-arch-clean-install-20261114 --ignore-scripts --audit=false --fund=false",
+      "exitCode": 0,
+      "effect": "1238 packages installed from unchanged versions in clean package-metadata-only fixture; no .env/private/source copies"
+    }
+  ],
+  "lockfileEntriesBefore": 1309,
+  "lockfileEntriesAfter": 1309,
+  "allPackageObjectsEqualAfterPathRemap": true,
+  "newDependencies": false,
+  "rawLogsOutsideGit": "/tmp/ruteam-arch-20261114"
+}

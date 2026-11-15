@@ -1,0 +1,156 @@
+{
+  "startedAt": "2026-11-15T02:09:58.803Z",
+  "environment": "New authorized PostgreSQL18 development/test instance127.0.0.1:55432; unchanged root.env",
+  "runs": [
+    {
+      "command": "npm run db:generate",
+      "exitCode": 0,
+      "durationMs": 2238
+    },
+    {
+      "command": "npm run db:migrate",
+      "exitCode": 0,
+      "durationMs": 1417
+    },
+    {
+      "command": "npm run db:seed",
+      "exitCode": 0,
+      "durationMs": 992
+    },
+    {
+      "command": "npm run db:seed",
+      "exitCode": 0,
+      "durationMs": 967
+    },
+    {
+      "command": "npm run db:test:setup",
+      "exitCode": 0,
+      "durationMs": 2637
+    },
+    {
+      "command": "npm run db:test:setup",
+      "exitCode": 0,
+      "durationMs": 2465
+    }
+  ],
+  "DATABASE_URL": {
+    "database": "ruteam",
+    "role": "ruteam",
+    "port": "55432",
+    "data_directory": "/home/darik/RuTeam/.local-data/postgresql-18/data",
+    "connection": "up"
+  },
+  "TEST_DATABASE_URL": {
+    "database": "ruteam_test",
+    "role": "ruteam",
+    "port": "55432",
+    "data_directory": "/home/darik/RuTeam/.local-data/postgresql-18/data",
+    "connection": "up"
+  },
+  "devMigrations": [
+    {
+      "migration_name": "20261114003554_foundation",
+      "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+      "finished_at": "2026-11-15T02:10:02.371Z",
+      "rolled_back_at": null,
+      "localSha256": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+      "matches": true
+    },
+    {
+      "migration_name": "20261114004000_domain_constraints",
+      "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+      "finished_at": "2026-11-15T02:10:02.385Z",
+      "rolled_back_at": null,
+      "localSha256": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+      "matches": true
+    },
+    {
+      "migration_name": "20261114014345_phase2_vehicle_publication",
+      "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+      "finished_at": "2026-11-15T02:10:02.458Z",
+      "rolled_back_at": null,
+      "localSha256": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+      "matches": true
+    },
+    {
+      "migration_name": "20261114015557_phase2_document_revisions",
+      "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+      "finished_at": "2026-11-15T02:10:02.467Z",
+      "rolled_back_at": null,
+      "localSha256": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+      "matches": true
+    }
+  ],
+  "devSeed": {
+    "idempotent": true,
+    "tableCounts": {
+      "User": 4,
+      "Profile": 4,
+      "InstitutionalMembership": 4,
+      "DriverEligibility": 1,
+      "Vehicle": 1,
+      "VehicleDocument": 1,
+      "TripRuleDefinition": 3,
+      "CampusDestination": 2,
+      "Trip": 0,
+      "TripStop": 0,
+      "TripRuleSelection": 0,
+      "TripEvent": 0
+    },
+    "tablesCompared": 12
+  },
+  "testMigrations": [
+    {
+      "migration_name": "20261114003554_foundation",
+      "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+      "finished_at": "2026-11-15T02:10:06.040Z",
+      "rolled_back_at": null,
+      "localSha256": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+      "matches": true
+    },
+    {
+      "migration_name": "20261114004000_domain_constraints",
+      "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+      "finished_at": "2026-11-15T02:10:06.054Z",
+      "rolled_back_at": null,
+      "localSha256": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+      "matches": true
+    },
+    {
+      "migration_name": "20261114014345_phase2_vehicle_publication",
+      "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+      "finished_at": "2026-11-15T02:10:06.130Z",
+      "rolled_back_at": null,
+      "localSha256": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+      "matches": true
+    },
+    {
+      "migration_name": "20261114015557_phase2_document_revisions",
+      "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+      "finished_at": "2026-11-15T02:10:06.138Z",
+      "rolled_back_at": null,
+      "localSha256": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+      "matches": true
+    }
+  ],
+  "testSeed": {
+    "idempotent": true,
+    "tableCounts": {
+      "User": 4,
+      "Profile": 4,
+      "InstitutionalMembership": 4,
+      "DriverEligibility": 1,
+      "Vehicle": 1,
+      "VehicleDocument": 1,
+      "TripRuleDefinition": 3,
+      "CampusDestination": 2,
+      "Trip": 0,
+      "TripStop": 0,
+      "TripRuleSelection": 0,
+      "TripEvent": 0
+    },
+    "tablesCompared": 12
+  },
+  "envUnchanged": true,
+  "finishedAt": "2026-11-15T02:10:09.664Z"
+}
