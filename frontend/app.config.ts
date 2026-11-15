@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-config({ path: '../../.env', quiet: true });
+config({ path: '../.env', quiet: true });
 export default {
   expo: {
     name: 'RuTeam Demo',

@@ -106,3 +106,11 @@ SolicitudCupo/Reserva/ParticipanteReserva/InventarioCupos se mapearán a
 ReservationRequest/Reservation/ReservationMember/claims transaccionales al implementar
 el [plan de Fase 3](../development/FASE3_RESERVAS_PLAN.md), después de revisión autorizada.
 Ese mapeo es propuesto, no una sincronización de esquema o firmas ya implementada.
+
+## Correspondencia de rutas — 2026-11-14
+
+Los nombres/clases/firmas y relaciones UML no cambian: el mismo sufijo de apps/api/src
+se encuentra bajo backend/src; apps/client/app y src pasan a frontend/app y frontend/src.
+No nueva jerarquía MVC global o reimplementación de módulos. Rutas propuestas de Fase 3
+actualizadas sólo en su plan; reservas continúan sin implementar. Ver REPOSITORY_STRUCTURE
+y ARCH_REFACTOR_REVIEW para equivalencia exacta y excepciones configuracionales.

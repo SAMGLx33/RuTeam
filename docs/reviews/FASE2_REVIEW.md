@@ -43,7 +43,7 @@ vulnerabilidades; R-01 sigue abierto. Se revisaron también los arreglos histór
 origen array y revisión obsoleta: las pruebas de esta sesión vuelven a observarlos.
 
 D-01 se verifica en [TripSummary](../../packages/contracts/src/index.ts),
-[serializador del repositorio](../../apps/api/src/modules/trips/infrastructure/repositories/trips.repository.ts)
+[serializador del repositorio](../../backend/src/modules/trips/infrastructure/repositories/trips.repository.ts)
 y la [aclaración de API](../development/API.md). La corrección no añade campos públicos.
 
 ## 3. Integridad y fronteras comprobadas
@@ -214,3 +214,7 @@ condiciones no se aprueba promoción ni comienza producción de Fase 3.
 
 Propuesta de mensaje e inventario exhaustivo: [FASE2_COMMIT_PROPOSAL](FASE2_COMMIT_PROPOSAL.md).
 Diseño de reservas únicamente: [FASE3_RESERVAS_PLAN](../development/FASE3_RESERVAS_PLAN.md).
+
+Nota de navegación 2026-11-14: el enlace al repositorio de viajes usa ahora backend/src.
+Las rutas narradas, hashes, comandos y hechos del corte anterior siguen siendo históricos;
+no son resultados nuevos de la migración. Ver ARCH_REFACTOR_REVIEW para el corte actual.

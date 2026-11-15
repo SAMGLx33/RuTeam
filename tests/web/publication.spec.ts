@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PrismaClient } from '../../apps/api/src/generated/prisma/client';
+import { PrismaClient } from '../../backend/src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { randomInt } from 'node:crypto';
 test('registra vehículo, admin revisa y conductor publica hacia USC con dos recogidas', async ({

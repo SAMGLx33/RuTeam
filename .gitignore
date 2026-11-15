@@ -7,7 +7,7 @@ dist/
 coverage/
 *.log
 *.tsbuildinfo
-apps/api/src/generated/
+backend/src/generated/
 .superpowers/
 playwright-report/
 test-results/

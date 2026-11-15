@@ -3,7 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@ruteam/contracts": ["../../packages/contracts/src/index.ts"]
+      "@ruteam/contracts": ["../packages/contracts/src/index.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"]

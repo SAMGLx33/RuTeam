@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
-config({ path: '../../.env', quiet: true });
+config({ path: '../.env', quiet: true });
 if (process.env.DEMO_MODE !== 'true' || process.env.NODE_ENV === 'production') {
   throw new Error(
     'El seed sintético exige DEMO_MODE=true y entorno no productivo',

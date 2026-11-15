@@ -1,0 +1,122 @@
+{
+  "date": "2026-11-14",
+  "timezone": "America/Bogota",
+  "checkedAt": "2026-11-15T02:44:16.876Z",
+  "branch": "task/refactor-monorepo-structure",
+  "head": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+  "stageEmpty": true,
+  "envUnchanged": true,
+  "changedPreexistingFiles": [
+    "docs/reviews/ARCH_REFACTOR_REVIEW.md",
+    "README.md",
+    "docs/coordination/CURRENT_STATUS.md",
+    "docs/coordination/WORKSTREAMS.md",
+    "docs/demo/EVIDENCE.md",
+    "docs/development/PROGRESS.md",
+    "docs/development/SETUP.md",
+    "package.json",
+    "playwright.config.ts"
+  ],
+  "historicalPrefixesPreserved": {
+    "docs/reviews/ARCH_REFACTOR_REVIEW.md": true,
+    "README.md": true,
+    "docs/coordination/CURRENT_STATUS.md": true,
+    "docs/coordination/WORKSTREAMS.md": true,
+    "docs/demo/EVIDENCE.md": true,
+    "docs/development/PROGRESS.md": true,
+    "docs/development/SETUP.md": true
+  },
+  "preexistingFunctionalFilesUnchanged": true,
+  "preexistingLockfileUnchanged": true,
+  "protectedRefs": {
+    "main": "e3841bc189ac1661210adf920cd3f8fb3db6a8ce",
+    "dev": "e3841bc189ac1661210adf920cd3f8fb3db6a8ce",
+    "feature": "e3841bc189ac1661210adf920cd3f8fb3db6a8ce",
+    "task/trips-publicacion": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+    "task/docs-foundation-checkpoint": "f637499113a9094f588f73fc880d25ab7071b002"
+  },
+  "migrations": {
+    "ruteam": [
+      {
+        "migration_name": "20261114003554_foundation",
+        "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "finished_at": "2026-11-15T02:10:02.371Z",
+        "rolled_back_at": null,
+        "localSha256": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "matches": true
+      },
+      {
+        "migration_name": "20261114004000_domain_constraints",
+        "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "finished_at": "2026-11-15T02:10:02.385Z",
+        "rolled_back_at": null,
+        "localSha256": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "matches": true
+      },
+      {
+        "migration_name": "20261114014345_phase2_vehicle_publication",
+        "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "finished_at": "2026-11-15T02:10:02.458Z",
+        "rolled_back_at": null,
+        "localSha256": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "matches": true
+      },
+      {
+        "migration_name": "20261114015557_phase2_document_revisions",
+        "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "finished_at": "2026-11-15T02:10:02.467Z",
+        "rolled_back_at": null,
+        "localSha256": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "matches": true
+      }
+    ],
+    "ruteam_test": [
+      {
+        "migration_name": "20261114003554_foundation",
+        "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "finished_at": "2026-11-15T02:10:06.040Z",
+        "rolled_back_at": null,
+        "localSha256": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "matches": true
+      },
+      {
+        "migration_name": "20261114004000_domain_constraints",
+        "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "finished_at": "2026-11-15T02:10:06.054Z",
+        "rolled_back_at": null,
+        "localSha256": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "matches": true
+      },
+      {
+        "migration_name": "20261114014345_phase2_vehicle_publication",
+        "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "finished_at": "2026-11-15T02:10:06.130Z",
+        "rolled_back_at": null,
+        "localSha256": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "matches": true
+      },
+      {
+        "migration_name": "20261114015557_phase2_document_revisions",
+        "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "finished_at": "2026-11-15T02:10:06.138Z",
+        "rolled_back_at": null,
+        "localSha256": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "matches": true
+      }
+    ]
+  },
+  "ports": {
+    "3000": { "listening": true, "pids": [15635] },
+    "3100": { "listening": false, "pids": [] },
+    "5432": { "listening": true, "pids": [] },
+    "8081": { "listening": true, "pids": [62019] },
+    "8082": { "listening": false, "pids": [] },
+    "55432": { "listening": true, "pids": [53412] }
+  },
+  "gitCounts": {
+    "trackedModified": 23,
+    "trackedDeleted": 216,
+    "untrackedFiles": 258
+  },
+  "privateOriginalsTracked": []
+}

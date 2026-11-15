@@ -45,3 +45,17 @@ se agregó exclusión permanente en .gitignore de esta task. No se borró/movió
 ningún original ni se cambió .env. No commits nuevos en esta intervención: cambios
 runtime+tests+documentación+handoff sin stage a espera de autorización explícita.
 Origin preservado, no fetch/push/PR/merge. Revisar task completa antes de decidir commit.
+
+## Excepción controlada de base para refactor — 2026-11-14
+
+Preflight limpio en task/trips-publicacion, HEAD bab4e630784714f8fa58bcbf964ea5a48e37259a;
+fetch origin confirmó origin/task/trips-publicacion. Feature/main/dev=e3841bc; no
+origin/feature observado. merge-base --is-ancestor task/trips-publicacion feature exit1.
+Por instrucción expresa del equipo se creó task/refactor-monorepo-structure desde ese
+commit Fase 2, sin cambiar las otras ramas. Esta excepción no modifica el flujo general.
+
+Integrar primero Fase 2 revisada a feature; después revisar el diff de refactor contra
+esa feature. No presentar PR de refactor que arrastre Fase 2 inadvertidamente. Sin stage,
+commit, push, PR, merge o rebase en esta intervención. Mensaje propuesto no ejecutado:
+refactor(architecture): reorganize RuTeam into backend and frontend workspaces.
+Checkpoint f637499 sigue aislado; su reconciliación documental requiere revisión propia.

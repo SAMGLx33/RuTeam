@@ -85,3 +85,14 @@ RF-006 y último cupo siguen **pendientes de implementación**: el
 no evidencia ejecutada de reservas. RF-007/021/025 permanecen bloqueados por PO.
 Npm audit fallido y límites RNF constan por separado en informe, sin convertir conteos
 locales en cumplimiento de seguridad, plataforma física o desempeño no medido.
+
+## Traslado de rutas — 2026-11-14
+
+apps/api→backend y apps/client→frontend; packages/contracts sigue igual. Se conservan
+identificadores, prioridades, criterios y estados RF/RNF de esta matriz. El movimiento
+no implementa reservas, verificación institucional, requisitos de negocio ni RNF nuevos.
+Schema/SQL/controladores/aplicación/dominio/repositorios/UI mantienen contenido y sufijos;
+ver [equivalencia](../reviews/ARCH_REFACTOR_REVIEW.md). Las referencias históricas a rutas
+anteriores describen sus snapshots; instrucciones vigentes usan backend/frontend.
+Las pruebas HTTP de hoy están bloqueadas/fallidas por la BD configurada ausente; no
+revalidan los71/71 históricos ni cambian estados para maquillar cumplimiento.

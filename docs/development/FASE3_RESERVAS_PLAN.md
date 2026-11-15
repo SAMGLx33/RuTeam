@@ -241,12 +241,12 @@ misma tarea; commits sólo cuando se autoricen. Personas POR_ASIGNAR, no tareas 
 | Orden | Archivos propuestos                                                                                                       | Responsable de módulo / revisor          | Criterio observable                                                                          |
 | ----- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------- |
 | 1     | packages/contracts/src/reservations.ts; API.md; UML_CROSSWALK; casos test de contrato                                     | Reservas + frontend / Identidad          | DTOs/estados/errores/actor e idempotencia acordados antes de code                            |
-| 2     | apps/api/prisma/schema.prisma y nueva migrations/<timestamp>_group_reservations/migration.sql; seed.ts                    | Datos / Reservas                         | FKs/UNIQUE/índices, migración nueva en test sin reset y seed idempotente                     |
+| 2     | backend/prisma/schema.prisma y nueva migrations/<timestamp>_group_reservations/migration.sql; seed.ts                     | Datos / Reservas                         | FKs/UNIQUE/índices, migración nueva en test sin reset y seed idempotente                     |
 | 3     | modules/reservations/domain/models/{request,reservation}.ts; domain/policies/{group,capacity,cancellation}.policy.ts      | Reservas / Viajes                        | Nidentidades, transiciones, ocupación y cancelación puras, sin Nest/Prisma                   |
 | 4     | modules/reservations/infrastructure/repositories/reservations.repository.ts; application/ports                            | Datos+Reservas / Identidad               | Unidad de trabajo, locks ordenados, clave única, retorno postcommit y rollback               |
 | 5     | application/reservations.service.ts; controllers/reservations.controller.ts; dto/*; reservations.module.ts; app.module.ts | Reservas / Viajes                        | Actor de sesión, permisos por recurso, invariantes server y OpenAPI                          |
 | 6     | modules/trips consulta disponible y DTO público; eventual catálogo de identidades DEMO                                    | Viajes+Identidad / Privacidad y frontend | Lista no reserva, sólo USC/activos/aptos y datos mínimos; dependencia coordinada             |
-| 7     | apps/client/src/features/reservations/* y rutas en grupos passenger/driver existentes                                     | Frontend / Reservas+QA                   | N miembros explícitos, pendientes/confirmadas, aceptar/rechazar/cancelar sin autoridad local |
+| 7     | frontend/src/features/reservations/* y rutas en grupos passenger/driver existentes                                        | Frontend / Reservas+QA                   | N miembros explícitos, pendientes/confirmadas, aceptar/rechazar/cancelar sin autoridad local |
 | 8     | api/test/reservations.policy.test.mjs; reservations.e2e.test.mjs; tests/web/reservations.spec.ts                          | QA / Datos+Reservas                      | Concurrencia PostgreSQL y flujo doscontextos con API real                                    |
 | 9     | docs/demo/EVIDENCE, TRACEABILITY, API, CURRENT_STATUS por integrador, PROGRESS y nuevo handoff                            | Integración / Revisores de cada frente   | Estado local/PR/feature/dev distinto; dispositivo explícito                                  |
 
@@ -294,3 +294,7 @@ cancelación parcial, antelación de cancelación y ausencia de cargos en demo. 
 Primer comando futuro, únicamente después de integración/autorización y árbol limpio:
 `git status --short --branch`. Después el integrador confirma SHA de feature; no crear
 rama ni implementar este plan durante la auditoría actual.
+
+Nota de rutas 2026-11-14: los dos paths de workspaces del plan se actualizan a
+backend/frontend. Ninguna decisión de reserva, estado RF/RNF o precondición de integración
+cambia; Fase 3 permanece sin implementación.

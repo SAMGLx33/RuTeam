@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "npm run build && node --env-file=../../.env dist/src/main.js",
+    "dev": "npm run build && node --env-file=../.env dist/src/main.js",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate --config prisma.config.ts",
     "db:migrate": "prisma migrate deploy --config prisma.config.ts",
     "db:seed": "tsx prisma/seed.ts",
-    "test": "npm run build && node --env-file=../../.env --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand"
+    "test": "npm run build && node --env-file=../.env --experimental-vm-modules ../node_modules/jest/bin/jest.js --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.9",

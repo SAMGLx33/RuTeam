@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "backend",
+    "frontend",
     "packages/*"
   ],
   "engines": {
@@ -12,8 +13,8 @@
   },
   "scripts": {
     "dev:api": "npm run dev -w @ruteam/api",
-    "dev:client": "npm run start -w @ruteam/client",
-    "dev:web": "npm run web -w @ruteam/client",
+    "dev:client": "npm run start -w @ruteam/client -- --clear",
+    "dev:web": "npm run web -w @ruteam/client -- --clear",
     "build:api": "npm run build -w @ruteam/api",
     "build:web": "npm run export:web -w @ruteam/client",
     "db:generate": "npm run db:generate -w @ruteam/api",

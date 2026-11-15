@@ -43,7 +43,8 @@ export default defineConfig({
       },
     },
     {
-      command: 'npm exec -w @ruteam/client -- expo start --web --port 8082',
+      command:
+        'npm exec -w @ruteam/client -- expo start --web --port 8082 --clear',
       url: 'http://localhost:8082',
       timeout: 120000,
       reuseExistingServer: false,

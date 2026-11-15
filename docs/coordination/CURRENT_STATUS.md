@@ -37,3 +37,40 @@ Referencias main/dev/feature en e3841bc y checkpoint f637499 aislado, según ins
 
 Informe: [FASE2_REVIEW](../reviews/FASE2_REVIEW.md).
 Reservas: [diseño pendiente, sin implementación](../development/FASE3_RESERVAS_PLAN.md).
+
+## Nota local del refactor — 2026-11-14 (sin promoción a dev)
+
+Actualización de coordinación solicitada; el estado integrado NO cambia. Fetch real
+confirma origin/task/trips-publicacion=bab4e63, igual a Fase 2 local publicada.
+Feature/main/dev=e3841bc y checkpoint f637499 aislado. No existe origin/feature observado.
+Los avisos anteriores de falta de commit/push corresponden a sus cortes históricos.
+
+| Categoría                | Resultado de esta intervención                                                                                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Probado localmente       | Equivalencia216archivos/133gitkeep, grafo npm, npm ci aislado, typecheck/lint/formato/builds/Doctor18/18/exports. Nueva ubicación backend/frontend, arquitectura intacta.    |
+| Bloqueado por entorno    | No PG55432/directorio temporal configurado. npm test28pasadas43fallidas; migrate/seed/test:setup/smoke fallan; E2E no ejecutado. API3000/web8081 propios activos, health503. |
+| Pendiente de integración | Refactor sin stage/commit en task/refactor-monorepo-structure desde Fase 2 bab4e63. Integrar primero Fase 2 y revisar diff puro después. Personas POR_ASIGNAR.               |
+| Pendiente de dispositivo | Expo Go físico/LAN/SecureStore NO VERIFICADO; exports no acreditan teléfono.                                                                                                 |
+| Pendiente de PO          | Sin resolver prioridades/cancelaciones/costos/género ni políticas de reservas; no cambia por mover rutas.                                                                    |
+| Riesgos audit            | Nueva consulta exit1:40alertas,5altas. Sin fixes/upgrades; evaluación compatible pendiente.                                                                                  |
+
+[Review con pruebas y límites](../reviews/ARCH_REFACTOR_REVIEW.md).
+No CI remoto ni integración USC real acreditados.
+
+## Recuperación autorizada y verificación local — 2026-11-14
+
+Este aviso actualiza el estado LOCAL, no la fuente integrada en dev. Usuario autorizó
+nuevo PostgreSQL persistente de desarrollo/test desde cero. No otra versión de app.
+
+| Categoría                   | Estado actual comprobado                                                                                                                                   |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entorno                     | ruteam/ruteam_test operativas en127.0.0.1:55432; datos fueraGit .local-data/postgresql-18; .env sin cambios; sistema5432 intacto y no consultado.          |
+| Probado localmente          | Migraciones4/4 por base y seed idempotente;71/71 Jest,4/4 E2E,6/6 smoke, Doctor18/18, estáticos/builds/equivalencia aprobados. Health200/databaseup.       |
+| Fallo corregido             | Caché Expo web retenía API3000 en E2E8082; --clear en comandos generales y harness produce3100 correcto, sin cambiar CORS, BD o assertions.                |
+| Pendiente de integración    | Rama task/refactor-monorepo-structure sigue bab4e63 con cambios locales sin stage/commit. Primero integrar Fase2 en feature; autorizaciones Git separadas. |
+| Pendiente de dispositivo/CI | Expo Go físico, LAN real y CI remoto no observados; viewport y Doctor no los acreditan.                                                                    |
+| Pendiente de PO/riesgos     | Decisiones de negocio abiertas y alertas audit previas40/5altas no resueltas por esta recuperación.                                                        |
+
+[Informe de resultados y limitaciones](../reviews/POSTGRESQL_RECOVERY_VALIDATION.md).
+Responsable humano/integrador/revisores POR_ASIGNAR. Los43fallos anteriores por BD ausente
+son históricos; no se reescriben. Esta sesión los contrasta con71/71 nuevas reales.

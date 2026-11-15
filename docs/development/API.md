@@ -70,3 +70,10 @@ no es un campo del contrato TripSummary ni de su respuesta HTTP actual. Esta fas
 ninguna reserva/endpoints de recorrido. GETtrips general sigue404, no es búsqueda de matching.
 Duración/origen/paradas son DEMO, sin distancia ni costo ni ETA de carretera fabricados.
 Contratos de salida en packages/contracts; Swagger refleja los DTO de entrada.
+
+## Rutas de repositorio — 2026-11-14
+
+Controladores/aplicación/dominio/repositorios en backend/src/modules; UI en frontend.
+packages/contracts conserva contenido y posición. No cambian /api/v1, DTOs, firmas,
+estados, permisos o reglas por mover los workspaces. Pruebas de entorno en review del
+refactor; una exportación no acredita disponibilidad PostgreSQL ni login real.

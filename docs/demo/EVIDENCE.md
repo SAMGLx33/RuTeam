@@ -163,3 +163,65 @@ Comandos/resultados/salidas exactos duraderos:
 Los servicios existentes no se reiniciaron ni duplicaron. Playwright usó puertos libres
 3100/8082 y cerró sus procesos. Concurrencia probada aquí: publicación superpuesta del
 mismo conductor [201,409], no último cupo de reservas. Ninguna reserva implementada.
+
+## 2026-11-14 — Evidencia del traslado de workspaces
+
+Nueva intervención local; resultados históricos anteriores se conservan íntegros.
+Linux/Node22.22.3/npm12.2.2, versiones sin cambios. Base bab4e63 publicada, refactor sin
+stage/commit en task/refactor-monorepo-structure. No integrado en feature/dev/main.
+
+[Resultados antes](../reviews/evidence/2026-11-14-arch-refactor/baseline.json),
+[después](../reviews/evidence/2026-11-14-arch-refactor/postmigration.json),
+[HTTP/env](../reviews/evidence/2026-11-14-arch-refactor/http-and-env.json) y
+[review completo](../reviews/ARCH_REFACTOR_REVIEW.md) registran comandos/exit/entorno/límites.
+216 archivos originales,133gitkeep, permisos y sufijos preservados. Sólo7 excepciones
+config/docs dentro de workspaces; schema/SQL/dominio/React funcional/contratos idénticos.
+
+| Estado                       | Resultado realmente observado                                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| APROBADO                     | check:env, db:generate, typecheck, lint, format:check, build:api, build:web; Doctor frontend18/18; exports Android/iOS.                 |
+| APROBADO                     | npm ci limpio aislado exit0;1309objetos lock iguales tras remapear rutas; verificador de equivalencia pasa.                             |
+| FALLIDO POR ENTORNO          | npm test28pasadas43fallidas71; dos suites HTTP afectadas por conexión aBD55432 ausente. No71/71 en esta sesión.                         |
+| FALLIDO POR ENTORNO          | db:migrate/db:seed/db:test:setup; smoke falla health503 incluso con API iniciada. No seed idempotente/checksumsDB actuales acreditados. |
+| BLOQUEADO / NO EJECUTADO     | test:e2e y publicación concurrente201/409: falta BD_test.                                                                               |
+| FALLIDO                      | npm audit exit1:40alertas,1baja34moderadas5altas0críticas; nofix.                                                                       |
+| NO VERIFICADO / NO EJECUTADO | Expo Go físico/LAN, CI remoto, Windows, carga/rollback/restauración.                                                                    |
+
+Playwright (Browser plugin no disponible), escritorio1280x900 y móvilweb390x844: antes
+requests aAPI3000 ECONNREFUSED; después auth/me401/login500, health503, Swagger200/web200.
+Sin pageerror/overlay/overflow visible; error real en login no se sustituye por éxito.
+Capturas sintéticas inspeccionadas fuera de Git en review-artifacts/2026-11-14-architecture
+bajo /home/darik/RuTeam; rutas completas en JSON browser. El caso histórico health200+errorUI
+no se pudo reproducir exactamente en este entorno sin BD. No afirmar corrección funcional.
+Sólo se arrancaron procesos propios API3000/Expo8081; no PostgreSQL ni otra API. .env intacto.
+
+Además se ejecutó npm run dev:client: Metro LAN en8081 sirvió manifiesto Android200,
+SDK54 y URL API3000. Se detuvo la instancia propia y se restauró dev:web8081, nunca dos
+servidores simultáneos en ese puerto. No equivale a funcionamiento en un teléfono.
+
+## 2026-11-14 — Nueva ejecución con PostgreSQL persistente autorizado
+
+Se conserva la evidencia anterior de entorno bloqueado. El usuario autorizó un clúster
+nuevo de desarrollo/test, no recuperación ficticia de datos ni otra versión del producto.
+Root .env idéntico, bases ruteam/ruteam_test en55432, PG5432 no usado.
+
+| Estado                       | Comandos/resultados de ESTA ejecución                                                                                                                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| APROBADO                     | db:generate/db:migrate/db:seed/db:test:setup; cuatro migraciones y checksums correctos por base. Seed repetido sin cambios en12tablas por base.                                                                                   |
+| APROBADO                     | npm run typecheck; npm run lint; npm run format:check: exit0.                                                                                                                                                                     |
+| APROBADO                     | npm test:71/71,5 suites, PostgreSQL real. Concurrencia de publicaciones201/409 con conteo+1.                                                                                                                                      |
+| APROBADO                     | npm run test:e2e:4/4, escritorio y viewport móvil web; registro→ADMIN→publicaciónUSC2paradas→recarga.                                                                                                                             |
+| APROBADO                     | npm run smoke:6/6, API3000/desarrollo; health200/databaseup y Swagger200.                                                                                                                                                         |
+| APROBADO                     | npm run build:api; npm run build:web; npx expo-doctor frontend18/18; verificador216/133; git diff --check.                                                                                                                        |
+| FALLO INICIAL CORREGIDO      | Primer E2E0/4 por manifiesto cacheado con API3000 en8082; traza y caso --clear1/1 demuestran solución; comandos generales/harness corregidos, sin debilitar assertions. Un recibo JSON requirió formato antes de repetir batería. |
+| NO EJECUTADO / NO VERIFICADO | Expo Go físico/LAN, Windows, CI remoto, carga/restauración. Audit no repetido: su deuda histórica40/5altas sigue abierta.                                                                                                         |
+
+[Recibos de comandos](../reviews/evidence/2026-11-14-postgresql-recovery/functional-validation-after-cache-fix.json),
+[migraciones/seed](../reviews/evidence/2026-11-14-postgresql-recovery/database-validation.json),
+[RED/GREEN cache](../reviews/evidence/2026-11-14-postgresql-recovery/metro-cache-diagnosis.json),
+[informe](../reviews/POSTGRESQL_RECOVERY_VALIDATION.md).
+Web normal8081 reiniciada por comando general corregido: auth/me200, perfil guardado y
+recargado, inactiva403 y ausencia de mensaje de conexión en desktop1280x900/móvilweb390x844.
+Original de perfil restaurado tras la comprobación. Sin pageerror o fallos de red; sólo
+identidades sintéticas existentes. Capturas inspeccionadas fueraGit en review-artifacts/
+2026-11-14-postgresql-recovery bajo /home/darik/RuTeam. No prueba de dispositivo nativo.

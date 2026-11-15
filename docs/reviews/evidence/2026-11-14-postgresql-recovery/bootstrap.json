@@ -1,0 +1,42 @@
+{
+  "authorization": "User expressly authorized new development/test environment from scratch replacing missing original; preserve local variables; no separate application version.",
+  "dataRoot": "/home/darik/RuTeam/.local-data/postgresql-18",
+  "dataDirectory": "/home/darik/RuTeam/.local-data/postgresql-18/data",
+  "socketDirectory": "/home/darik/RuTeam/.local-data/postgresql-18/socket",
+  "port": 55432,
+  "listenAddress": "127.0.0.1",
+  "system5432Used": false,
+  "envChanged": false,
+  "newCluster": true,
+  "originalDataRecovered": false,
+  "runs": [
+    {
+      "command": "/usr/lib/postgresql/18/bin/initdb -D /home/darik/RuTeam/.local-data/postgresql-18/data --username=ruteam --auth=trust --no-locale --encoding=UTF8",
+      "exitCode": 0
+    },
+    {
+      "command": "/usr/lib/postgresql/18/bin/pg_ctl -D /home/darik/RuTeam/.local-data/postgresql-18/data -l /home/darik/RuTeam/.local-data/postgresql-18/postgresql.log -w start",
+      "exitCode": 0
+    },
+    {
+      "command": "/usr/lib/postgresql/18/bin/createdb -h 127.0.0.1 -p 55432 -U ruteam ruteam",
+      "exitCode": 0
+    },
+    {
+      "command": "/usr/lib/postgresql/18/bin/pg_isready -h 127.0.0.1 -p 55432 -d ruteam -t 3",
+      "exitCode": 0
+    },
+    {
+      "command": "/usr/lib/postgresql/18/bin/createdb -h 127.0.0.1 -p 55432 -U ruteam ruteam_test",
+      "exitCode": 0
+    },
+    {
+      "command": "/usr/lib/postgresql/18/bin/pg_isready -h 127.0.0.1 -p 55432 -d ruteam_test -t 3",
+      "exitCode": 0
+    }
+  ],
+  "databases": ["ruteam", "ruteam_test"],
+  "configurationPersistedInPostgresqlConf": true,
+  "ownerUid": 1000,
+  "completed": true
+}

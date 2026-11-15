@@ -1,0 +1,2178 @@
+{
+  "base": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+  "checkedAt": "2026-11-15T02:25:43.058Z",
+  "checks": {
+    "filesAndModesPreserved": true,
+    "modulesPreserved": true,
+    "featuresPreserved": true,
+    "exactSourceInventory": true,
+    "oldWorkspacesAbsent": true,
+    "dependencyGraphPreserved": true,
+    "apiLink": true,
+    "clientLink": true
+  },
+  "fileCount": 216,
+  "gitkeepCount": 133,
+  "files": [
+    {
+      "before": "apps/api/AGENTS.md",
+      "after": "backend/AGENTS.md",
+      "sha256Before": "34b22db60f025cf8ad25e28959c5cdc2523185fe0fe1b8c0c459504ce8cfd6ad",
+      "sha256After": "9ea70cbd14b78b5177521d386b21ac450c79a5d7d47a32b770bd0e4871499b46",
+      "mode": "0o664",
+      "unchanged": false,
+      "expectedChange": "Updated root reference and mandatory architecture/agent guidance; documentation only.",
+      "valid": true
+    },
+    {
+      "before": "apps/api/jest.config.mjs",
+      "after": "backend/jest.config.mjs",
+      "sha256Before": "bafca5d448569b6e31480c97b143c0e47387b397cb36ef43245e86a01d3bed3b",
+      "sha256After": "bafca5d448569b6e31480c97b143c0e47387b397cb36ef43245e86a01d3bed3b",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/package.json",
+      "after": "backend/package.json",
+      "sha256Before": "886cad580e0a00ce338ad8fc393143f315270f825a4a00a8a1fe0352c1255d50",
+      "sha256After": "16d41384dd7f3bd7ff423d25cdc3748cfe34e8ecc86b197a4aa8c8ac7837d9d0",
+      "mode": "0o664",
+      "unchanged": false,
+      "expectedChange": "Only dev/test root env and Jest executable paths.",
+      "valid": true
+    },
+    {
+      "before": "apps/api/prisma.config.ts",
+      "after": "backend/prisma.config.ts",
+      "sha256Before": "2bb782b96b12a9fa855a79b85469549522fab98d708d6f807e5d93763451b808",
+      "sha256After": "d9c5440bd79626db16516db2b6393a7e55bd6426ddc4047abc2ff00a378a7495",
+      "mode": "0o664",
+      "unchanged": false,
+      "expectedChange": "Only dotenv root path ../../.env -> ../.env.",
+      "valid": true
+    },
+    {
+      "before": "apps/api/prisma/migrations/20261114003554_foundation/migration.sql",
+      "after": "backend/prisma/migrations/20261114003554_foundation/migration.sql",
+      "sha256Before": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+      "sha256After": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/prisma/migrations/20261114004000_domain_constraints/migration.sql",
+      "after": "backend/prisma/migrations/20261114004000_domain_constraints/migration.sql",
+      "sha256Before": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+      "sha256After": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/prisma/migrations/20261114014345_phase2_vehicle_publication/migration.sql",
+      "after": "backend/prisma/migrations/20261114014345_phase2_vehicle_publication/migration.sql",
+      "sha256Before": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+      "sha256After": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/prisma/migrations/20261114015557_phase2_document_revisions/migration.sql",
+      "after": "backend/prisma/migrations/20261114015557_phase2_document_revisions/migration.sql",
+      "sha256Before": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+      "sha256After": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/prisma/migrations/migration_lock.toml",
+      "after": "backend/prisma/migrations/migration_lock.toml",
+      "sha256Before": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900",
+      "sha256After": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/prisma/schema.prisma",
+      "after": "backend/prisma/schema.prisma",
+      "sha256Before": "91d0ad68c372f642d731852ef9b9fa41c50c229c0a9c4b9b402cbed74e74b9de",
+      "sha256After": "91d0ad68c372f642d731852ef9b9fa41c50c229c0a9c4b9b402cbed74e74b9de",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/prisma/seed.ts",
+      "after": "backend/prisma/seed.ts",
+      "sha256Before": "6975be9ee07eed06a1e18256359e67e65dbe3396cdd0272575de6657f9033360",
+      "sha256After": "4e70d687deacf8902cff6c1262b35f23625979e811341a93dae07066bdade562",
+      "mode": "0o664",
+      "unchanged": false,
+      "expectedChange": "Only dotenv root path ../../.env -> ../.env.",
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/app.module.ts",
+      "after": "backend/src/app.module.ts",
+      "sha256Before": "be24facf2ac375acd62e6169ac30672ca8092ba64899408524d9e0d8472c4852",
+      "sha256After": "be24facf2ac375acd62e6169ac30672ca8092ba64899408524d9e0d8472c4852",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/bootstrap.ts",
+      "after": "backend/src/bootstrap.ts",
+      "sha256Before": "42f8e8008a6bb962c20f6e57bd262bfb660d84ce840952ae9dc121368f1745cb",
+      "sha256After": "42f8e8008a6bb962c20f6e57bd262bfb660d84ce840952ae9dc121368f1745cb",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/common/decorators/.gitkeep",
+      "after": "backend/src/common/decorators/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/common/errors/domain-policy.error.ts",
+      "after": "backend/src/common/errors/domain-policy.error.ts",
+      "sha256Before": "dad8f705e465da4216cc127401bf5a2af74d4cc2ff3fdff4a0d49c6934889ea6",
+      "sha256After": "dad8f705e465da4216cc127401bf5a2af74d4cc2ff3fdff4a0d49c6934889ea6",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/common/filters/api-exception.filter.ts",
+      "after": "backend/src/common/filters/api-exception.filter.ts",
+      "sha256Before": "693d65199911f5b319276092096cb872ebfc0c0f03091e28904181a626a0c73a",
+      "sha256After": "693d65199911f5b319276092096cb872ebfc0c0f03091e28904181a626a0c73a",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/common/guards/client-origin.guard.ts",
+      "after": "backend/src/common/guards/client-origin.guard.ts",
+      "sha256Before": "984f5b5e6c88dcc55d3246929b8910867e2f22eb26ff97f1427912327e038e21",
+      "sha256After": "984f5b5e6c88dcc55d3246929b8910867e2f22eb26ff97f1427912327e038e21",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/common/guards/session.guard.ts",
+      "after": "backend/src/common/guards/session.guard.ts",
+      "sha256Before": "8edac3ca5c50bd81e43ac7f3d836f3eaa2e48a870e4dcaddd09f4679770154ea",
+      "sha256After": "8edac3ca5c50bd81e43ac7f3d836f3eaa2e48a870e4dcaddd09f4679770154ea",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/common/pipes/.gitkeep",
+      "after": "backend/src/common/pipes/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/config/environment.ts",
+      "after": "backend/src/config/environment.ts",
+      "sha256Before": "638cbf144221af68fd8b5c6ad97a757238dc463ba578185b9a7e5987d7227d54",
+      "sha256After": "638cbf144221af68fd8b5c6ad97a757238dc463ba578185b9a7e5987d7227d54",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/infrastructure/events/.gitkeep",
+      "after": "backend/src/infrastructure/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/infrastructure/infrastructure.module.ts",
+      "after": "backend/src/infrastructure/infrastructure.module.ts",
+      "sha256Before": "78283163b72d9fc5a41edd2c253c053d01f5f035149ba99e5aa5f14e12573ab2",
+      "sha256After": "78283163b72d9fc5a41edd2c253c053d01f5f035149ba99e5aa5f14e12573ab2",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/infrastructure/prisma/prisma.service.ts",
+      "after": "backend/src/infrastructure/prisma/prisma.service.ts",
+      "sha256Before": "cf4b3720b23ded8761215dc2ad1ba9a33f8fc24b39b5bae9ab7ce494aa87e3ef",
+      "sha256After": "cf4b3720b23ded8761215dc2ad1ba9a33f8fc24b39b5bae9ab7ce494aa87e3ef",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/infrastructure/routing/.gitkeep",
+      "after": "backend/src/infrastructure/routing/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/infrastructure/verification/demo-institutional-verification.provider.ts",
+      "after": "backend/src/infrastructure/verification/demo-institutional-verification.provider.ts",
+      "sha256Before": "78381ebe1813ed1aba91ed558844c8be06bcff9fc63456a1a884ae32882550c5",
+      "sha256After": "78381ebe1813ed1aba91ed558844c8be06bcff9fc63456a1a884ae32882550c5",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/infrastructure/verification/institutional-verification.provider.ts",
+      "after": "backend/src/infrastructure/verification/institutional-verification.provider.ts",
+      "sha256Before": "5cfa928336d39bc190aaa2765fc993d30f50b37676b97d2ea7c232fe709aace3",
+      "sha256After": "5cfa928336d39bc190aaa2765fc993d30f50b37676b97d2ea7c232fe709aace3",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/infrastructure/verification/official-usc-verification.provider.ts",
+      "after": "backend/src/infrastructure/verification/official-usc-verification.provider.ts",
+      "sha256Before": "f7d4199c7a4e71b7b1a45d0dbd1ba5e983e9ba161326d17d1cba28f4749d6d89",
+      "sha256After": "f7d4199c7a4e71b7b1a45d0dbd1ba5e983e9ba161326d17d1cba28f4749d6d89",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/main.ts",
+      "after": "backend/src/main.ts",
+      "sha256Before": "bb9fdc17925b8e00c9ac19d15d2b332761513e3123beb1c9c27c9ff1d0fe3326",
+      "sha256After": "bb9fdc17925b8e00c9ac19d15d2b332761513e3123beb1c9c27c9ff1d0fe3326",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/administration/application/.gitkeep",
+      "after": "backend/src/modules/administration/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/administration/controllers/.gitkeep",
+      "after": "backend/src/modules/administration/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/administration/domain/events/.gitkeep",
+      "after": "backend/src/modules/administration/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/administration/domain/models/.gitkeep",
+      "after": "backend/src/modules/administration/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/administration/domain/policies/.gitkeep",
+      "after": "backend/src/modules/administration/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/administration/dto/.gitkeep",
+      "after": "backend/src/modules/administration/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/administration/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/administration/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/administration/tests/.gitkeep",
+      "after": "backend/src/modules/administration/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/application/auth.service.ts",
+      "after": "backend/src/modules/auth/application/auth.service.ts",
+      "sha256Before": "45dd693f7c9870a27b76d270600498bb25791d9855f7573ab8353562434334b3",
+      "sha256After": "45dd693f7c9870a27b76d270600498bb25791d9855f7573ab8353562434334b3",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/auth.module.ts",
+      "after": "backend/src/modules/auth/auth.module.ts",
+      "sha256Before": "d83b183e59da582b4aed279b2bad2d72a35647fbf0b5132cf541433e8d672dc4",
+      "sha256After": "d83b183e59da582b4aed279b2bad2d72a35647fbf0b5132cf541433e8d672dc4",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/controllers/auth.controller.ts",
+      "after": "backend/src/modules/auth/controllers/auth.controller.ts",
+      "sha256Before": "f3d74651cd1fd467e5e5498c77829b78097e1594db7180c8a553e83fdc2f429a",
+      "sha256After": "f3d74651cd1fd467e5e5498c77829b78097e1594db7180c8a553e83fdc2f429a",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/domain/events/.gitkeep",
+      "after": "backend/src/modules/auth/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/domain/models/.gitkeep",
+      "after": "backend/src/modules/auth/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/domain/policies/.gitkeep",
+      "after": "backend/src/modules/auth/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/dto/demo-login.dto.ts",
+      "after": "backend/src/modules/auth/dto/demo-login.dto.ts",
+      "sha256Before": "f288a23198822aaeda0d4ce3799b723e6853d1ac28f24cf5fb3479d3db286066",
+      "sha256After": "f288a23198822aaeda0d4ce3799b723e6853d1ac28f24cf5fb3479d3db286066",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/infrastructure/repositories/auth.repository.ts",
+      "after": "backend/src/modules/auth/infrastructure/repositories/auth.repository.ts",
+      "sha256Before": "122ddb3c3be6302baeeab1fbf3c6cbe7c7ab8b2ba39f3e44595716efa3e92cfc",
+      "sha256After": "122ddb3c3be6302baeeab1fbf3c6cbe7c7ab8b2ba39f3e44595716efa3e92cfc",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/auth/tests/.gitkeep",
+      "after": "backend/src/modules/auth/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/boarding/application/.gitkeep",
+      "after": "backend/src/modules/boarding/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/boarding/controllers/.gitkeep",
+      "after": "backend/src/modules/boarding/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/boarding/domain/events/.gitkeep",
+      "after": "backend/src/modules/boarding/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/boarding/domain/models/.gitkeep",
+      "after": "backend/src/modules/boarding/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/boarding/domain/policies/.gitkeep",
+      "after": "backend/src/modules/boarding/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/boarding/dto/.gitkeep",
+      "after": "backend/src/modules/boarding/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/boarding/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/boarding/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/boarding/tests/.gitkeep",
+      "after": "backend/src/modules/boarding/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/application/campus.service.ts",
+      "after": "backend/src/modules/campus/application/campus.service.ts",
+      "sha256Before": "6fbc0beb2488749f1d8a114afdaa76a3e231bb9d3a6f3cf4f860e04cf6f6b57b",
+      "sha256After": "6fbc0beb2488749f1d8a114afdaa76a3e231bb9d3a6f3cf4f860e04cf6f6b57b",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/campus.module.ts",
+      "after": "backend/src/modules/campus/campus.module.ts",
+      "sha256Before": "b3e909fb64d231a8f81a14938bd863ae51547543c4646fbe15b5ac7500f003d3",
+      "sha256After": "b3e909fb64d231a8f81a14938bd863ae51547543c4646fbe15b5ac7500f003d3",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/controllers/campus.controller.ts",
+      "after": "backend/src/modules/campus/controllers/campus.controller.ts",
+      "sha256Before": "5a10f515c7e1015e3d89f6a683842ecc44f8cc53fe058b12b6f26a1be88b5c72",
+      "sha256After": "5a10f515c7e1015e3d89f6a683842ecc44f8cc53fe058b12b6f26a1be88b5c72",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/domain/events/.gitkeep",
+      "after": "backend/src/modules/campus/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/domain/models/.gitkeep",
+      "after": "backend/src/modules/campus/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/domain/policies/.gitkeep",
+      "after": "backend/src/modules/campus/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/dto/.gitkeep",
+      "after": "backend/src/modules/campus/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/infrastructure/repositories/campus.repository.ts",
+      "after": "backend/src/modules/campus/infrastructure/repositories/campus.repository.ts",
+      "sha256Before": "ce8b2568e40e53cd31bd1ed8194c58c939737eb2232f851dd3d7410b60075bf7",
+      "sha256After": "ce8b2568e40e53cd31bd1ed8194c58c939737eb2232f851dd3d7410b60075bf7",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/campus/tests/.gitkeep",
+      "after": "backend/src/modules/campus/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/chat/application/.gitkeep",
+      "after": "backend/src/modules/chat/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/chat/controllers/.gitkeep",
+      "after": "backend/src/modules/chat/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/chat/domain/events/.gitkeep",
+      "after": "backend/src/modules/chat/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/chat/domain/models/.gitkeep",
+      "after": "backend/src/modules/chat/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/chat/domain/policies/.gitkeep",
+      "after": "backend/src/modules/chat/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/chat/dto/.gitkeep",
+      "after": "backend/src/modules/chat/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/chat/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/chat/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/chat/tests/.gitkeep",
+      "after": "backend/src/modules/chat/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/compensations/application/.gitkeep",
+      "after": "backend/src/modules/compensations/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/compensations/controllers/.gitkeep",
+      "after": "backend/src/modules/compensations/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/compensations/domain/events/.gitkeep",
+      "after": "backend/src/modules/compensations/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/compensations/domain/models/.gitkeep",
+      "after": "backend/src/modules/compensations/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/compensations/domain/policies/.gitkeep",
+      "after": "backend/src/modules/compensations/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/compensations/dto/.gitkeep",
+      "after": "backend/src/modules/compensations/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/compensations/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/compensations/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/compensations/tests/.gitkeep",
+      "after": "backend/src/modules/compensations/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/costs/application/.gitkeep",
+      "after": "backend/src/modules/costs/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/costs/controllers/.gitkeep",
+      "after": "backend/src/modules/costs/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/costs/domain/events/.gitkeep",
+      "after": "backend/src/modules/costs/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/costs/domain/models/.gitkeep",
+      "after": "backend/src/modules/costs/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/costs/domain/policies/.gitkeep",
+      "after": "backend/src/modules/costs/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/costs/dto/.gitkeep",
+      "after": "backend/src/modules/costs/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/costs/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/costs/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/costs/tests/.gitkeep",
+      "after": "backend/src/modules/costs/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/health/health.controller.ts",
+      "after": "backend/src/modules/health/health.controller.ts",
+      "sha256Before": "1096220518088269dd75c15d45ccd5b46e279f06590444f324f4d7bd7aea2052",
+      "sha256After": "1096220518088269dd75c15d45ccd5b46e279f06590444f324f4d7bd7aea2052",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/application/.gitkeep",
+      "after": "backend/src/modules/institutional-membership/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/controllers/.gitkeep",
+      "after": "backend/src/modules/institutional-membership/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/domain/events/.gitkeep",
+      "after": "backend/src/modules/institutional-membership/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/domain/membership.policy.ts",
+      "after": "backend/src/modules/institutional-membership/domain/membership.policy.ts",
+      "sha256Before": "75eb3248396820662a45fe9d3a5b92abbfaf46644f4a73900066f44cff9af711",
+      "sha256After": "75eb3248396820662a45fe9d3a5b92abbfaf46644f4a73900066f44cff9af711",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/domain/models/.gitkeep",
+      "after": "backend/src/modules/institutional-membership/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/domain/policies/.gitkeep",
+      "after": "backend/src/modules/institutional-membership/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/dto/.gitkeep",
+      "after": "backend/src/modules/institutional-membership/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/institutional-membership/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/institutional-membership/tests/.gitkeep",
+      "after": "backend/src/modules/institutional-membership/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/matching/application/.gitkeep",
+      "after": "backend/src/modules/matching/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/matching/controllers/.gitkeep",
+      "after": "backend/src/modules/matching/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/matching/domain/events/.gitkeep",
+      "after": "backend/src/modules/matching/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/matching/domain/models/.gitkeep",
+      "after": "backend/src/modules/matching/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/matching/domain/policies/.gitkeep",
+      "after": "backend/src/modules/matching/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/matching/dto/.gitkeep",
+      "after": "backend/src/modules/matching/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/matching/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/matching/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/matching/tests/.gitkeep",
+      "after": "backend/src/modules/matching/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/application/profiles.service.ts",
+      "after": "backend/src/modules/profiles/application/profiles.service.ts",
+      "sha256Before": "7d4091993796440b310e04c45b2df401cc89df22e0d49781dd20db403157ef3d",
+      "sha256After": "7d4091993796440b310e04c45b2df401cc89df22e0d49781dd20db403157ef3d",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/controllers/profiles.controller.ts",
+      "after": "backend/src/modules/profiles/controllers/profiles.controller.ts",
+      "sha256Before": "eb353fb043306fa4492b7de7f1c1d832fed87071822266ff6d2a822c0f7fef5e",
+      "sha256After": "eb353fb043306fa4492b7de7f1c1d832fed87071822266ff6d2a822c0f7fef5e",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/domain/events/.gitkeep",
+      "after": "backend/src/modules/profiles/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/domain/models/.gitkeep",
+      "after": "backend/src/modules/profiles/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/domain/policies/.gitkeep",
+      "after": "backend/src/modules/profiles/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/dto/update-profile.dto.ts",
+      "after": "backend/src/modules/profiles/dto/update-profile.dto.ts",
+      "sha256Before": "06049641fe7b8fa6018bb12dae9942037be0d548eb1b7597f7e643057b61b922",
+      "sha256After": "06049641fe7b8fa6018bb12dae9942037be0d548eb1b7597f7e643057b61b922",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/infrastructure/repositories/profile.repository.ts",
+      "after": "backend/src/modules/profiles/infrastructure/repositories/profile.repository.ts",
+      "sha256Before": "348ce7da196f91f04a864f99e4ac1eff6510dbc78a2366e2eba4568247a143b0",
+      "sha256After": "348ce7da196f91f04a864f99e4ac1eff6510dbc78a2366e2eba4568247a143b0",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/profiles.module.ts",
+      "after": "backend/src/modules/profiles/profiles.module.ts",
+      "sha256Before": "632ff2c3bf39da11ff8e9e24b74c4795513e7fe7479f082c1a189e3e7deab94f",
+      "sha256After": "632ff2c3bf39da11ff8e9e24b74c4795513e7fe7479f082c1a189e3e7deab94f",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/profiles/tests/.gitkeep",
+      "after": "backend/src/modules/profiles/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ratings/application/.gitkeep",
+      "after": "backend/src/modules/ratings/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ratings/controllers/.gitkeep",
+      "after": "backend/src/modules/ratings/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ratings/domain/events/.gitkeep",
+      "after": "backend/src/modules/ratings/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ratings/domain/models/.gitkeep",
+      "after": "backend/src/modules/ratings/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ratings/domain/policies/.gitkeep",
+      "after": "backend/src/modules/ratings/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ratings/dto/.gitkeep",
+      "after": "backend/src/modules/ratings/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ratings/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/ratings/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ratings/tests/.gitkeep",
+      "after": "backend/src/modules/ratings/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/reservations/application/.gitkeep",
+      "after": "backend/src/modules/reservations/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/reservations/controllers/.gitkeep",
+      "after": "backend/src/modules/reservations/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/reservations/domain/events/.gitkeep",
+      "after": "backend/src/modules/reservations/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/reservations/domain/models/.gitkeep",
+      "after": "backend/src/modules/reservations/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/reservations/domain/policies/.gitkeep",
+      "after": "backend/src/modules/reservations/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/reservations/dto/.gitkeep",
+      "after": "backend/src/modules/reservations/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/reservations/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/reservations/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/reservations/tests/.gitkeep",
+      "after": "backend/src/modules/reservations/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ride-execution/application/.gitkeep",
+      "after": "backend/src/modules/ride-execution/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ride-execution/controllers/.gitkeep",
+      "after": "backend/src/modules/ride-execution/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ride-execution/domain/events/.gitkeep",
+      "after": "backend/src/modules/ride-execution/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ride-execution/domain/models/.gitkeep",
+      "after": "backend/src/modules/ride-execution/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ride-execution/domain/policies/.gitkeep",
+      "after": "backend/src/modules/ride-execution/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ride-execution/dto/.gitkeep",
+      "after": "backend/src/modules/ride-execution/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ride-execution/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/ride-execution/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/ride-execution/tests/.gitkeep",
+      "after": "backend/src/modules/ride-execution/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/safety/application/.gitkeep",
+      "after": "backend/src/modules/safety/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/safety/controllers/.gitkeep",
+      "after": "backend/src/modules/safety/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/safety/domain/events/.gitkeep",
+      "after": "backend/src/modules/safety/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/safety/domain/models/.gitkeep",
+      "after": "backend/src/modules/safety/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/safety/domain/policies/.gitkeep",
+      "after": "backend/src/modules/safety/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/safety/dto/.gitkeep",
+      "after": "backend/src/modules/safety/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/safety/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/safety/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/safety/tests/.gitkeep",
+      "after": "backend/src/modules/safety/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/application/trips.service.ts",
+      "after": "backend/src/modules/trips/application/trips.service.ts",
+      "sha256Before": "4b2f66f0f1dcab5f9e8011976284eb8d0c85e7c1c496506226f194d26e0568b7",
+      "sha256After": "4b2f66f0f1dcab5f9e8011976284eb8d0c85e7c1c496506226f194d26e0568b7",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/controllers/trips.controller.ts",
+      "after": "backend/src/modules/trips/controllers/trips.controller.ts",
+      "sha256Before": "8105863919921dc2715a6f0d4511a17cd425252c0f9758285d95232cf0e80e06",
+      "sha256After": "8105863919921dc2715a6f0d4511a17cd425252c0f9758285d95232cf0e80e06",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/domain/events/.gitkeep",
+      "after": "backend/src/modules/trips/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/domain/models/viaje.ts",
+      "after": "backend/src/modules/trips/domain/models/viaje.ts",
+      "sha256Before": "1c7dbde009b3e240f2c024cc456c3ef3ccd665dfea3831ccf15cce071d162a64",
+      "sha256After": "1c7dbde009b3e240f2c024cc456c3ef3ccd665dfea3831ccf15cce071d162a64",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/domain/policies/.gitkeep",
+      "after": "backend/src/modules/trips/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/dto/publish-trip.dto.ts",
+      "after": "backend/src/modules/trips/dto/publish-trip.dto.ts",
+      "sha256Before": "5807e54f8c42a7693a3ac025f2b770f6218aaafcefd5d0652e7d2bdd03dbd48f",
+      "sha256After": "5807e54f8c42a7693a3ac025f2b770f6218aaafcefd5d0652e7d2bdd03dbd48f",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/infrastructure/repositories/trips.repository.ts",
+      "after": "backend/src/modules/trips/infrastructure/repositories/trips.repository.ts",
+      "sha256Before": "5196ccfffc2d0a0b7bd91b47bfba2b170962f2154b03b2254e76b39c1765f0b3",
+      "sha256After": "5196ccfffc2d0a0b7bd91b47bfba2b170962f2154b03b2254e76b39c1765f0b3",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/tests/.gitkeep",
+      "after": "backend/src/modules/trips/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/trips/trips.module.ts",
+      "after": "backend/src/modules/trips/trips.module.ts",
+      "sha256Before": "32cd2b5158fd9263a4dcccf1d79e83e0a0214df83cf353eee32814ecbc903a3b",
+      "sha256After": "32cd2b5158fd9263a4dcccf1d79e83e0a0214df83cf353eee32814ecbc903a3b",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/users/application/.gitkeep",
+      "after": "backend/src/modules/users/application/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/users/controllers/.gitkeep",
+      "after": "backend/src/modules/users/controllers/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/users/domain/events/.gitkeep",
+      "after": "backend/src/modules/users/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/users/domain/models/.gitkeep",
+      "after": "backend/src/modules/users/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/users/domain/policies/.gitkeep",
+      "after": "backend/src/modules/users/domain/policies/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/users/dto/.gitkeep",
+      "after": "backend/src/modules/users/dto/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/users/infrastructure/repositories/.gitkeep",
+      "after": "backend/src/modules/users/infrastructure/repositories/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/users/tests/.gitkeep",
+      "after": "backend/src/modules/users/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/application/vehicles.service.ts",
+      "after": "backend/src/modules/vehicles/application/vehicles.service.ts",
+      "sha256Before": "cc64bc54d72e8baf999d73849ee5ff2bbebb81dfa5126d7e20794e8057cc7901",
+      "sha256After": "cc64bc54d72e8baf999d73849ee5ff2bbebb81dfa5126d7e20794e8057cc7901",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/controllers/vehicles.controller.ts",
+      "after": "backend/src/modules/vehicles/controllers/vehicles.controller.ts",
+      "sha256Before": "57fb9f99c1d9daf9993247b66eeb8a5efabe7451f558fcbff2c08ca818630901",
+      "sha256After": "57fb9f99c1d9daf9993247b66eeb8a5efabe7451f558fcbff2c08ca818630901",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/domain/events/.gitkeep",
+      "after": "backend/src/modules/vehicles/domain/events/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/domain/models/.gitkeep",
+      "after": "backend/src/modules/vehicles/domain/models/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/domain/policies/vehiculo.policy.ts",
+      "after": "backend/src/modules/vehicles/domain/policies/vehiculo.policy.ts",
+      "sha256Before": "92a94647943ff71b61b34464f57ce85a42f69f99b69a6323ee052ddff4520ea2",
+      "sha256After": "92a94647943ff71b61b34464f57ce85a42f69f99b69a6323ee052ddff4520ea2",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/dto/vehicles.dto.ts",
+      "after": "backend/src/modules/vehicles/dto/vehicles.dto.ts",
+      "sha256Before": "a6ea7b3bb755fbc2dc1ec0adee68a7920cc8386c61cf07206d874371c6b71a6e",
+      "sha256After": "a6ea7b3bb755fbc2dc1ec0adee68a7920cc8386c61cf07206d874371c6b71a6e",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/infrastructure/repositories/vehicles.repository.ts",
+      "after": "backend/src/modules/vehicles/infrastructure/repositories/vehicles.repository.ts",
+      "sha256Before": "1de27bf3f74c6006d855d4b4549fb7554ebb42e106900b81e88c892e43538734",
+      "sha256After": "1de27bf3f74c6006d855d4b4549fb7554ebb42e106900b81e88c892e43538734",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/tests/.gitkeep",
+      "after": "backend/src/modules/vehicles/tests/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/src/modules/vehicles/vehicles.module.ts",
+      "after": "backend/src/modules/vehicles/vehicles.module.ts",
+      "sha256Before": "5030fea1f36691d58ef5756723b095fc4484ae6ba254c686953ce1f127b3b6a8",
+      "sha256After": "5030fea1f36691d58ef5756723b095fc4484ae6ba254c686953ce1f127b3b6a8",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/test/auth.e2e.test.mjs",
+      "after": "backend/test/auth.e2e.test.mjs",
+      "sha256Before": "7602ad7518a7987583b0e291977d09eeced3e33662a5b877879916395bfa15d1",
+      "sha256After": "7602ad7518a7987583b0e291977d09eeced3e33662a5b877879916395bfa15d1",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/test/membership.test.mjs",
+      "after": "backend/test/membership.test.mjs",
+      "sha256Before": "702f109e06fc2e706693c7b41e4dd45d3cdb3f8bc5e77e284f27f8510a1d54b9",
+      "sha256After": "702f109e06fc2e706693c7b41e4dd45d3cdb3f8bc5e77e284f27f8510a1d54b9",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/test/phase2-policy.test.mjs",
+      "after": "backend/test/phase2-policy.test.mjs",
+      "sha256Before": "e189d3ac53d8a735124e4886c82b44f8fdb83eebb433a763f523869ceecfa352",
+      "sha256After": "e189d3ac53d8a735124e4886c82b44f8fdb83eebb433a763f523869ceecfa352",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/test/phase2.e2e.test.mjs",
+      "after": "backend/test/phase2.e2e.test.mjs",
+      "sha256Before": "be2cbfbd382a81b69b0b1abe44371b324273b352cbb925a7392ef7bdd66eb133",
+      "sha256After": "be2cbfbd382a81b69b0b1abe44371b324273b352cbb925a7392ef7bdd66eb133",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/test/providers.test.mjs",
+      "after": "backend/test/providers.test.mjs",
+      "sha256Before": "a3c6179068cd3729f47e6d88ca781ad764cd48ff27d38d7adf1205bba01d840c",
+      "sha256After": "a3c6179068cd3729f47e6d88ca781ad764cd48ff27d38d7adf1205bba01d840c",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/api/tsconfig.json",
+      "after": "backend/tsconfig.json",
+      "sha256Before": "85ac7642d81df7cf9a4d80504868e27abc126713a7ec5d1e8c0c14b7ab7a4864",
+      "sha256After": "85ac7642d81df7cf9a4d80504868e27abc126713a7ec5d1e8c0c14b7ab7a4864",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/AGENTS.md",
+      "after": "frontend/AGENTS.md",
+      "sha256Before": "67d51960ca0e1a420180a1a609ff00cf36cc9fe4acd2a607f68cc420f1dfc7a6",
+      "sha256After": "2ba95f0923eca3fff3798da5a678375c734f6580d0d59c11cdb880f03bc7a1dd",
+      "mode": "0o664",
+      "unchanged": false,
+      "expectedChange": "Updated root reference and mandatory architecture/agent guidance; documentation only.",
+      "valid": true
+    },
+    {
+      "before": "apps/client/app.config.ts",
+      "after": "frontend/app.config.ts",
+      "sha256Before": "b199172a5547a30e79096577289a27226596bfef4483349d92a6c70b3e62e975",
+      "sha256After": "634cacab42f6a317bd58b5fddaa90802b641a05f056ceb9ebcbf0490b5483d0c",
+      "mode": "0o664",
+      "unchanged": false,
+      "expectedChange": "Only dotenv root path ../../.env -> ../.env.",
+      "valid": true
+    },
+    {
+      "before": "apps/client/app/(admin)/document-reviews.tsx",
+      "after": "frontend/app/(admin)/document-reviews.tsx",
+      "sha256Before": "cf690f3dc4646e0c6c01fb5a0765ef8e4743aadb63f4915aefd4d6d6cd30911c",
+      "sha256After": "cf690f3dc4646e0c6c01fb5a0765ef8e4743aadb63f4915aefd4d6d6cd30911c",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/app/(driver)/my-trips.tsx",
+      "after": "frontend/app/(driver)/my-trips.tsx",
+      "sha256Before": "587dbd6c423eb1ab13ae0163d1df33319264434e8e05a4ea277e49a0bff196c8",
+      "sha256After": "587dbd6c423eb1ab13ae0163d1df33319264434e8e05a4ea277e49a0bff196c8",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/app/(driver)/publish.tsx",
+      "after": "frontend/app/(driver)/publish.tsx",
+      "sha256Before": "11b4e3a6004805d539522e4ccf2fe8d499d08d20d825ffe706786a9111c13a71",
+      "sha256After": "11b4e3a6004805d539522e4ccf2fe8d499d08d20d825ffe706786a9111c13a71",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/app/(driver)/vehicles.tsx",
+      "after": "frontend/app/(driver)/vehicles.tsx",
+      "sha256Before": "fe4fb644b3befb4f6d195629c23462cf17f22f20ecae45ff14b7fbf7d17f9c93",
+      "sha256After": "fe4fb644b3befb4f6d195629c23462cf17f22f20ecae45ff14b7fbf7d17f9c93",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/app/(passenger)/.gitkeep",
+      "after": "frontend/app/(passenger)/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/app/(public)/.gitkeep",
+      "after": "frontend/app/(public)/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/app/_layout.tsx",
+      "after": "frontend/app/_layout.tsx",
+      "sha256Before": "d1bd779457be405b767c98d49d4a238dc2d730c60629b63caeda0a95ce165bdb",
+      "sha256After": "d1bd779457be405b767c98d49d4a238dc2d730c60629b63caeda0a95ce165bdb",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/app/index.tsx",
+      "after": "frontend/app/index.tsx",
+      "sha256Before": "e690709de1d6c28246f5a4bf404888158875f2bb6eee9a31e5871bfc616ea5aa",
+      "sha256After": "e690709de1d6c28246f5a4bf404888158875f2bb6eee9a31e5871bfc616ea5aa",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/assets/.gitkeep",
+      "after": "frontend/assets/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/package.json",
+      "after": "frontend/package.json",
+      "sha256Before": "11bcb750dd1612352c399776e78656025ace25ec897a8c27d40d73cf9ef59a4f",
+      "sha256After": "11bcb750dd1612352c399776e78656025ace25ec897a8c27d40d73cf9ef59a4f",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/components/forms/field.tsx",
+      "after": "frontend/src/components/forms/field.tsx",
+      "sha256Before": "49e3757306e73eb4898790ccd78e1cbdd51a8538d3b7dae05c5c1dbbab0b9d29",
+      "sha256After": "49e3757306e73eb4898790ccd78e1cbdd51a8538d3b7dae05c5c1dbbab0b9d29",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/components/maps/.gitkeep",
+      "after": "frontend/src/components/maps/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/components/ui/button.tsx",
+      "after": "frontend/src/components/ui/button.tsx",
+      "sha256Before": "9a12b676e6fbe1bc8dd952f8f663f544d34ec642ce32b0ec108882c255529974",
+      "sha256After": "9a12b676e6fbe1bc8dd952f8f663f544d34ec642ce32b0ec108882c255529974",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/components/ui/protected-page.tsx",
+      "after": "frontend/src/components/ui/protected-page.tsx",
+      "sha256Before": "f4178a2b4e13a033e1234d0eea044a33705a5b812dbe38efefbf71321951e150",
+      "sha256After": "f4178a2b4e13a033e1234d0eea044a33705a5b812dbe38efefbf71321951e150",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/config/.gitkeep",
+      "after": "frontend/src/config/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/admin/document-reviews-screen.tsx",
+      "after": "frontend/src/features/admin/document-reviews-screen.tsx",
+      "sha256Before": "daa1f07d707084ab489364db8c4ea05355703ec427810a1acd5777a066d5f971",
+      "sha256After": "daa1f07d707084ab489364db8c4ea05355703ec427810a1acd5777a066d5f971",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/auth/login-screen.tsx",
+      "after": "frontend/src/features/auth/login-screen.tsx",
+      "sha256Before": "e4934b040ed85cf92b5aeb6daa6d611a3c55c495f8998c48e1935d02506bd5d6",
+      "sha256After": "e4934b040ed85cf92b5aeb6daa6d611a3c55c495f8998c48e1935d02506bd5d6",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/auth/profile-screen.tsx",
+      "after": "frontend/src/features/auth/profile-screen.tsx",
+      "sha256Before": "95dc305eb87e900da593424d59ca70653859c13ed19fd8bcde41eccb76b1f7ca",
+      "sha256After": "95dc305eb87e900da593424d59ca70653859c13ed19fd8bcde41eccb76b1f7ca",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/chat/.gitkeep",
+      "after": "frontend/src/features/chat/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/ratings/.gitkeep",
+      "after": "frontend/src/features/ratings/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/reservations/.gitkeep",
+      "after": "frontend/src/features/reservations/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/ride/.gitkeep",
+      "after": "frontend/src/features/ride/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/trips/my-trips-screen.tsx",
+      "after": "frontend/src/features/trips/my-trips-screen.tsx",
+      "sha256Before": "41606f0bd2aea7a2b06bb28be0380c1582b1ab36aee91c41d670246122d59c3e",
+      "sha256After": "41606f0bd2aea7a2b06bb28be0380c1582b1ab36aee91c41d670246122d59c3e",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/trips/publish-screen.tsx",
+      "after": "frontend/src/features/trips/publish-screen.tsx",
+      "sha256Before": "9241146c0fe4917c3e882fb4e41268a68fd7b165f9f8ecc42b4ca29abacf3407",
+      "sha256After": "9241146c0fe4917c3e882fb4e41268a68fd7b165f9f8ecc42b4ca29abacf3407",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/features/trips/vehicles-screen.tsx",
+      "after": "frontend/src/features/trips/vehicles-screen.tsx",
+      "sha256Before": "3c8717a7dc1e5309e8f5ab30abda64cb079d9cf947c55aca42d74b606677a292",
+      "sha256After": "3c8717a7dc1e5309e8f5ab30abda64cb079d9cf947c55aca42d74b606677a292",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/hooks/.gitkeep",
+      "after": "frontend/src/hooks/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/providers/session-provider.tsx",
+      "after": "frontend/src/providers/session-provider.tsx",
+      "sha256Before": "0eafee82704939e67627ef648c234429bd22cae070001afa9c38fe391af03561",
+      "sha256After": "0eafee82704939e67627ef648c234429bd22cae070001afa9c38fe391af03561",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/services/api/client.ts",
+      "after": "frontend/src/services/api/client.ts",
+      "sha256Before": "7a54db84e6149e37f32a2c9350e87ee684842ae211e19f853b6b6ad05da7d730",
+      "sha256After": "7a54db84e6149e37f32a2c9350e87ee684842ae211e19f853b6b6ad05da7d730",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/services/api/session-storage.native.ts",
+      "after": "frontend/src/services/api/session-storage.native.ts",
+      "sha256Before": "d52060abff9a1f526baa5b8fe0387d93eea0947d2a4e89b0089c2604c0f697ab",
+      "sha256After": "d52060abff9a1f526baa5b8fe0387d93eea0947d2a4e89b0089c2604c0f697ab",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/services/api/session-storage.ts",
+      "after": "frontend/src/services/api/session-storage.ts",
+      "sha256Before": "ba9ddce7a42e096862e7e9c48beed59611d5928c9c48f88ee983a0b8884a90cf",
+      "sha256After": "ba9ddce7a42e096862e7e9c48beed59611d5928c9c48f88ee983a0b8884a90cf",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/services/api/session-storage.web.ts",
+      "after": "frontend/src/services/api/session-storage.web.ts",
+      "sha256Before": "e3b985985eccafba863bb27ec45ef5933a777fbb27d308886466f8929a89bca3",
+      "sha256After": "e3b985985eccafba863bb27ec45ef5933a777fbb27d308886466f8929a89bca3",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/services/location/.gitkeep",
+      "after": "frontend/src/services/location/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/services/realtime/.gitkeep",
+      "after": "frontend/src/services/realtime/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/theme/tokens.ts",
+      "after": "frontend/src/theme/tokens.ts",
+      "sha256Before": "0730fc5e6d7a9e7059166616de4d763a16f5b577ebf465b6082d6f475411b459",
+      "sha256After": "0730fc5e6d7a9e7059166616de4d763a16f5b577ebf465b6082d6f475411b459",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/types/.gitkeep",
+      "after": "frontend/src/types/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/src/utils/.gitkeep",
+      "after": "frontend/src/utils/.gitkeep",
+      "sha256Before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sha256After": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "0o664",
+      "unchanged": true,
+      "expectedChange": null,
+      "valid": true
+    },
+    {
+      "before": "apps/client/tsconfig.json",
+      "after": "frontend/tsconfig.json",
+      "sha256Before": "0ac714d5db316f8e4c6d311a47846010a97df0542d63cb781851f192164b241f",
+      "sha256After": "6fd1e497e048688c76003e82afb4e0dfb5b060556fdad4c2ea10bdfd319fe3df",
+      "mode": "0o664",
+      "unchanged": false,
+      "expectedChange": "Only root-relative contracts alias.",
+      "valid": true
+    }
+  ]
+}

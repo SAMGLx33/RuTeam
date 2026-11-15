@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-11-15T02:22:15.890Z",
+  "environment": "Linux Node22.22.3 npm12.2.2; authorized PostgreSQL18 development ruteam/test ruteam_test127.0.0.1:55432; unchanged .env",
+  "runs": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "durationMs": 7276,
+      "summary": []
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "durationMs": 2645,
+      "summary": []
+    },
+    {
+      "command": "npm run format:check",
+      "exitCode": 1,
+      "durationMs": 4082,
+      "summary": []
+    }
+  ],
+  "stoppedAtFailure": "format",
+  "envUnchanged": true,
+  "finishedAt": "2026-11-15T02:22:29.897Z"
+}

@@ -1,0 +1,203 @@
+{
+  "phase": "postmigration",
+  "startedAt": "2026-11-14T23:57:18.820Z",
+  "base": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+  "environment": "Linux Node22.22.3 npm12.2.2; original .env; configured DB55432 absent before migration",
+  "runs": [
+    {
+      "command": "npm run check:env",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 243,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-env.txt"
+    },
+    {
+      "command": "npm run db:generate",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 2246,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-generate.txt"
+    },
+    {
+      "command": "npm run db:migrate",
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 1334,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-migrate.txt"
+    },
+    {
+      "command": "npm run db:seed",
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 1195,
+      "summary": [
+        "PrismaClientKnownRequestError: Can't reach database server at 127.0.0.1:55432"
+      ],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-seed.txt"
+    },
+    {
+      "command": "npm run db:test:setup",
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 189,
+      "summary": [
+        "Error: connect ECONNREFUSED 127.0.0.1:55432",
+        "  code: 'ECONNREFUSED',"
+      ],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-test-setup.txt"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 7934,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-typecheck.txt"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 3246,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-lint.txt"
+    },
+    {
+      "command": "npm run format:check",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 3938,
+      "summary": ["All matched files use Prettier code style!"],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-format.txt"
+    },
+    {
+      "command": "npm test",
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 6340,
+      "summary": [
+        "    Can't reach database server at 127.0.0.1:55432",
+        "    Can't reach database server at 127.0.0.1:55432",
+        "Test Suites: 2 failed, 3 passed, 5 total",
+        "Tests:       43 failed, 28 passed, 71 total"
+      ],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-jest.txt"
+    },
+    {
+      "command": "npm run smoke",
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 193,
+      "summary": [
+        "  [cause]: Error: connect ECONNREFUSED 127.0.0.1:3000",
+        "    code: 'ECONNREFUSED',"
+      ],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-smoke.txt"
+    },
+    {
+      "command": "npm run build:api",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 2924,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-build-api.txt"
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 20519,
+      "summary": ["Exported: dist"],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-build-web.txt"
+    },
+    {
+      "command": "npx expo-doctor frontend",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 6144,
+      "summary": ["18/18 checks passed. No issues detected!"],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-doctor.txt"
+    },
+    {
+      "command": "npm exec -w @ruteam/client -- expo export --platform android",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 23903,
+      "summary": ["Exported: dist"],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-android.txt"
+    },
+    {
+      "command": "npm exec -w @ruteam/client -- expo export --platform ios",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 41850,
+      "summary": ["Exported: dist"],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-ios.txt"
+    },
+    {
+      "command": "npm audit --json",
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 6258,
+      "summary": [
+        "{\"info\":0,\"low\":1,\"moderate\":34,\"high\":5,\"critical\":0,\"total\":40}"
+      ],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-audit.txt"
+    },
+    {
+      "command": "node scripts/verify-workspace-move.mjs",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 153,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-manifest.txt"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 37,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/post-diff.txt"
+    }
+  ],
+  "blocked": [
+    {
+      "command": "npm run test:e2e",
+      "reason": "Real HTTP/PostgreSQL prerequisite missing; no mock or development DB substituted."
+    }
+  ],
+  "envUnchanged": true,
+  "finishedAt": "2026-11-14T23:59:27.483Z",
+  "supplemental": [
+    {
+      "command": "npm run dev:api",
+      "result": "API3000 listens from backend; no configured database available"
+    },
+    {
+      "command": "npm run dev:web",
+      "result": "Expo8081 serves from frontend; desktop/mobile browser observed"
+    },
+    {
+      "command": "npm run smoke",
+      "exitCode": 1,
+      "result": "Repeated with API running: assertion health PostgreSQL fails (health503). Earlier run had API absent."
+    },
+    {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/tmp/ruteam-arch-browsers node /tmp/ruteam-arch-browser-check.cjs postmigration",
+      "exitCode": 0,
+      "result": "Desktop1280x900 and mobileweb390x844: auth/me401, login500, no pageerror/overflow; functional login BLOCKED"
+    },
+    {
+      "command": "npm exec -w @ruteam/client -- expo config --type public --json",
+      "result": "default localhost3000/api/v1; process EXPO_PUBLIC_API_URL override3100 wins; public extra keys apiUrl and Expo router only"
+    },
+    {
+      "command": "npm run dev:client",
+      "result": "Own web stopped, LAN Metro8081 Android manifest HTTP200 SDK54/public API3000 verified; own LAN stopped and one dev:web restored; no phone."
+    }
+  ]
+}
