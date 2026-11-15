@@ -11,3 +11,8 @@ No se leyó ERS, Proyecto Final.pdf, drawio ni guías originales. Aportar localm
 No publicar referencias sin permiso o con credenciales/PII. PDF/drawio se ignoran
 por defecto. Esta carpeta contiene README útil y no requiere .gitkeep. Matriz oficial
 y crosswalk BLOQUEADOS hasta cotejo, no se inventan numeración, prioridades ni páginas.
+
+Actualización Fase2: las tres fuentes se recibieron en paquete privado ignorado bajo
+docs/RuTeam_Referencias_Codex_PRIVADO/reference-private/. Se leyeron sin moverlas ni
+modificarlas. Derivados públicos sin PII: docs/requirements/ERS_CATALOG.md, TRACEABILITY.md
+y UML_CROSSWALK.md. No copiar originales aquí ni publicar fichas/contactos del equipo.

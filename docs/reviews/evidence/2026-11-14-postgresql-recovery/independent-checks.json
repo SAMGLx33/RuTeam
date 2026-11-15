@@ -1,0 +1,54 @@
+{
+  "environment": "Linux Node22.22.3 npm12.2.2; DB not created; PostgreSQL5432 not used",
+  "runs": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "durationMs": 11808,
+      "summary": []
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "durationMs": 2825,
+      "summary": []
+    },
+    {
+      "command": "npm run format:check",
+      "exitCode": 0,
+      "durationMs": 5576,
+      "summary": ["All matched files use Prettier code style!"]
+    },
+    {
+      "command": "npm run build:api",
+      "exitCode": 0,
+      "durationMs": 3286,
+      "summary": []
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "durationMs": 6704,
+      "summary": ["Exported: dist"]
+    },
+    {
+      "command": "npx expo-doctor frontend",
+      "exitCode": 0,
+      "durationMs": 6184,
+      "summary": ["18/18 checks passed. No issues detected!"]
+    },
+    {
+      "command": "node scripts/verify-workspace-move.mjs",
+      "exitCode": 0,
+      "durationMs": 147,
+      "summary": []
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMs": 27,
+      "summary": []
+    }
+  ],
+  "architecturePreviousReceiptRestoredByteForByte": true
+}

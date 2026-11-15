@@ -1,0 +1,81 @@
+{
+  "phase": "baseline",
+  "startedAt": "2026-11-14T23:45:45.016Z",
+  "base": "bab4e630784714f8fa58bcbf964ea5a48e37259a",
+  "environment": "Linux Node22.22.3 npm12.2.2; no configured DB55432 or API3000",
+  "runs": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 8322,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/baseline-typecheck.txt"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 3888,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/baseline-lint.txt"
+    },
+    {
+      "command": "npm run build:api",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 2838,
+      "summary": [],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/baseline-build-api.txt"
+    },
+    {
+      "command": "node --env-file=.env --experimental-vm-modules node_modules/jest/bin/jest.js --config apps/api/jest.config.mjs --runInBand --runTestsByPath apps/api/test/membership.test.mjs apps/api/test/providers.test.mjs apps/api/test/phase2-policy.test.mjs",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1147,
+      "summary": [
+        "Test Suites: 3 passed, 3 total",
+        "Tests:       20 passed, 20 total"
+      ],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/baseline-unit.txt"
+    },
+    {
+      "command": "npm run smoke",
+      "exitCode": 1,
+      "timedOut": false,
+      "durationMs": 198,
+      "summary": [
+        "TypeError: fetch failed",
+        "  [cause]: Error: connect ECONNREFUSED 127.0.0.1:3000"
+      ],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/baseline-smoke.txt"
+    },
+    {
+      "command": "npm run build:web",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 31883,
+      "summary": ["Exported: dist"],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/baseline-build-web.txt"
+    },
+    {
+      "command": "npx expo-doctor apps/client",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 7557,
+      "summary": ["18/18 checks passed. No issues detected!"],
+      "rawOutput": "outside Git: /tmp/ruteam-arch-20261114/baseline-doctor.txt"
+    }
+  ],
+  "blocked": [
+    {
+      "command": "npm test",
+      "reason": "Full HTTP/PostgreSQL suites require missing configured DB55432; three pure suites run separately."
+    },
+    {
+      "command": "npm run test:e2e",
+      "reason": "Configured PostgreSQL missing; previous temporary browser installation missing too."
+    }
+  ],
+  "finishedAt": "2026-11-14T23:46:40.856Z"
+}

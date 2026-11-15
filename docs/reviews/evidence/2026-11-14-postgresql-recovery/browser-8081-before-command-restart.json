@@ -1,0 +1,147 @@
+{
+  "browserPlugin": "not available; Playwright used",
+  "results": [
+    {
+      "label": "desktop",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "url": "http://localhost:8081",
+      "title": "RuTeam",
+      "activeLogin": true,
+      "inactiveRejected": true,
+      "profilePersistedAfterReload": true,
+      "originalProfileRestored": true,
+      "profileMutationSkippedToPreserveExistingName": false,
+      "noConnectionBanner": true,
+      "overflow": false,
+      "pageErrors": [],
+      "networkFailures": [],
+      "responses": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "status": 401,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "status": 403,
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "status": 201,
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "status": 200,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/campus/destinations",
+          "status": 200,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/me/profile",
+          "status": 200,
+          "method": "PATCH"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "status": 200,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/campus/destinations",
+          "status": 200,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/me/profile",
+          "status": 200,
+          "method": "PATCH"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/logout",
+          "status": 204,
+          "method": "POST"
+        }
+      ],
+      "screenshotOutsideGit": "/home/darik/RuTeam/review-artifacts/2026-11-14-postgresql-recovery/desktop-connected.png"
+    },
+    {
+      "label": "mobile-web",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "url": "http://localhost:8081",
+      "title": "RuTeam",
+      "activeLogin": true,
+      "inactiveRejected": true,
+      "profilePersistedAfterReload": true,
+      "originalProfileRestored": true,
+      "profileMutationSkippedToPreserveExistingName": false,
+      "noConnectionBanner": true,
+      "overflow": false,
+      "pageErrors": [],
+      "networkFailures": [],
+      "responses": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "status": 401,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "status": 403,
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "status": 201,
+          "method": "POST"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "status": 200,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/campus/destinations",
+          "status": 200,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/me/profile",
+          "status": 200,
+          "method": "PATCH"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "status": 200,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/campus/destinations",
+          "status": 200,
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/me/profile",
+          "status": 200,
+          "method": "PATCH"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/logout",
+          "status": 204,
+          "method": "POST"
+        }
+      ],
+      "screenshotOutsideGit": "/home/darik/RuTeam/review-artifacts/2026-11-14-postgresql-recovery/mobile-web-connected.png"
+    }
+  ]
+}

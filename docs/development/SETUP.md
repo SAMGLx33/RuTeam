@@ -24,7 +24,9 @@ usar URLs reales de esas bases en .env, con test terminando `_test`. El script d
 test crea esa base si el rol tiene CREATEDB; si no, pedir al administrador que la cree.
 No requiere cuenta USC ni servidor cloud.
 
-En esta sesión se probó un clúster aislado, no el servicio del sistema:
+### Receta histórica de fundación — no ejecución actual
+
+El 2026-11-13 se probó un clúster aislado, no el servicio del sistema:
 
 ```bash
 /usr/lib/postgresql/18/bin/initdb -D /tmp/ruteam-pg-20261113 -A trust --username=ruteam --no-locale --encoding=UTF8
@@ -43,7 +45,7 @@ usar PostgreSQL/Compose persistente. Al terminar:
 
 ```bash
 npm ci
-cp .env.example .env
+test -f .env || cp .env.example .env
 # Editar .env antes de migrar; iniciar BD elegida.
 npm run db:generate
 npm run db:migrate
@@ -65,7 +67,7 @@ Instalar Node22 y PostgreSQL; crear BD/rol locales o usar Docker Desktop opciona
 
 ```powershell
 npm ci
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
 # Editar .env con URLs PostgreSQL locales.
 npm run db:generate
 npm run db:migrate
@@ -114,3 +116,68 @@ Origin no listado o falta x-ruteam-client.404 en trips/reservations: módulo fut
 - Puerto ocupado: cerrar sólo procesos propios o configurar puerto y URLs coherentes.
 - Auditoría dependencias: consultar EVIDENCE; no usar --force ni subir Expo mayor sin prueba.
 - SSR no se usa; web se sirve desde Metro con Router (sin Vite/Next).
+
+## Workspaces y entorno vigentes tras refactor
+
+backend/ contiene Nest/Prisma; frontend/ es el project root Expo para web y Expo Go.
+Los scripts raíz dev:api/dev:web/dev:client y db:* siguen iguales y resuelven los nombres
+@ruteam/api y @ruteam/client. Prisma config/seed leen ../.env desde backend. No mover
+schema/migraciones/generados a frontend ni ejecutar herramientas desde el CWD incorrecto.
+
+La configuración anterior de Expo se CONSERVA: app.config.ts carga ../.env raíz con
+quiet:true y sin override. EXPO_PUBLIC_API_URL ya definida en el proceso tiene prioridad;
+Expo admite su .env local estándar, pero no copiar a éste los secretos del servidor.
+frontend/.env.example contiene sólo una URL pública de ejemplo; nunca DATABASE_URL,
+TEST_DATABASE_URL, claves o tokens en EXPO_PUBLIC_* ni extra. No versionar frontend/.env.
+Para un override inequívoco sin editar archivos (Linux):
+
+```bash
+EXPO_PUBLIC_API_URL=http://localhost:3000/api/v1 npm run dev:web
+# Comprobar configuración pública; no imprimir entorno privado completo:
+npm exec -w @ruteam/client -- expo config --type public
+```
+
+Playwright usa una variable de proceso explícita http://localhost:3100/api/v1 y Expo8082;
+la carga dotenv sin override no la reemplaza. Verificar request real en navegador.
+Para navegador Ubuntu usar localhost con localhost en8081/3000. En teléfono localhost es
+el teléfono; determinar IP LAN/VM NAT/puente real y CORS antes de configurar la URL pública.
+No adivinar direcciones ni declarar Expo Go probado con export/viewport. No lanzar dev:web
+y dev:client a la vez en8081; escoger uno e inspeccionar procesos antes de reiniciar.
+
+Diagnóstico del14/11: .env conserva55432, pero no existe listener ni el directorio temporal
+del ejemplo histórico. PostgreSQL del sistema en5432 no es la BD de esta configuración;
+no migrarlo ni cambiar credenciales automáticamente. Responsable debe proporcionar/restaurar
+un entorno DEMO y test autorizado. Hasta entonces login/health DB y E2E están bloqueados;
+la migración de carpetas no remedia una BD ausente ni autoriza reset o recreación.
+
+## Entorno persistente vigente — recuperación autorizada 2026-11-14
+
+Sustituye el clúster temporal perdido de las recetas históricas anteriores. PostgreSQL18
+real de desarrollo/test:127.0.0.1:55432, ruteam/ruteam_test; .env original conservado.
+Datos de ESTA máquina fuera de Git en /home/darik/RuTeam/.local-data/postgresql-18/data,
+socket privado y logs en el mismo padre. No volver a inicializar ese directorio.
+El servicio del sistema5432 es ajeno y no se utiliza. No autoinicio añadido; tras reboot
+el directorio persiste, pero iniciar el proceso manualmente si está detenido:
+
+```bash
+/usr/lib/postgresql/18/bin/pg_ctl -D /home/darik/RuTeam/.local-data/postgresql-18/data status
+# Sólo si está detenido y el puerto55432 está libre:
+/usr/lib/postgresql/18/bin/pg_ctl -D /home/darik/RuTeam/.local-data/postgresql-18/data -l /home/darik/RuTeam/.local-data/postgresql-18/postgresql.log -w start
+/usr/lib/postgresql/18/bin/pg_isready -h 127.0.0.1 -p 55432 -d ruteam
+/usr/lib/postgresql/18/bin/pg_isready -h 127.0.0.1 -p 55432 -d ruteam_test
+```
+
+Antes de parar, terminar sólo servicios propios que usen esas bases y no estar ejecutando
+suites. Para parada normal del clúster propio, conservando datos:
+`/usr/lib/postgresql/18/bin/pg_ctl -D /home/darik/RuTeam/.local-data/postgresql-18/data -m fast -w stop`.
+No reset/dbpush/drop ni initdb de nuevo. Estas son instrucciones, no parada ejecutada.
+
+`npm run dev:web` y `npm run dev:client` ahora limpian caché Metro al arrancar. Playwright8082
+hace lo mismo: Expo54 incrusta extra.apiUrl en el bundle web y podía reutilizar API3000
+cuando el test necesita3100. No cambiar CORS para permitir ese destino incorrecto ni hacer
+que E2E escriba en desarrollo. Reiniciar sólo instancias propias tras comprobar puertos;
+no arrancar web y MetroLAN simultáneamente en8081. .env/variables y nombres npm siguen iguales.
+
+La app conserva el seed y el modo de identidad sintética existentes; esta recuperación
+es PostgreSQL real y no crea una aplicación alternativa o una integración USC oficial.
+[Validación funcional actual](../reviews/POSTGRESQL_RECOVERY_VALIDATION.md).

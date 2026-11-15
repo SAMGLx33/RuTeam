@@ -1,0 +1,16 @@
+[
+  {
+    "runtime": "docker",
+    "available": true,
+    "containerExitCode": 1,
+    "containers": [],
+    "containerError": "permission denied while trying to connect to the docker API at unix:///var/run/docker.sock",
+    "volumeExitCode": 1,
+    "volumes": [],
+    "volumeError": "permission denied while trying to connect to the docker API at unix:///var/run/docker.sock"
+  },
+  {
+    "runtime": "podman",
+    "available": false
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "command": "node --env-file=.env --experimental-vm-modules node_modules/jest/bin/jest.js --config backend/jest.config.mjs --runInBand --runTestsByPath backend/test/phase2.e2e.test.mjs --json --outputFile=/tmp/ruteam-pg-recovery-validation/concurrency-jest.json",
+  "suiteTestsPassed": 32,
+  "suiteTestsFailed": 0,
+  "testFile": "backend/test/phase2.e2e.test.mjs",
+  "testName": "dos publicaciones superpuestas simultáneas confirman exactamente una",
+  "status": "passed",
+  "durationMs": 43,
+  "httpStatusPairValidatedByPassingAssertion": [201, 409],
+  "tripCountDeltaValidatedByPassingAssertion": 1,
+  "database": "ruteam_test127.0.0.1:55432",
+  "scope": "Overlapping trip publication, not reservations or last-seat allocation."
+}

@@ -41,3 +41,36 @@ No declares INTEGRADO un cambio no fusionado y comprobado en dev.
 - .gitkeep sólo en hojas planificadas vacías; quitarlo al agregar contenido útil.
 - DoD: código + pruebas reales + contrato + trazabilidad + ADR si cambia decisión +
   nuevo handoff + PROGRESS en el mismo commit; si falta algo, PARCIAL.
+
+## Continuidad de Fase 2
+
+Fuentes privadas leídas en `docs/RuTeam_Referencias_Codex_PRIVADO/reference-private/`
+(ubicación recibida) o `reference-private/` (ubicación esperada). Ambas están ignoradas.
+No versionar el paquete, conversiones ni PII; sólo derivados en ERS_CATALOG/TRACEABILITY
+y requirements/UML_CROSSWALK. IDs oficiales RF-001..030 y RNF-031..050 cotejados;
+RF-001 sin prioridad unívoca en la matriz original. No inventarla.
+
+Fase2 en task/trips-publicacion: registro/listado propios, documentos DEMO pendientes,
+revisión ADMIN versionada, publicación/listado de viajes USC. No reservas ni transiciones
+operativas todavía. Verificar código+tests+docs+handoff antes de cierre; este corte no
+autoriza commit/push/PR/merge. Mantener los cambios revisables sin stage si no hay permiso.
+
+## Estructura vigente tras traslado local — 2026-11-14
+
+Workspaces backend (antes apps/api), frontend (antes apps/client) y packages/contracts.
+Leer backend/AGENTS.md o frontend/AGENTS.md y docs/architecture/REPOSITORY_STRUCTURE.md
+antes de cambiar el subárbol. Probar y documentar después de CADA avance, aunque falle
+o quede parcial; nuevo handoff + PROGRESS obligatorios para los agentes de seis integrantes.
+No replicar una plantilla ni reorganizar las capas internas por cambiar la ruta exterior.
+
+Backend conserva MVC por módulo: controllers→application→domain/repositorios; common es
+transversal y Prisma permanece en infraestructura/backend. La vista visual vive sólo en
+frontend. Frontend conserva Expo Router app y src/features, components/providers/services.
+No crear root app, backend/src/backend/api/mvc, capas MVC globales, frontend/frontend o
+segundo frontend web. Capacidad de driver/passenger no desplaza autoridad Nest al cliente.
+.gitkeep permanece en hojas planificadas vacías; no generar implementación ficticia.
+
+Excepción de base autorizada: task/refactor-monorepo-structure parte de bab4e63 de Fase 2
+porque feature todavía no la integra. No promover este refactor a feature antes de integrar
+Fase 2 y revisar que su diff sólo contenga el traslado. No stage/commit/push/PR/merge aquí.
+Las notas anteriores son cortes históricos; consultar PROGRESS/handoff y Git para estado.

@@ -7,9 +7,13 @@ dist/
 coverage/
 *.log
 *.tsbuildinfo
-apps/api/src/generated/
+backend/src/generated/
 .superpowers/
 playwright-report/
 test-results/
 *.pdf
 *.drawio
+
+reference-private/
+
+/docs/RuTeam_Referencias_Codex_PRIVADO/
