@@ -16,8 +16,10 @@ import {
   Max,
   Min,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ItineraryDto } from './itinerary.dto.js';
 export class GeoPointDto {
   @ApiProperty() @IsString() @Length(2, 100) label!: string;
   @ApiProperty()
@@ -36,13 +38,21 @@ export class TripStopDto extends GeoPointDto {
 }
 export class PublishTripDto {
   @ApiProperty() @IsUUID() vehicleId!: string;
-  @ApiProperty() @IsUUID() destinationId!: string;
-  @ApiProperty({ type: GeoPointDto })
+  @ApiPropertyOptional()
+  @ValidateIf(
+    (dto: PublishTripDto, value) => !dto.itinerary || value !== undefined,
+  )
+  @IsUUID()
+  destinationId?: string;
+  @ApiPropertyOptional({ type: GeoPointDto })
+  @ValidateIf(
+    (dto: PublishTripDto, value) => !dto.itinerary || value !== undefined,
+  )
   @IsDefined()
   @IsObject()
   @ValidateNested()
   @Type(() => GeoPointDto)
-  origin!: GeoPointDto;
+  origin?: GeoPointDto;
   @ApiProperty({ format: 'date-time' })
   @IsDateString({ strict: true })
   departureAt!: string;
@@ -66,12 +76,21 @@ export class PublishTripDto {
   @ArrayUnique()
   @IsUUID(undefined, { each: true })
   ruleIds!: string[];
-  @ApiProperty({ type: [TripStopDto] })
+  @ApiPropertyOptional({ type: [TripStopDto] })
+  @ValidateIf(
+    (dto: PublishTripDto, value) => !dto.itinerary || value !== undefined,
+  )
   @IsArray()
   @ArrayMaxSize(10)
   @ValidateNested({ each: true })
   @Type(() => TripStopDto)
-  stops!: TripStopDto[];
+  stops?: TripStopDto[];
+  @ApiPropertyOptional({ type: ItineraryDto })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsObject()
+  @ValidateNested()
+  @Type(() => ItineraryDto)
+  itinerary?: ItineraryDto;
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
   @IsBoolean()

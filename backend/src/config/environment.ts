@@ -9,6 +9,10 @@ const schema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   SESSION_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(3600),
   CORS_ORIGINS: z.string().min(1),
+  ROUTING_BASE_URL: z
+    .url()
+    .regex(/^https?:\/\//)
+    .optional(),
 });
 export function readEnvironment() {
   const parsed = schema.parse(process.env);
@@ -17,6 +21,13 @@ export function readEnvironment() {
   if (parsed.DEMO_MODE === 'false' && parsed.VERIFICATION_PROVIDER === 'demo') {
     // Sin login demo ni verificación sintética: el provider oficial falla cerrado.
     parsed.VERIFICATION_PROVIDER = 'official';
+  }
+  if (parsed.ROUTING_BASE_URL) {
+    const routing = new URL(parsed.ROUTING_BASE_URL);
+    if (routing.username || routing.password || routing.search || routing.hash)
+      throw new Error(
+        'ROUTING_BASE_URL debe ser una URL HTTP(S) base sin credenciales, query ni fragmento',
+      );
   }
   const origins = parsed.CORS_ORIGINS.split(',').map(
     (origin) => new URL(origin.trim()).origin,

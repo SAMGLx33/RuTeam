@@ -9,11 +9,41 @@ import { Viaje } from '../domain/models/viaje.js';
 import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
 import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
 import type { PublishTripDto } from '../dto/publish-trip.dto.js';
+import { planItinerary, resolveRouteStops } from './plan-itinerary.js';
+import { searchTrips } from './search-trips.js';
+import type { SearchTripsDto } from '../dto/search-trips.dto.js';
+import type { RouteOptionsDto } from '../dto/itinerary.dto.js';
+import { OsrmRoutingProvider } from '../infrastructure/routing/osrm-routing.provider.js';
 @Injectable()
 export class ViajeService {
-  constructor(private readonly repository: ViajeRepository) {}
+  constructor(
+    private readonly repository: ViajeRepository,
+    private readonly routing: OsrmRoutingProvider,
+  ) {}
   listarPropios(driverId: string) {
     return this.repository.listarPropios(driverId);
+  }
+  buscar(actorId: string, data: SearchTripsDto) {
+    return searchTrips(this.repository, actorId, data);
+  }
+  async opcionesDeRuta(driverId: string, input: RouteOptionsDto) {
+    const stops = await this.repository.withDriverLock(
+      driverId,
+      async (unit) => {
+        const actor = await unit.actor();
+        const now = new Date();
+        if (
+          !actor ||
+          !isActiveMembership(actor.membership, now) ||
+          !VehiculoPolicy.esPublicable(actor.driverEligibility, now)
+        )
+          throw new ForbiddenException(
+            'Se requiere afiliación activa y licencia aprobada',
+          );
+        return resolveRouteStops(input, unit);
+      },
+    );
+    return this.routing.options(stops);
   }
   reglas() {
     return this.repository.reglas();
@@ -21,7 +51,10 @@ export class ViajeService {
   publicarViaje(driverId: string, data: PublishTripDto) {
     return this.repository.withDriverLock(driverId, async (unit) => {
       const now = new Date();
-      const end = Viaje.validarPublicacion(data, now);
+      const end = Viaje.validarPublicacion(
+        { ...data, stops: data.stops ?? [] },
+        now,
+      );
       const actor = await unit.actor();
       if (!actor || !isActiveMembership(actor.membership, now))
         throw new ForbiddenException('Afiliación USC no activa');
@@ -57,11 +90,33 @@ export class ViajeService {
         throw new BadRequestException(
           'Casco debe declararse sólo para motocicleta',
         );
-      const destination = await unit.destination(data.destinationId);
-      if (!destination || !destination.active || destination.campus !== 'USC')
+      if (
+        data.itinerary &&
+        (data.origin !== undefined ||
+          data.destinationId !== undefined ||
+          data.stops !== undefined)
+      )
         throw new BadRequestException(
-          'Destino debe ser un punto USC activo del catálogo',
+          'Envía un itinerario o el formato anterior de publicación',
         );
+      const itinerary = data.itinerary
+        ? await planItinerary(data.itinerary, unit)
+        : undefined;
+      if (!itinerary) {
+        const destination =
+          data.destinationId && (await unit.destination(data.destinationId));
+        if (
+          !destination ||
+          !destination.active ||
+          destination.campus !== 'USC' ||
+          destination.kind === 'CAMPUS' ||
+          destination.latitude === null ||
+          destination.longitude === null
+        )
+          throw new BadRequestException(
+            'Destino debe ser un punto USC activo del catálogo',
+          );
+      }
       const rules = await unit.rules(data.ruleIds);
       if (rules.length !== (data.ruleIds.length || 1))
         throw new BadRequestException('Reglas inexistentes o deshabilitadas');
@@ -73,6 +128,7 @@ export class ViajeService {
         data,
         end,
         rules.map((rule) => rule.id),
+        itinerary,
       );
     });
   }

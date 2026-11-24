@@ -52,3 +52,13 @@ un árbol idealizado. Este traslado conserva incluso carpetas futuras con .gitke
 No cambia SQL, schema, contratos o reglas de negocio; reservas son otra tarea no iniciada.
 Scripts usan ../.env y ../node_modules desde backend. Integrador de datos POR_ASIGNAR.
 Ver docs/architecture/REPOSITORY_STRUCTURE.md y review del refactor para excepciones.
+
+## Itinerarios y reservas — 2026-11-24
+
+Los itinerarios admiten USC como origen, destino o punto intermedio. La geometría
+confirmada queda inmutable. Buscar no ocupa cupos ni reescribe la ruta. El formato
+anterior queda limitado al listado propio. Para reservas, lock de conductor antes
+del lock de viaje. Revalidar ambas paradas, documentos, afiliaciones, estado y
+capacidad bajo el lock. Revisar ambos SQL nuevos con el integrador de datos y los
+contratos de routes.ts con frontend. Una prueba PostgreSQL de última plaza forma
+parte del corte; reejecutarla ante cambios a la transacción.

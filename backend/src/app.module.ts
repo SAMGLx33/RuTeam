@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { VehiclesModule } from './modules/vehicles/vehicles.module.js';
 import { TripsModule } from './modules/trips/trips.module.js';
+import { ReservationsModule } from './modules/reservations/reservations.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { ProfilesModule } from './modules/profiles/profiles.module.js';
 import { CampusModule } from './modules/campus/campus.module.js';
@@ -15,6 +16,7 @@ import { ClientOriginGuard } from './common/guards/client-origin.guard.js';
     AuthModule,
     VehiclesModule,
     TripsModule,
+    ReservationsModule,
     ProfilesModule,
     CampusModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
