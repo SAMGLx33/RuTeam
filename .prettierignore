@@ -12,3 +12,6 @@ reference/*.drawio
 reference-private
 
 docs/RuTeam_Referencias_Codex_PRIVADO
+
+# Contenido de terceros fijado por backend/skills-lock.json.
+backend/.agents/skills/

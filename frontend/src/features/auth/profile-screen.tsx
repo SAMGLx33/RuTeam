@@ -83,10 +83,16 @@ export function ProfileScreen({ user }: { user: CurrentUser }) {
         Vehículos y licencia DEMO
       </Link>
       <Link href="/publish" style={styles.label}>
-        Publicar viaje hacia USC
+        Publicar viaje
       </Link>
       <Link href="/my-trips" style={styles.label}>
         Mis viajes publicados
+      </Link>
+      <Link href="/search-trips" style={styles.label}>
+        Buscar viajes
+      </Link>
+      <Link href="/my-reservations" style={styles.label}>
+        Mis reservas
       </Link>
       {user.role === 'ADMIN' && (
         <Link href="/document-reviews" style={styles.label}>
@@ -148,7 +154,7 @@ export function ProfileScreen({ user }: { user: CurrentUser }) {
         </Text>
       )}
       <View style={styles.catalog}>
-        <Text style={styles.label}>Destino de la comunidad</Text>
+        <Text style={styles.label}>Puntos de encuentro USC</Text>
         {destinations.isPending && (
           <Text style={styles.detail}>Consultando catálogo USC…</Text>
         )}
@@ -166,10 +172,6 @@ export function ProfileScreen({ user }: { user: CurrentUser }) {
             {point.demo ? ' · DEMO' : ''}
           </Text>
         ))}
-        <Text style={styles.note}>
-          Reservas, recorrido y compensaciones están planificados para fases
-          posteriores.
-        </Text>
       </View>
     </View>
   );
@@ -212,5 +214,4 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     gap: 12,
   },
-  note: { color: colors.muted, fontSize: 14, lineHeight: 21 },
 });

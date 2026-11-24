@@ -76,3 +76,9 @@ conserva variables y aislamiento API3100/BD_test. Primer falloE2E4/4 documentado
 [handoff](../handoffs/2026-11-14_task-refactor-monorepo-structure_recuperacion-postgresql.md).
 Rama task/refactor-monorepo-structure, HEAD bab4e63; sin stage/commit/PR/push/merge.
 Fase2 aún no integrada en feature. Local validado, no integrado; físico/CI/audit pendientes.
+
+## 2026-11-24 — Redefinición funcional del itinerario y reservas
+
+Rama local `task/driver-defined-routes` desde `690d486` de feature. El conductor publica un trayecto hacia o desde USC, con puntos DEMO institucionales o públicos personalizados y geometría opcional. El pasajero busca sobre pares autorizados y solicita plazas. El conductor decide, gestiona estados y conserva la ruta. Cupos de grupo validados en PostgreSQL real. Jest 81/81, Playwright 4/4, smoke 6/6 y Expo Doctor 18/18. Export web/Android y Playwright en escritorio y viewport móvil. Fuentes originales privadas y Expo Go físico pendientes.
+
+[Informe](../reviews/DRIVER_DEFINED_ROUTES_DELIVERY.md), [diagnóstico y datos](../handoffs/2026-11-24_driver-defined-routes_diagnostico-datos.md), [publicación y matching](../handoffs/2026-11-24_driver-defined-routes_publicacion-matching.md) y [reservas e integración](../handoffs/2026-11-24_driver-defined-routes_reservas-integracion.md). Validación local. Revisión humana, decisiones PO y promoción pendientes.

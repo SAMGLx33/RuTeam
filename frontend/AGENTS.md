@@ -9,8 +9,8 @@ servidor valida todo. Sesión web en cookie HttpOnly; móvil expo-secure-store;
 jamás AsyncStorage para tokens. URL API configurable, localhost no es computador
 en teléfono. No loguear credenciales. UI muestra estados loading/error/empty/success.
 
-Mapas/cámara/GPS futuros: Leaflet web, react-native-maps nativo, expo-camera,
-expo-location foreground. No simular pruebas físicas, pagos o afiliación oficial.
+Ruta compartida: vista Expo de geometría GeoJSON y teselas raster opcionales según
+ADR 0002. Cámara y GPS foreground siguen previstos para su fase. No simular pruebas físicas, pagos o afiliación oficial.
 Verificar typecheck, lint, expo install --check, expo-doctor, export y Playwright;
 Expo Go físico debe etiquetarse NO VERIFICADO hasta probar dispositivo real y versión.
 Actualizar docs y nuevo handoff en cada avance.
@@ -51,3 +51,12 @@ EXPO_PUBLIC_API_URL es público, no credencial. Mantener compatibilidad actual d
 expresas de proceso para override; Playwright impone API3100. Frontend .env.example sólo
 ofrece URL pública. Revisar compatibilidad con expo install --check; no aplicar --fix
 ni actualizaciones automáticas durante un refactor de rutas. Expo Go físico NO VERIFICADO.
+
+## Itinerarios y reservas — 2026-11-24
+
+/publish permite seleccionar extremos y paradas autorizadas, ordenar, importar
+GeoJSON o elegir una alternativa del motor configurado y confirmar el resumen.
+/search-trips consulta matching de Nest y /my-reservations consulta participación
+del actor. /my-trips gestiona solicitudes y transiciones del propietario. Las
+coordenadas publicadas son puntos públicos confirmados. La app muestra cuando
+falta geometría vial. No inferir validación física a partir de export o Playwright.

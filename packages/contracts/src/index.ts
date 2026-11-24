@@ -1,3 +1,6 @@
+import type { ItineraryInput, TripItinerary } from './routes.js';
+export type * from './routes.js';
+
 /** API v1. Tipos públicos; ninguna regla de negocio vive en este paquete. */
 export type InstitutionalGroup =
   'STUDENT' | 'TEACHER' | 'ADMINISTRATIVE' | 'WORKER' | 'OTHER';
@@ -70,7 +73,8 @@ export interface TripSummary {
   driverId: string;
   vehicleId: string;
   vehicle: { plate: string; type: VehicleType };
-  destination: { id: string; name: string; demo: boolean };
+  destination: { id: string | null; name: string; demo: boolean };
+  itinerary: TripItinerary | null;
   origin: TripPoint;
   departureAt: string;
   expectedEndAt: string;
@@ -103,14 +107,24 @@ export interface ReviewDemoDocumentInput {
   decision: 'APPROVED' | 'REJECTED';
   revision: number;
 }
-export interface PublishTripInput {
+export type PublishTripInput = {
   vehicleId: string;
-  destinationId: string;
-  origin: TripPoint;
   departureAt: string;
   estimatedDurationMinutes: number;
   offeredSeats: number;
   ruleIds: string[];
-  stops: (TripPoint & { position: number })[];
   providesHelmet?: boolean;
-}
+} & (
+  | {
+      itinerary: ItineraryInput;
+      destinationId?: never;
+      origin?: never;
+      stops?: never;
+    }
+  | {
+      itinerary?: never;
+      destinationId: string;
+      origin: TripPoint;
+      stops: (TripPoint & { position: number })[];
+    }
+);

@@ -96,3 +96,17 @@ ver [equivalencia](../reviews/ARCH_REFACTOR_REVIEW.md). Las referencias históri
 anteriores describen sus snapshots; instrucciones vigentes usan backend/frontend.
 Las pruebas HTTP de hoy están bloqueadas/fallidas por la BD configurada ausente; no
 revalidan los71/71 históricos ni cambian estados para maquillar cumplimiento.
+
+## Redefinición del 24 de noviembre — corte local
+
+La matriz histórica arriba conserva el cotejo. Los estados siguientes se aplican a la redefinición en la rama de tarea. Revisar aceptación en conjunto con los casos A–E.
+
+| Requisitos                         | Estado local y evidencia                                                                                                                                                                                                                        |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-003, RF-004, RF-013, RF-022     | Publicación bidireccional y validaciones verificadas. DTO `ItineraryDto`, `ViajeService`, `TripStop`, `PublishScreen`, API y Playwright. RF-013/022 continúan mediante los controles de Fase 2.                                                 |
+| RF-005 / RQ-RUTA-01                | Filtro de paradas, cupos, sentido, horario y vista del trayecto verificados. `matchStops`, `searchTrips`, `RoutePreview`. Calibración, geocodificación, ETA por parada y la prueba RNF-031 (p95 <1,5 s con 500 concurrentes) siguen pendientes. |
+| RF-006 / RQ-GRUPO-01               | Solicitud, aceptación y último cupo verificados por HTTP, PostgreSQL y Expo web. RF-006 completo queda parcial por notificaciones push y WebSocket del original. Las reglas de grupo pendientes figuran en OPEN_DECISIONS.                      |
+| RF-012, RF-015                     | Listados y transiciones básicas verificadas. Historial avanzado, notificaciones y seguimiento permanecen parciales.                                                                                                                             |
+| RF-018, RF-024, RF-027, RF-029     | Vista geográfica y catálogo DEMO parciales. RF-024 conserva revisión sintética. Precisión/dispositivo, QR, catálogo y verificación oficiales pendientes.                                                                                        |
+| RNF-039, RNF-040                   | Autorización, campos mínimos, límites y evento de viaje revisados. La privacidad DEMO y la limitación técnica no acreditan todas las métricas originales. RNF-041 queda pendiente junto con la liquidación económica.                           |
+| RNF-045, RNF-046, RNF-048, RNF-050 | Rama individual, contratos, revisión Playwright escritorio y viewport móvil. Expo Go físico y conformidad WCAG pendientes.                                                                                                                      |

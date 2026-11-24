@@ -1,11 +1,12 @@
 # RuTeam
 
-MVP académico local de carpooling hacia la Universidad Santiago de Cali. Monorepo
+MVP académico local de carpooling para la comunidad de la Universidad Santiago de Cali. Monorepo
 TypeScript: NestJS + Prisma7/PostgreSQL + **una app Expo Router SDK54** para web y móvil.
 
 **ENTORNO DE DEMOSTRACIÓN; VINCULACIÓN SIMULADA.** Sólo identidades sintéticas;
-no integración oficial USC, cobros reales ni despliegue. Estado: primer flujo local
-implementado; Fase 2 local publicada, sin integración en feature/dev; Expo Go físico pendiente.
+sin integración oficial USC, cobros reales ni despliegue. El corte del 24 de
+noviembre añade viajes definidos por el conductor hacia y desde la USC, matching
+y reservas en la rama local de tarea. Expo Go físico y promoción a dev pendientes.
 
 ## Arranque
 
@@ -45,9 +46,12 @@ Correos `ana|diego|laura|admin@demo.ruteam.invalid`; sin contraseñas ni datos r
 No hay registro libre ni otorgamiento de ADMIN desde el cliente. El login sólo existe
 con DEMO_MODE=true, VERIFICATION_PROVIDER=demo y entorno no productivo.
 
-Funciona en Fase 1/2: login/rechazo, auth/me, perfil propio, logout, catálogo USC DEMO,
-vehículos/licencia, revisión administrativa versionada y publicación/listado propios.
-Reservas/QR/chat/costos y dashboard administrativo general siguen pendientes.
+Desde el perfil se puede publicar, buscar, solicitar cupos y consultar las reservas.
+El conductor acepta solicitudes y cambia el estado del viaje desde «Mis viajes
+publicados». La [guía de demostración](docs/demo/DEMO_SCRIPT.md) incluye los casos
+de la redefinición y [SETUP](docs/development/SETUP.md) explica el motor vial
+y el mapa base opcionales. QR, chat, costos y panel administrativo general siguen
+pendientes.
 
 ## Verificación
 

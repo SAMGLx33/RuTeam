@@ -181,3 +181,13 @@ no arrancar web y MetroLAN simultáneamente en8081. .env/variables y nombres npm
 La app conserva el seed y el modo de identidad sintética existentes; esta recuperación
 es PostgreSQL real y no crea una aplicación alternativa o una integración USC oficial.
 [Validación funcional actual](../reviews/POSTGRESQL_RECOVERY_VALIDATION.md).
+
+## Opciones viales y mapa base desde el 24 de noviembre
+
+El flujo se demuestra también sin servicios cartográficos. El conductor ingresa un itinerario público con una descripción y puntos ordenados, o importa un GeoJSON `LineString` representativo de la ruta que eligió. La interfaz informa cuando falta la geometría.
+
+Para sugerencias viales, provisionar una instancia [OSRM](https://github.com/Project-OSRM/osrm-backend) accesible al backend y preparar el grafo del área con perfil driving. Añadir `ROUTING_BASE_URL` a las variables locales de Nest con la URL HTTP(S) base de confianza. Reiniciar la API. La aplicación envía sólo coordenadas al pulsar «Consultar rutas viales». El perfil y el extracto deben validarse con rutas de Cali. El modo predeterminado no usa el servidor público de demostración.
+
+Opcionalmente, exponer un proveedor autorizado de teselas raster XYZ en `EXPO_PUBLIC_ROUTE_TILE_URL` con los tres marcadores `{z}/{x}/{y}` y su texto visible `EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION`. Definir ambas variables antes de iniciar/exportar Expo y reiniciar después de cambiar. Deben ser accesibles tanto desde el navegador como desde el teléfono. Las capas se piden sólo al pulsar «Mostrar mapa base». La [ADR de itinerarios](../architecture/ADRs/0002-driver-defined-itineraries.md) especifica los límites. Las variables `EXPO_PUBLIC_*` son públicas.
+
+Las migraciones `20261124203000_driver_itineraries` y `20261124204500_route_reservations` son aditivas. Aplicar el flujo normal `db:generate`, `db:migrate` y `db:seed` en la base autorizada. Para validación usar `db:test:setup` con otra base terminada en `_test`. El historial de viajes permanece consultable por el conductor.

@@ -27,3 +27,9 @@ No se borraron columnas/tablas previas; driverDemoApproved queda legado sin auto
 auth/me deriva capacidad conductor de licencia revisada y publicación revalida vehículo.
 Migraciones nuevas:20261114014345_phase2_vehicle_publication y
 20261114015557_phase2_document_revisions. Reservas y dinero no se añadieron.
+
+## Itinerarios y reservas de la redefinición
+
+El agregado conserva `Trip` y `TripStop`. `CampusDestination` incorpora tipos, instrucciones, metadatos de nivel y coordenadas opcionales por pareja. `Trip.routeGeometry` es JSONB; `routeDescription` distingue itinerarios nuevos. La FK de destino sigue válida cuando existe, y nunca se reubican históricos. Los extremos nuevos también son `TripStop` para que todos los puntos reservables tengan IDs homogéneos.
+
+Cada `Reservation` relaciona la solicitud/confirmación con un viaje, un solicitante, un abordaje y un descenso. Las dos relaciones compuestas enlazan paradas del mismo viaje. `ReservationMember` asocia miembros concretos. El lock por viaje serializa las comprobaciones de duplicidad y ocupación. Se mantienen todas las filas al cambiar estados. Índices y comprobaciones están en las dos migraciones nuevas. Ver [ADR 0002](ADRs/0002-driver-defined-itineraries.md).

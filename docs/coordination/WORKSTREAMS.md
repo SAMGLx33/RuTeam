@@ -58,3 +58,16 @@ validación Fase1/2 verde71Jest/4E2E/6smoke, conservación216archivos/133gitkeep
 adicionales sólo arranque de caché en package.json/playwright.config; negocio/SQL intactos.
 Responsables/revisores POR_ASIGNAR. Handoff de recuperación enlazado en PROGRESS.
 No Fase3 ni promoción: primero integración autorizada de Fase2 y revisión del refactor.
+
+## Corte de tarea del 24 de noviembre
+
+| Frente                  | Evidencia o responsabilidad pendiente                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Viajes/vehículos/campus | Publicación y catálogo DEMO en la tarea local. Revisar migración e integridad con Datos y QA.                                  |
+| Matching/reservas       | Búsqueda y último cupo comprobados en PostgreSQL. Confirmar políticas provisionales de grupo con PO.                           |
+| Recorrido               | Vista GeoJSON, proveedor vial/teselas optativos. Calibrar con proveedor de Cali y validar Expo Go físico.                      |
+| Identidad               | Regresión DEMO. Conservar bloqueo de integración oficial y revisar datos públicos del viaje.                                   |
+| Comunicación/economía   | Mantener el backlog. Sólo conectar futuros consumidores a reservas confirmadas y estados persistidos.                          |
+| Frontend/integración/QA | Repetir flujos completos, revisar datos/contratos con los seis frentes y promover autorizado desde task a feature y luego dev. |
+
+Dueños nominales y revisión del integrador POR_ASIGNAR. CURRENT_STATUS conserva la fuente de estado integrado.

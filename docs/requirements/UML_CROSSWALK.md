@@ -114,3 +114,36 @@ se encuentra bajo backend/src; apps/client/app y src pasan a frontend/app y fron
 No nueva jerarquía MVC global o reimplementación de módulos. Rutas propuestas de Fase 3
 actualizadas sólo en su plan; reservas continúan sin implementar. Ver REPOSITORY_STRUCTURE
 y ARCH_REFACTOR_REVIEW para equivalencia exacta y excepciones configuracionales.
+
+## Especificaciones para actualizar los originales — 2026-11-24
+
+Las pestañas se citan por su código cotejado. Los archivos XML/drawio originales faltan en este checkout. Mantener su notación, IDs y diagramas ajenos al cambio.
+
+| Pestañas                                   | Edición precisa                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 00, 02, 15, 33                             | Reemplazar la obligación de `destinoCampusId`. Mostrar `CampusDestination` con tipo, nivel, acceso y coordenadas opcionales, y `TripStop` con identidad del punto y snapshot por viaje. Mostrar 2..12 posiciones para itinerarios nuevos, sólo paso separado de ambos permisos y GeoJSON/metros opcionales en `Trip`. Mantener `destinationId` opcional para relaciones de catálogo e historial. |
+| 03, 04                                     | Miembro activo selecciona sus puntos, puede solicitar alternativas de OSRM, ve el resumen y confirma. Modelar un bloque opcional de motor disponible. El servicio resuelve catálogo, comprueba documentos, capacidad e intervalo bajo lock del conductor y guarda puntos, geometría y evento en una transacción.                                                                                 |
+| 07, 12, 22                                 | Actor pasajero consulta filtros. Servicio selecciona candidatos programados futuros y pares de paradas en sentido correcto. Calcular Haversine sólo sobre puntos habilitados y retornar el par y el itinerario de lectura. Rama de cero coincidencias y continuación del cursor. Eliminar flujos que añadan desvíos o autoricen abordar sobre la línea.                                          |
+| 05, 16, 31, 35                             | `Reservation` con 1..4 `ReservationMember`, dos paradas del mismo viaje y condición de sentido. Solicitud y confirmación son estados del mismo agregado. Modelar el lock del conductor y después el del viaje. Aceptar reserva todos los cupos o falla sin modificar ocupación. Conservar rechazo y retiro.                                                                                      |
+| 08, 11                                     | Estados de viaje y ocupación derivada se mantienen independientes. Cancelación sólo desde PROGRAMADO, propaga cancelación de reservas activas y restaura disponibilidad registrada. Inicio cierra pendientes. Penalidad y cancelación individual confirmada quedan en la rama de política PO sin implementación.                                                                                 |
+| 09, 17, 28                                 | La especificación de abordaje futuro recibe `reservationId` y `pickupId` autorizados. Separar preparación de QR/GPS y telemetría del itinerario estático. Inicio y finalización son comandos del propietario en este corte.                                                                                                                                                                      |
+| 00, casos de uso de publicación y búsqueda | Actualizar actores y precondiciones. Conductor activo diseña el viaje. Pasajero encuentra y elige paradas del viaje. Identidad USC, reserva bidireccional y administración documental se mantienen.                                                                                                                                                                                              |
+
+```mermaid
+sequenceDiagram
+    actor Conductor
+    actor Pasajero
+    participant API as NestJS
+    participant BD as PostgreSQL
+    Conductor->>API: Publicar puntos y geometría seleccionada
+    API->>BD: Validar y persistir itinerario bajo lock del conductor
+    Pasajero->>API: Buscar por horario, paradas y cupos
+    API->>BD: Consultar candidatos de sólo lectura
+    API-->>Pasajero: Viaje, recorrido publicado y par compatible
+    Pasajero->>API: Solicitud de grupo con par autorizado
+    API->>BD: Validar y registrar solicitud pendiente
+    Conductor->>API: Aceptar solicitud
+    API->>BD: Bloquear conductor y viaje, confirmar grupo y cupos
+    BD-->>API: Confirmación o conflicto de capacidad
+    API-->>Conductor: Estado actualizado
+```

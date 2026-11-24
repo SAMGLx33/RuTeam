@@ -225,3 +225,9 @@ recargado, inactiva403 y ausencia de mensaje de conexión en desktop1280x900/mó
 Original de perfil restaurado tras la comprobación. Sin pageerror o fallos de red; sólo
 identidades sintéticas existentes. Capturas inspeccionadas fueraGit en review-artifacts/
 2026-11-14-postgresql-recovery bajo /home/darik/RuTeam. No prueba de dispositivo nativo.
+
+## Corte de itinerarios y reservas — 2026-11-24
+
+El [informe de entrega](../reviews/DRIVER_DEFINED_ROUTES_DELIVERY.md) registra cada comando y alcance comprobado. Playwright usa Chromium en escritorio y viewport iPhone 13 y dos sesiones separadas para observar la aceptación. Las capturas sintéticas se escriben en `/tmp/ruteam-driver-routes-desktop.png` y `/tmp/ruteam-driver-routes-mobile-web.png`. Su comprobación web no prueba Expo Go físico, cartografía oficial ni verificación del dispositivo.
+
+Capturas del panel de geometría de los recorridos de prueba en `/tmp/ruteam-route-geometry-desktop.png` y `/tmp/ruteam-route-geometry-mobile-web.png`. El mapa base optativo no se configuró en este escenario.

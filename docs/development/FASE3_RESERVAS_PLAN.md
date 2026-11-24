@@ -298,3 +298,7 @@ rama ni implementar este plan durante la auditoría actual.
 Nota de rutas 2026-11-14: los dos paths de workspaces del plan se actualizan a
 backend/frontend. Ninguna decisión de reserva, estado RF/RNF o precondición de integración
 cambia; Fase 3 permanece sin implementación.
+
+## Corte sucesor del 24 de noviembre
+
+Este archivo conserva la propuesta original. La base `feature` ya incluye Fase 2 y los itinerarios de la tarea sucesora sustituyen el criterio de destino exclusivo. La implementación local usa una `Reservation` que pasa de solicitud a confirmación, conserva miembros y dos FKs de paradas y usa el lock de viaje tras el lock de conductor. La ocupación es por viaje completo. La tabla de operaciones idempotentes y las tablas separadas de claims/eventos del plan permanecen como opciones de evolución. Repetir aceptar/rechazar o retirar es idempotente mientras el estado coincide; crear una solicitud duplicada devuelve 409. Reglas que requieren ratificación en [OPEN_DECISIONS](../decisions/OPEN_DECISIONS.md). Contratos entregados en [API](API.md).

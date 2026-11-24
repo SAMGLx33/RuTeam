@@ -650,3 +650,16 @@ Sección: 3.4.1.3. Prioridad literal de matriz: **Media/Deseado**.
 - Justificación: Asegura inclusión de estudiantes con discapacidades visuales.
 - Métrica de validación: Auditoría pasando con > 90% en herramientas como Google Lighthouse.
 - Dependencias tecnológicas: Atributos semánticos/aria-labels en el framework móvil.
+
+## Enmienda funcional del 24 de noviembre de 2026
+
+Los criterios anteriores conservan el cotejo de la ERS. La enmienda aplica sólo a los requisitos siguientes y conserva sus IDs.
+
+| Requisitos                    | Cambio que debe reflejar la ERS                                                                                                                                                                                                                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-003, RF-004                | El conductor define ambos extremos, puntos ordenados, permisos de operación, vías y condiciones. La USC puede asociarse a cualquier punto de encuentro. Mantener validaciones de vehículo, afiliación, capacidad y agenda. Guardar geometría cuando se aporta o elige y distinguir su ausencia. |
+| RF-005                        | Buscar próximos viajes por cercanía a abordaje y descenso autorizados, ventana de salida, sentido y cupos. Preservar el radio de la ERS. Una plaza disponible admite un pasajero. Match no cambia el itinerario.                                                                                |
+| RF-006, RF-012, RF-015        | Solicitud de grupo con par ordenado de paradas, aceptación del dueño y capacidad atómica por viaje. Conservar miembros e historial. Cancelar desde PROGRAMADO o avanzar EN_CURSO → COMPLETADO. RF-007 conserva la contradicción pendiente de decisión.                                          |
+| RF-018, RF-027, RF-029        | Distinguir catálogo DEMO, puntos internos por nivel/acceso, catálogo oficial, ruta consultable y posición del dispositivo. El QR futuro debe vincular al participante con su parada seleccionada y reserva confirmada.                                                                          |
+| RNF-031, RNF-035, RNF-039–041 | Filtrar antes de devolver datos, paginar búsqueda y limitar operaciones y geometrías. Datos de búsqueda mínimos. Conservar eventos y estados; las mediciones y garantías completas de la ERS siguen pendientes de evidencia.                                                                    |
+| RNF-046–048, RNF-050          | Una app Expo Web/Native. Experiencia usable con mapa base opcional, permisos y errores explícitos cuando una integración se habilite. Validación física y conformidad de accesibilidad requieren pruebas propias.                                                                               |

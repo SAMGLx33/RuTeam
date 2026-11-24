@@ -12,6 +12,10 @@ export default {
     ios: { supportsTablet: true },
     android: { package: 'org.ruteam.demo' },
     web: { bundler: 'metro', output: 'single', name: 'RuTeam' },
-    extra: { apiUrl: process.env.EXPO_PUBLIC_API_URL },
+    extra: {
+      apiUrl: process.env.EXPO_PUBLIC_API_URL,
+      routeTileUrl: process.env.EXPO_PUBLIC_ROUTE_TILE_URL,
+      routeTileAttribution: process.env.EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION,
+    },
   },
 };

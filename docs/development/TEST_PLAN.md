@@ -42,3 +42,10 @@ su snapshot, no un gate permanente para impedir futuros cambios de código autor
 Jest usa ../.env/../node_modules desde backend; contratos frontend ../packages.
 Errores por BD55432 inexistente se registran como entorno previo, sin ocultarlos ni marcar
 HTTP aprobado. Pruebas puras se pueden ejecutar por separado; no equivalen a las71 totales.
+
+## Itinerario definido por conductor
+
+- `driver-route-policy.test.mjs` cubre pares autorizados, dirección, distancia, inmutabilidad y formato/alineación GeoJSON.
+- `driver-routes.e2e.test.mjs` usa PostgreSQL aislado, catálogo por nivel, USC↔Floralia, autorización, matching temporal/geométrico, grupo activo, atribución de cupos concurrente, cancelación y transiciones. `phase2.e2e.test.mjs` conserva cobertura de licencia, capacidad, fechas, solapamiento y compatibilidad del POST histórico.
+- `osrm-routing.test.mjs` usa HTTP local con respuesta sintética y verifica error sin motor y descarte de geometrías invertidas. Un motor con datos viales reales y un proveedor de teselas desplegados requieren sus propias pruebas.
+- `publication.spec.ts` abre sesiones de conductor, administración y pasajero. Valida datos del vehículo, publicación, GeoJSON, parada de sólo paso, solicitud y aceptación en escritorio y viewport móvil. La configuración actual usa Playwright por disponibilidad de herramientas. Teléfono físico y prueba del catálogo certificado siguen pendientes.

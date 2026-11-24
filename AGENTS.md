@@ -31,9 +31,11 @@ No declares INTEGRADO un cambio no fusionado y comprobado en dev.
   en packages/contracts y docs/development/API.md; no Prisma en cliente.
 - Afiliación ACTIVA y vigente en cada acceso protegido; demo siempre rotulada.
   Provider USC oficial falla cerrado; no afirmar integración QR institucional.
-- Próximas fases: destino sólo USC, capacidades de pasajeros (auto≤4, moto≤1),
-  reservas grupales atómicas con PostgreSQL real, estados y costos sin lucro.
-  No automatizar género, penalidades o cobros pendientes de aprobación.
+- El conductor fija itinerario y paradas. La USC puede ser origen, destino o punto
+  de encuentro. Los viajes sin vínculo USC quedan pendientes del PO. Matching y
+  reservas respetan paradas autorizadas en orden, capacidad por viaje (auto≤4,
+  moto≤1) y pruebas concurrentes reales. No automatizar género, penalidades o cobros
+  pendientes de aprobación.
 - No tocar módulos ajenos ni schema/lockfile/app.module sin coordinación. No editar
   migraciones aplicadas: crear nuevas. Tests en BD independiente con sufijo _test.
 - Prohibidos reset --hard, clean -fd, branch -D, force push, migrate reset compartido.
@@ -74,3 +76,5 @@ Excepción de base autorizada: task/refactor-monorepo-structure parte de bab4e63
 porque feature todavía no la integra. No promover este refactor a feature antes de integrar
 Fase 2 y revisar que su diff sólo contenga el traslado. No stage/commit/push/PR/merge aquí.
 Las notas anteriores son cortes históricos; consultar PROGRESS/handoff y Git para estado.
+La actualización del 24 de noviembre se documenta en
+docs/architecture/ADRs/0002-driver-defined-itineraries.md.
