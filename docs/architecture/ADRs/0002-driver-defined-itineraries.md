@@ -1,5 +1,10 @@
 # ADR 0002 — Itinerario publicado por el conductor
 
+> Antecedente histórico. Al25/11/2026, las reglas incompatibles quedan sustituidas
+> por [ADR0003](0003-student-participation-redefinition.md) y PRODUCT_DEFINITION.
+> Conservar esta decisión para explicar la base; no recuperar ADMIN, aprobación
+> ordinaria, coordenadas manuales ni viajes externos con USC sólo intermedia.
+
 2026-11-24. Decisión funcional del encargo. Implementación local pendiente de integración.
 
 ## Modelo y autoridades

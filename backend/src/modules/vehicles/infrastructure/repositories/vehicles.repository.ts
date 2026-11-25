@@ -7,9 +7,6 @@ import type {
 @Injectable()
 export class VehiculoRepository {
   constructor(private readonly db: PrismaService) {}
-  actor(id: string) {
-    return this.db.user.findUnique({ where: { id }, select: { role: true } });
-  }
   listarPropios(ownerId: string) {
     return this.db.vehicle.findMany({
       where: { ownerId },
@@ -23,47 +20,36 @@ export class VehiculoRepository {
       include: { document: true },
     });
   }
-  registrar(ownerId: string, data: RegisterVehicleDto) {
-    return this.db.vehicle.create({
-      data: {
-        ownerId,
-        plate: data.plate,
-        type: data.type,
-        passengerCapacity: data.passengerCapacity,
-        brand: data.brand.trim(),
-        modelYear: data.modelYear,
-        color: data.color,
-        document: { create: { expiresAt: new Date(data.soatExpiresAt) } },
-      },
-      include: { document: true },
+  registrar(ownerId: string, data: RegisterVehicleDto, demo: boolean) {
+    return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${ownerId}::uuid FOR UPDATE`;
+      return tx.vehicle.create({
+        data: {
+          ownerId,
+          plate: data.plate,
+          type: data.type,
+          passengerCapacity: data.passengerCapacity,
+          brand: data.brand.trim(),
+          modelYear: data.modelYear,
+          color: data.color,
+          demo,
+          document: {
+            create: {
+              expiresAt: new Date(data.soatExpiresAt),
+              demo,
+              verificationSource: 'SELF_DECLARED',
+              kind: 'SOAT',
+            },
+          },
+        },
+        include: { document: true },
+      });
     });
-  }
-  pendientes() {
-    return Promise.all([
-      this.db.vehicle.findMany({
-        where: { document: { reviewStatus: 'PENDING' } },
-        select: {
-          id: true,
-          plate: true,
-          document: { select: { expiresAt: true, revision: true } },
-        },
-      }),
-      this.db.driverEligibility.findMany({
-        where: { reviewStatus: 'PENDING' },
-        select: {
-          userId: true,
-          category: true,
-          expiresAt: true,
-          revision: true,
-          user: { select: { profile: { select: { displayName: true } } } },
-        },
-      }),
-    ]);
   }
   licencia(userId: string) {
     return this.db.driverEligibility.findUnique({ where: { userId } });
   }
-  registrarLicencia(userId: string, data: RegisterLicenseDto) {
+  registrarLicencia(userId: string, data: RegisterLicenseDto, demo: boolean) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
       return tx.driverEligibility.upsert({
@@ -72,73 +58,52 @@ export class VehiculoRepository {
           userId,
           category: data.category,
           expiresAt: new Date(data.expiresAt),
+          demo,
+          verificationSource: 'SELF_DECLARED',
         },
         update: {
           category: data.category,
           expiresAt: new Date(data.expiresAt),
+          demo,
+          verificationSource: 'SELF_DECLARED',
           reviewStatus: 'PENDING',
           revision: { increment: 1 },
-          reviewedAt: null,
-          reviewedById: null,
         },
       });
     });
   }
-  revisarLicencia(
-    userId: string,
-    reviewer: string,
-    decision: 'APPROVED' | 'REJECTED',
-    revision: number,
-  ) {
-    return this.db.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
-      const current = await tx.driverEligibility.findUnique({
-        where: { userId },
-      });
-      if (!current) return { outcome: 'MISSING' as const };
-      if (current.revision !== revision || current.reviewStatus !== 'PENDING')
-        return { outcome: 'STALE' as const };
-      if (decision === 'APPROVED' && current.expiresAt.getTime() <= Date.now())
-        return { outcome: 'EXPIRED' as const };
-      const license = await tx.driverEligibility.update({
-        where: { userId },
-        data: {
-          reviewStatus: decision,
-          revision: { increment: 1 },
-          reviewedById: reviewer,
-          reviewedAt: new Date(),
-        },
-      });
-      return { outcome: 'OK' as const, license };
-    });
-  }
-  revisarDocumento(
-    vehicleId: string,
+  actualizarSoat(
     ownerId: string,
-    reviewer: string,
-    decision: 'APPROVED' | 'REJECTED',
-    revision: number,
+    vehicleId: string,
+    expiresAt: Date,
+    demo: boolean,
   ) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${ownerId}::uuid FOR UPDATE`;
-      const current = await tx.vehicleDocument.findUnique({
+      const vehicle = await tx.vehicle.findUnique({ where: { id: vehicleId } });
+      if (!vehicle || vehicle.ownerId !== ownerId) return null;
+      await tx.vehicleDocument.upsert({
         where: { vehicleId },
-      });
-      if (!current) return { outcome: 'MISSING' as const };
-      if (current.revision !== revision || current.reviewStatus !== 'PENDING')
-        return { outcome: 'STALE' as const };
-      if (decision === 'APPROVED' && current.expiresAt.getTime() <= Date.now())
-        return { outcome: 'EXPIRED' as const };
-      await tx.vehicleDocument.update({
-        where: { vehicleId },
-        data: {
-          reviewStatus: decision,
+        create: {
+          vehicleId,
+          expiresAt,
+          demo,
+          kind: 'SOAT',
+          verificationSource: 'SELF_DECLARED',
+        },
+        update: {
+          expiresAt,
+          demo,
+          kind: 'SOAT',
+          verificationSource: 'SELF_DECLARED',
+          reviewStatus: 'PENDING',
           revision: { increment: 1 },
-          reviewedById: reviewer,
-          reviewedAt: new Date(),
         },
       });
-      return { outcome: 'OK' as const };
+      return tx.vehicle.findUniqueOrThrow({
+        where: { id: vehicleId },
+        include: { document: true },
+      });
     });
   }
 }

@@ -5,7 +5,10 @@
 - [ ] Contratos compatibles con ramas concurrentes; consumidores actualizados.
 - [ ] Schema/migraciones revisados por integrador de datos, BD aislada migrada.
 - [ ] Lint/typecheck/Jest/HTTP/PostgreSQL y flujo web ejecutados; Expo físico declarado.
-- [ ] Último cupo concurrente probado realmente cuando se agreguen reservas.
+- [ ] Confirmación directa y último cupo probados en PostgreSQL real; carreras con retiro/inicio/cancelación, sin aprobación ordinaria.
+- [ ] Sólo estudiantes, sin ADMIN operativo; modalidades con USC como extremo y campus institucional.
+- [ ] Encuentro interior libre, UI sin coordenadas/UUID/GeoJSON manuales y propuesta HACIA_USC sin consumo de plazas.
+- [ ] Migración histórica sin reclasificar usuarios ni promover reservas pendientes.
 - [ ] Referencias/UML y prioridades cotejadas o bloqueos registrados.
 - [ ] Nuevo handoff + PROGRESS + trazabilidad/ADR incluidos en el mismo commit.
 - [ ] Sin secretos, logs, dependencias, PII, outputs ni .gitkeep sobrantes.

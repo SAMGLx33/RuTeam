@@ -1,5 +1,11 @@
 # Fase 3 — plan técnico de reservas grupales
 
+> Plan histórico, sustituido en sus reglas incompatibles el25/11/2026.
+> Leer [PRODUCT_DEFINITION](../requirements/PRODUCT_DEFINITION.md) y
+> [plan vigente](PRODUCT_REDEFINITION_PLAN.md) antes de implementar.
+> No recuperar aprobación ordinaria, ADMIN ni viajes con USC sólo intermedia.
+> Sus contratos/propuestas no acreditan implementación del corte vigente.
+
 Estado: DISEÑO PARA REVISIÓN. Ninguna tabla, endpoint, pantalla o prueba de reservas
 se implementa en esta intervención. Personas responsables: POR_ASIGNAR.
 

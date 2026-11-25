@@ -14,6 +14,7 @@ export interface DocumentSnapshot {
   reviewStatus: string;
   expiresAt: Date;
   demo: boolean;
+  verificationSource?: string;
 }
 export class VehiculoPolicy {
   static validarCapacidad(type: string, passengers: number): void {
@@ -35,11 +36,25 @@ export class VehiculoPolicy {
     document: DocumentSnapshot | null,
     through: Date,
   ): boolean {
+    const status = this.estadoDocumental(document, through);
     return (
-      !!document &&
-      document.demo &&
-      document.reviewStatus === 'APPROVED' &&
-      document.expiresAt.getTime() > through.getTime()
+      status === 'VERIFIED' ||
+      (status === 'DECLARED' && document?.demo === true)
     );
+  }
+  static estadoDocumental(
+    document: DocumentSnapshot | null,
+    through: Date,
+  ): 'DECLARED' | 'VERIFIED' | 'EXPIRED' | 'UNVERIFIED' {
+    if (!document) return 'UNVERIFIED';
+    if (!(document.expiresAt.getTime() > through.getTime())) return 'EXPIRED';
+    if (
+      document.verificationSource === 'AUTHORIZED_SOURCE' &&
+      document.reviewStatus === 'APPROVED'
+    )
+      return 'VERIFIED';
+    if (document.demo && document.verificationSource === 'SELF_DECLARED')
+      return 'DECLARED';
+    return 'UNVERIFIED';
   }
 }

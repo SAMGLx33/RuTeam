@@ -6,7 +6,10 @@ import type {
   RouteOptionsDto,
 } from '../dto/itinerary.dto.js';
 import type { PublicationUnit } from '../infrastructure/repositories/trips.repository.js';
-import { validateGeometry } from '../domain/models/driver-route.js';
+import {
+  tripDirection,
+  validateGeometry,
+} from '../domain/models/driver-route.js';
 
 type PlannedStop = Omit<RouteStop, 'id'>;
 export interface PlannedItinerary {
@@ -20,7 +23,6 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
   const instructions = input.instructions?.trim() || null;
   if (input.campusPointId) {
     if (
-      input.label !== undefined ||
       input.latitude !== undefined ||
       input.longitude !== undefined ||
       input.campusReference !== undefined
@@ -39,16 +41,21 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
       throw new DomainPolicyError(
         'Elige un punto institucional activo y con coordenadas',
       );
-    const access = [point.description, point.accessReference]
-      .filter(Boolean)
-      .join(' · ');
+    const label = input.label?.trim();
+    if (input.label !== undefined && (!label || label.length < 2))
+      throw new DomainPolicyError(
+        'Describe el punto de encuentro dentro de la USC',
+      );
+    const access = label
+      ? 'Ubicación interna descrita; el mapa usa una referencia del campus'
+      : [point.description, point.accessReference].filter(Boolean).join(' · ');
     const notes = [access, instructions].filter(Boolean).join(' · ');
     if (notes.length > 240)
       throw new DomainPolicyError(
         'Acorta las instrucciones para este punto institucional',
       );
     return {
-      label: point.name,
+      label: label ?? point.name,
       latitude: Number(point.latitude),
       longitude: Number(point.longitude),
       campus: point.campus,
@@ -56,6 +63,10 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
       instructions: notes || null,
     };
   }
+  if (input.campusReference)
+    throw new DomainPolicyError(
+      'Selecciona una referencia institucional del catálogo USC',
+    );
   if (
     !input.label ||
     input.label.trim().length < 2 ||
@@ -70,7 +81,7 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
     label: input.label.trim(),
     latitude: input.latitude,
     longitude: input.longitude,
-    campus: input.campusReference ?? null,
+    campus: null,
     campusPointId: null,
     instructions,
   };
@@ -98,11 +109,19 @@ export async function resolveRouteStops(
     position: stops.length,
     access: 'DROPOFF',
   });
+  const direction = tripDirection(stops);
+  if (!direction || (input.direction && input.direction !== direction))
+    throw new DomainPolicyError(
+      'El viaje debe conectar un extremo USC del catálogo y un extremo externo, en el sentido seleccionado',
+    );
   if (
-    !stops.some((stop) => stop.campus === 'USC' && stop.access !== 'WAYPOINT')
+    direction === 'DESDE_USC' &&
+    stops
+      .slice(1, -1)
+      .some(({ access }) => access === 'PICKUP' || access === 'BOTH')
   )
     throw new DomainPolicyError(
-      'El trayecto debe incluir un punto de encuentro asociado a la USC',
+      'En viajes desde la USC se aborda en el punto de encuentro de origen',
     );
   return stops;
 }

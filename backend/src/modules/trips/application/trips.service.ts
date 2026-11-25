@@ -38,7 +38,7 @@ export class ViajeService {
           !VehiculoPolicy.esPublicable(actor.driverEligibility, now)
         )
           throw new ForbiddenException(
-            'Se requiere afiliación activa y licencia aprobada',
+            'Se requiere afiliación activa y documentación habilitada',
           );
         return resolveRouteStops(input, unit);
       },
@@ -51,10 +51,7 @@ export class ViajeService {
   publicarViaje(driverId: string, data: PublishTripDto) {
     return this.repository.withDriverLock(driverId, async (unit) => {
       const now = new Date();
-      const end = Viaje.validarPublicacion(
-        { ...data, stops: data.stops ?? [] },
-        now,
-      );
+      const end = Viaje.validarPublicacion({ ...data, stops: [] }, now);
       const actor = await unit.actor();
       if (!actor || !isActiveMembership(actor.membership, now))
         throw new ForbiddenException('Afiliación USC no activa');
@@ -68,14 +65,14 @@ export class ViajeService {
         !VehiculoPolicy.esPublicable(actor.driverEligibility, end)
       )
         throw new ForbiddenException(
-          'SOAT o licencia DEMO pendientes, rechazados o sin vigencia para el viaje',
+          'SOAT o licencia sin elegibilidad o vigencia para el viaje',
         );
       if (
         actor.driverEligibility?.category !== 'BOTH' &&
         actor.driverEligibility?.category !== vehicle.type
       )
         throw new ForbiddenException(
-          'Licencia DEMO no habilita este tipo de vehículo',
+          'La licencia no habilita este tipo de vehículo',
         );
       if (data.offeredSeats > vehicle.passengerCapacity)
         throw new BadRequestException(
@@ -90,33 +87,7 @@ export class ViajeService {
         throw new BadRequestException(
           'Casco debe declararse sólo para motocicleta',
         );
-      if (
-        data.itinerary &&
-        (data.origin !== undefined ||
-          data.destinationId !== undefined ||
-          data.stops !== undefined)
-      )
-        throw new BadRequestException(
-          'Envía un itinerario o el formato anterior de publicación',
-        );
-      const itinerary = data.itinerary
-        ? await planItinerary(data.itinerary, unit)
-        : undefined;
-      if (!itinerary) {
-        const destination =
-          data.destinationId && (await unit.destination(data.destinationId));
-        if (
-          !destination ||
-          !destination.active ||
-          destination.campus !== 'USC' ||
-          destination.kind === 'CAMPUS' ||
-          destination.latitude === null ||
-          destination.longitude === null
-        )
-          throw new BadRequestException(
-            'Destino debe ser un punto USC activo del catálogo',
-          );
-      }
+      const itinerary = await planItinerary(data.itinerary, unit);
       const rules = await unit.rules(data.ruleIds);
       if (rules.length !== (data.ruleIds.length || 1))
         throw new BadRequestException('Reglas inexistentes o deshabilitadas');

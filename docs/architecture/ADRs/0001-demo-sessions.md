@@ -1,5 +1,10 @@
 # ADR0001 — Fundación local y sesiones demo
 
+> Antecedente histórico. Al25/11/2026, las reglas incompatibles quedan sustituidas
+> por [ADR0003](0003-student-participation-redefinition.md) y PRODUCT_DEFINITION.
+> Conservar esta decisión para explicar la base; no recuperar ADMIN, aprobación
+> ordinaria, coordenadas manuales ni viajes externos con USC sólo intermedia.
+
 Estado: adoptada para corte académico reversible, 2026-11-13; no validación institucional.
 Prompt exige stack fijo y ejecución. Se descartan frontend paralelo y login basado
 sólo en email porque no acreditan pertenencia activa. Adapter demo consulta membresía
@@ -13,11 +18,11 @@ protegen mutaciones web. HTTP LAN/secure=false es una excepción demo, no seguri
 productiva. Login de cualquier identidad sintética es públicamente accesible en demo:
 no exponer esta instancia ni cargar PII. Modo demo prohibido con NODE_ENV production.
 
-Prisma7.10.1 fijado con prisma.config.ts y generator prisma-client ESM, adapter-pg,
+Prisma 7.10.1 fijado con prisma.config.ts y generator prisma-client ESM, adapter-pg,
 output ignorado. Fuente consultada: https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7
-SDK54/React19.1/RN0.81.5 verificados con expo install --fix y expo-doctor.
+SDK 54/React 19.1/RN 0.81.5 verificados con expo install --fix y expo-doctor.
 https://docs.expo.dev/versions/v54.0.0/ (puede redirigir a versión actual; prevalece
-la matriz instalada SDK54). No actualizar a SDK más nuevo para resolver auditoría
+la matriz instalada SDK 54). No actualizar a SDK más nuevo para resolver auditoría
 sin acreditar Expo Go físico. Consecuencia: test físico sigue pendiente.
 
 Revisión: logout verifica token/sesión pero permite revocación propia tras baja de afiliación;

@@ -1,51 +1,71 @@
-# Pruebas
+# Estrategia de pruebas vigente
 
-`npm run db:test:setup` prepara migraciones+seed sin borrar datos. Usa base distinta
-con sufijo _test. Jest y Playwright requieren esa separación; no ejecutar ambos a la
-vez en la misma base. No se utilizan mocks de Prisma para las pruebas HTTP.
+La [definición del 25/11](../requirements/PRODUCT_DEFINITION.md) es el oráculo de negocio.
+Este documento especifica cobertura requerida; no declara escenarios ejecutados ni
+aprobados. Evidencia y conteos efectivos en EVIDENCE/PROGRESS y review del incremento.
+Las suites históricas y sus resultados se conservan en Git/handoffs y en
+[guías anteriores](../history/2026-11-24-guides.md); adaptar criterios incompatibles
+sin borrar pruebas para conseguir verde.
 
-- `npm test`: compila API y ejecuta Jest ESM/Supertest con PostgreSQL real; política
-  de vigencia, login activo/inactivo, sesión/hash/revocación/expiración, afiliación
-  cambiada, DTOperfil, cookie web/CSRF, modo demo apagado, catálogo y404 futuro.
-- `npm run test:e2e`: Chromium escritorio e iPhone13 viewport (web). Dos contextos,
-  error inactivo, auth/me200, guardado/recarga PostgreSQL, catálogo ylogout.
-  Inicia API3100/Expo8082; no usa servidores existentes. Browser plugin no disponible.
-- `npm run smoke`: seis aserciones HTTP sobre API configurada; no imprime token.
-- `npm run lint`, `npm run typecheck`: verificaciones estáticas, no ejecuciones de negocio.
-- `npm run build:web`; export Android/iOS en EVIDENCE: bundle, no prueba física.
-- `npm exec -w @ruteam/client -- expo install --check` y `npx expo-doctor frontend`;
-  no aplicar fixes o upgrades automáticamente durante el refactor de rutas.
+## Entorno y niveles
 
-Pendientes: Expo Go físico versión/dispositivo, cámara/GPS/SecureStore, Windows,
-concurrencia cupos (módulo aún no implementado), pruebas de carga/RNF/seguridad
-productiva. No añadir tests que sólo comprueben carpetas o reproduzcan implementación.
-CI ejecuta mismos comandos; workflow creado no significa ejecución remota ya probada.
+- PostgreSQL real: TEST_DATABASE_URL distinta de desarrollo, con sufijo _test.
+  db:test:setup aplica migraciones/seed sin reset. Una sola suite escritora por base;
+  ejecutar Jest y Playwright secuencialmente. Fixtures limpian sólo sus propios recursos.
+- Dominio puro: modalidades, elegibilidad, capacidad, pares/orden, documentos y estados.
+- HTTP+PostgreSQL: permisos/DTO, persistencia, conflictos, locks e historial.
+- Adaptadores: HTTP controlado para errores de proveedor, separado de una integración
+  real. Una respuesta sintética no verifica USC/RUNT, geocodificación ni carreteras.
+- Expo web: Chromium escritorio y viewport móvil, dos contextos independientes,
+  persistencia tras recarga, errores visibles y accesibilidad funcional.
+- Nativo: Expo Go físico con versión/modelo/OS/red observados. Export/Doctor/viewport
+  son comprobaciones distintas. No declarar cámara/GPS/SecureStore físicos por compilar.
 
-## Extensión Fase 2
+## Escenarios obligatorios por regla
 
-phase2.e2e.test.mjs usa PostgreSQL real y limpia sólo UUIDs creados por esa suite; no
-reset ni borrado global. Cubre placa409, capacidad/tipo/año/color, permisos, documentos
-pendientes/vencidos, destino ajeno/deshabilitado, fechas, reglas, paradas, DTO origenarray,
-versión de revisión y simultaneidad de publicaciones. Políticas en phase2-policy.
-publication.spec.ts prueba en dos viewports: registro→revisión admin en segundo contexto
-→rechazo fecha pasada→publicaciónUSC con2recogidas→listado persistido tras recarga.
-Fixtures Node de E2E usan Prisma y BD_test; tests/package.json habilita ESM (Prisma usa
-import.meta), sin alterar el frontend ni crear servicios de test accesibles públicamente.
-Ejecutar Jest y Playwright SECUENCIALMENTE sobre esa BD. No prueba de reservas aún.
+| Reglas / RF relacionados           | Casos y aserciones                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RN-IDENTIDAD-01/02; RF-001/002/016 | Estudiante vigente permitido; inactivo, no estudiante y correo ajeno denegados. Correo institucional no verificado y correo controlado sin matrícula no habilitan acceso. Fuente autorizada ausente falla cerrada. Sin login/seed/endpoint/panel ADMIN ni escalada desde perfil. Sesiones independientes, expiradas/revocadas, baja posterior y logout propio. Origin/cabecera/CSRF/CORS y límites. |
+| RN-VEHICULO-01; RF-013/024/022     | Registro propio, placa única/formato/tipo/capacidad, propiedad y vigencia. Documento declarado o aportado no acredita fuente oficial. Renovación, vencimiento y falta de validación externa exigida bloquean operación real. Nadie modifica vehículo ajeno; sin dependencia de revisión ADMIN.                                                                                                      |
+| RN-VIAJE-01..04; RF-003/004/029    | DESDE_USC y HACIA_USC válidos por campus institucional. Externo→externo rechazado incluso con punto USC intermedio; texto «USC» no suplanta FK. Encuentro interior libre sin GPS propio, campus aproximado claramente indicado. Fecha/capacidad/documentos/propiedad/choques de horario. Resumen y snapshot persistido iguales a lo elegido.                                                        |
+| RN-BUSQUEDA-01; RF-005/018         | Sentido, campus, horario, destino/texto, disponibilidad, par autorizado en orden. Punto de paso/proximidad a línea no autoriza recogida. Texto no prueba proximidad exacta. Buscar no crea solicitudes, plazas ni geometría nueva. Cero resultados/error/proveedor caído visibles.                                                                                                                  |
+| RN-PARTICIPACION-01; RF-006        | Confirmación directa sin aprobación, ocupa exactamente una plaza. Viaje propio, duplicado, no elegible, lleno/cancelado/completado/iniciado/cerrado o fecha vencida se rechazan. Puntos ajenos o invertidos se rechazan. Reintento conserva participación y cupos. Propietario consulta confirmados.                                                                                                |
+| RN-CAPACIDAD-01; RF-006/007/015    | Dos estudiantes por última plaza: sólo uno confirma y ocupación≤capacidad. Doble clic/reintento, confirmación frente a retiro/cancelación/inicio y cancelación de viaje. Bloqueo, estados, evento e historial consistentes. Retiro válido libera plaza una sola vez.                                                                                                                                |
+| RN-GRUPO-01; RQ-GRUPO-01           | Cada miembro estudiante identificado y con consentimiento. UUID no funciona como invitación. Si mecanismo grupal está pendiente, respuesta explícita sin cupos ni éxito parcial; conservar historial anterior. Cuando se habilite, invitación expira/uso controlado, no retiene indefinidamente, lote atómico y carrera de grupos por última capacidad.                                             |
+| RN-PARADA-01                       | Sólo HACIA_USC. Propietario decide y ajeno no aprueba. Duplicada, incompatible, cerrada y estados terminales se rechazan. Aceptación mantiene geometría/condiciones y no ocupa plazas ni confirma. Participación posterior sólo con disponibilidad y nueva validación.                                                                                                                              |
+| RN-ABORDAJE-01; RF-027             | Sólo participación confirmada del viaje correcto, actor autorizado y estado permitido; sin segunda plaza. Código/QR interno, si existe: expiración, vinculación y uso único. No confundir con QR institucional.                                                                                                                                                                                     |
+| RN-ESTADO-01; RF-012/015           | Inicio/final/cancelación por propietario con precondiciones; lleno≠iniciado. Historial preservado; cambios esenciales no silenciosos. Cancelación/retiro sin multas inventadas.                                                                                                                                                                                                                     |
+| RF-014/010/008/009/011/028/030     | Regresión de módulos existentes; chat sólo participantes autorizados, calificaciones posteriores reales/sin duplicados/propias, costos decimales sin lucro, compensaciones estimadas distintas de registradas, SOS sin promesa de despacho. Si pendientes, no fabricar endpoints/cobertura.                                                                                                         |
 
-## Traslado backend/frontend
+## Migraciones y seguridad de datos
 
-Se conservan las suites y sus criterios; sólo publication.spec.ts cambia import del
-Prisma generado al nuevo backend. Verificar con node scripts/verify-workspace-move.mjs:
-inventario/hash/permisos/.gitkeep y grafo npm; es comprobación de esta migración contra
-su snapshot, no un gate permanente para impedir futuros cambios de código autorizados.
-Jest usa ../.env/../node_modules desde backend; contratos frontend ../packages.
-Errores por BD55432 inexistente se registran como entorno previo, sin ocultarlos ni marcar
-HTTP aprobado. Pruebas puras se pueden ejecutar por separado; no equivalen a las71 totales.
+Probar desde esquema previo con usuarios de roles/estamentos antiguos, documentos y
+revisores, vehículos, viajes, geometrías, paradas, pendientes/confirmadas y miembros.
+Conservar IDs/FKs, historia y geometrías. No promover pendientes a confirmadas ni
+reclasificar administradores/docentes/trabajadores como estudiantes sin evidencia.
+Verificar idempotencia de fixtures y retirar capacidad operativa ADMIN; preservar sólo
+auditoría histórica necesaria. Revisar diff de esquema y migraciones aplicadas sin editarlas.
 
-## Itinerario definido por conductor
+## Secuencia de comprobación
 
-- `driver-route-policy.test.mjs` cubre pares autorizados, dirección, distancia, inmutabilidad y formato/alineación GeoJSON.
-- `driver-routes.e2e.test.mjs` usa PostgreSQL aislado, catálogo por nivel, USC↔Floralia, autorización, matching temporal/geométrico, grupo activo, atribución de cupos concurrente, cancelación y transiciones. `phase2.e2e.test.mjs` conserva cobertura de licencia, capacidad, fechas, solapamiento y compatibilidad del POST histórico.
-- `osrm-routing.test.mjs` usa HTTP local con respuesta sintética y verifica error sin motor y descarte de geometrías invertidas. Un motor con datos viales reales y un proveedor de teselas desplegados requieren sus propias pruebas.
-- `publication.spec.ts` abre sesiones de conductor, administración y pasajero. Valida datos del vehículo, publicación, GeoJSON, parada de sólo paso, solicitud y aceptación en escritorio y viewport móvil. La configuración actual usa Playwright por disponibilidad de herramientas. Teléfono físico y prueba del catálogo certificado siguen pendientes.
+```bash
+npm run check:env
+npm run db:generate
+npm run db:test:setup
+npm run typecheck
+npm run lint
+npm run format:check
+npm test
+# Esperar final de Jest; no compartir su base en paralelo.
+npm run test:e2e
+npm run build:api
+npm run build:web
+npm exec -w @ruteam/client -- expo install --check
+npx expo-doctor frontend
+```
+
+smoke requiere API y BD autorizadas iniciadas. Exportaciones Android/iOS y dispositivos
+son pasos adicionales aplicables. Guardar comandos, resultados, primer fallo/corrección,
+concurrencia, bases anonimizadas y limitaciones sin secretos. Rendimiento RNF-031,
+consumo/precisión, WCAG y seguridad productiva necesitan mediciones propias; no inferir
+cumplimiento de totales de tests ni de tener un workflow CI.

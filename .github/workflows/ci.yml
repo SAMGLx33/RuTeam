@@ -9,6 +9,9 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      DEMO_MODE: 'true'
+      VERIFICATION_PROVIDER: demo
     services:
       postgres:
         image: postgres:18-alpine

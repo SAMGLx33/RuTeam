@@ -1,3 +1,38 @@
+# Trazabilidad vigente del 25/11/2026
+
+Fuente funcional: [PRODUCT_DEFINITION](PRODUCT_DEFINITION.md). Se mantienen IDs
+RF/RNF/HU/RQ originales; las RN nuevas sólo identifican reglas y no sustituyen requisitos.
+Este bloque registra impacto, implementación a inspeccionar y pruebas requeridas.
+**No acredita ejecución ni cumplimiento del nuevo corte.** El integrador incorpora la
+evidencia actual en API/PROGRESS/EVIDENCE/review; el historial13–24 sigue al final.
+
+| Regla                                 | Requisitos / historias existentes        | Implementación afectada                                                         | Verificación requerida del corte                                                                                                                                 |
+| ------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RN-IDENTIDAD-01/02                    | RF-001/002/016/017, RQ-ACC-01, HU-A/HU-P | auth, membership, profiles, contratos, sesión/login Expo, seed/migración roles  | Sólo estudiante vigente; separación correo/estamento/matrícula; sin acceso ADMIN; expiración/revocación/baja, logout, escalada, aislamiento y fallo cerrado real |
+| RN-VEHICULO-01                        | RF-013/024/022, HU-V                     | vehicles, elegibilidad, publicación y UI documental; datos/revisores históricos | Autogestión sin ADMIN, propiedad/capacidad/formatos/vigencia y no confundir declaración con verificación oficial                                                 |
+| RN-VIAJE-01..04                       | RF-003/004/029, RQ-RUTA-01, HU-V         | trips/campus, modalidad/campus/encuentro, DTO/Prisma/contracts, PublishScreen   | Ambas modalidades válidas; externo→externo denegado aunque USC intermedia; texto interior sin GPS, resumen/persistencia y permisos                               |
+| RN-BUSQUEDA-01                        | RF-005/018, RQ-RUTA-01                   | matching en trips, filtros, RoutePreview/mapas/servicios Expo                   | Sentido/texto/horario/proximidad/paradas/capacidad; no solicitud ni cambio de ruta; no UI técnica; proveedor fallido visible                                     |
+| RN-PARTICIPACION-01 / RN-CAPACIDAD-01 | RF-006/007/012/015                       | reservations, locks/ocupación/idempotencia, mis viajes/participaciones          | Confirmación sin aprobación; último cupo real y carreras; no propio/duplicado/ajeno; retiro una vez, estados e historia preservados                              |
+| RN-GRUPO-01                           | RQ-GRUPO-01, RF-006                      | miembros históricos, contrato y futuro consentimiento/invitación                | Cada estudiante consiente; sin UUID invitación ni lote parcial. Si pendiente, individual seguro y limitación explícita                                           |
+| RN-PARADA-01                          | RQ-RUTA-01, RN nueva sin RF/HU inventado | propuestas de trips, DTO/contratos/UI y persistencia                            | Sólo HACIA_USC, propietario decide compatibilidad y estado; no geometría/cupos/confirmación automática                                                           |
+| RN-ABORDAJE-01 / RN-ESTADO-01         | RF-027/012/015                           | transiciones/participación/abordaje/eventos                                     | Confirmada antes de abordar, sin segunda plaza; inicio/final/cancelación autorizados y estados distintos                                                         |
+| Módulos compatibles                   | RF-008/009/010/011/014/028/030           | costs/compensations/chat/ratings/safety según existencia efectiva               | Participantes autorizados, historial, precisión económica y privacidad; pendientes no se presentan implementados                                                 |
+| Seguridad/plataformas/UX              | RNF-031..050 según catálogo              | API/Expo/config, métricas, operación y documentación                            | Medición por requisito; físicas y fuentes externas separadas de fixtures/viewport/build                                                                          |
+
+Estados válidos: implementada y verificada, parcial, pendiente, bloqueada externamente
+o aceptación PO pendiente. Decisión de producto resuelta no equivale a estado implementado.
+Ningún total histórico revalida la semántica nueva. Confirmación directa reemplaza el
+caso RF-006 histórico y la carrera ahora se produce al confirmar, no al aceptar.
+[TEST_PLAN](../development/TEST_PLAN.md) define escenarios;
+[ACCEPTANCE](ACCEPTANCE.md) criterios del producto y
+[ediciones académicas](ACADEMIC_REDEFINITION_CHANGES.md) cambios revisables.
+
+## Cotejos y evidencias históricas 13–24/11
+
+Los textos siguientes describen cortes anteriores. Sus estados, fuentes ausentes,
+solicitud/aceptación, ADMIN y rutas viejas no son instrucciones de implementación vigente.
+No se borran ni se reinterpretan como pruebas del 25/11.
+
 # Trazabilidad RF/RNF — cotejo de fuentes
 
 Cotejado el2026-11-13 (America/Bogota).50/50 identificadores, títulos y criterios
@@ -58,8 +93,8 @@ Reemplaza RF-P01..30 y RNF-P01..20; historial provisional conservado en commit e
 | [RNF-043 — Tiempo Objetivo de Recuperación (RTO)](ERS_CATALOG.md#rnf-043)            | Media/Deseado               | pendiente    | Sin implementación en este corte; fases posteriores.                                                                                                                                       |
 | [RNF-044 — Disponibilidad y Uptime](ERS_CATALOG.md#rnf-044)                          | Alta/Esencial               | pendiente    | Sin implementación en este corte; fases posteriores.                                                                                                                                       |
 | [RNF-045 — Mantenibilidad mediante GitFlow](ERS_CATALOG.md#rnf-045)                  | Alta/Esencial               | parcial      | Monorepo modular y ramas literales/ task; cambios locales no revisados ni integrados en dev.                                                                                               |
-| [RNF-046 — Interoperabilidad Multiplataforma](ERS_CATALOG.md#rnf-046)                | Alta/Esencial               | parcial      | Expo SDK54 export web/Android/iOS; .apk/.aab/.ipa y teléfono físico no verificados.                                                                                                        |
-| [RNF-047 — Compatibilidad con Sistemas Operativos Heredados](ERS_CATALOG.md#rnf-047) | Media/Deseado               | excepción    | iOS14 incompatible con SDK54/iOS15.1+; Android10 y dispositivos físicos no probados.                                                                                                       |
+| [RNF-046 — Interoperabilidad Multiplataforma](ERS_CATALOG.md#rnf-046)                | Alta/Esencial               | parcial      | Expo SDK 54 export web/Android/iOS; .apk/.aab/.ipa y teléfono físico no verificados.                                                                                                       |
+| [RNF-047 — Compatibilidad con Sistemas Operativos Heredados](ERS_CATALOG.md#rnf-047) | Media/Deseado               | excepción    | iOS14 incompatible con SDK 54/iOS15.1+; Android10 y dispositivos físicos no probados.                                                                                                      |
 | [RNF-048 — Diseño Usable y Mobile-First](ERS_CATALOG.md#rnf-048)                     | Alta/Esencial               | parcial      | Componentes compartidos web/móvil, UX real; evaluación de 100%core a una mano no realizada.                                                                                                |
 | [RNF-049 — Cumplimiento Normativo (Términos legales)](ERS_CATALOG.md#rnf-049)        | Alta/Esencial               | bloqueado    | Texto legal/consentimiento versionado no implementado; requiere aprobación PO/asesoría.                                                                                                    |
 | [RNF-050 — Accesibilidad (Estándar WCAG 2.1)](ERS_CATALOG.md#rnf-050)                | Media/Deseado               | parcial      | Labels, semántica y contraste del diseño; sin Lighthouse>90 ni auditoría WCAG completa.                                                                                                    |
@@ -110,3 +145,24 @@ La matriz histórica arriba conserva el cotejo. Los estados siguientes se aplica
 | RF-018, RF-024, RF-027, RF-029     | Vista geográfica y catálogo DEMO parciales. RF-024 conserva revisión sintética. Precisión/dispositivo, QR, catálogo y verificación oficiales pendientes.                                                                                        |
 | RNF-039, RNF-040                   | Autorización, campos mínimos, límites y evento de viaje revisados. La privacidad DEMO y la limitación técnica no acreditan todas las métricas originales. RNF-041 queda pendiente junto con la liquidación económica.                           |
 | RNF-045, RNF-046, RNF-048, RNF-050 | Rama individual, contratos, revisión Playwright escritorio y viewport móvil. Expo Go físico y conformidad WCAG pendientes.                                                                                                                      |
+
+## Evidencia local del 25 de noviembre
+
+La tabla de este corte se interpreta conforme a PRODUCT_DEFINITION. Los ID de
+requisitos e historias se mantienen. Los resultados describen evidencia
+sintética con API y PostgreSQL real.
+
+| RF y reglas vigentes                                                    | Evidencia o dependencia                                                                                                                                                                          |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RF-001/002, RN-IDENTIDAD-01/02                                          | auth.e2e, membership, Playwright, control de sesión y cuenta. Acceso y vigencia reales bloqueados por fuente institucional.                                                                      |
+| RF-003/004/029, RN-VIAJE-01/02/03/04                                    | driver-routes.e2e, pickup-proposals.e2e y Playwright. Los dos sentidos, extremo USC, origen con encuentro libre y publicación en mapa pasaron. Catálogo oficial completo pendiente.              |
+| RF-005/018, RN-BUSQUEDA-01                                              | Búsqueda textual, catálogo, sentido, horario y filtro por geometría en driver-routes.e2e. Render web por Playwright con teselas controladas. Geocodificación, calibración y teléfono pendientes. |
+| RF-006/007/012/015, RN-PARTICIPACION-01, RN-CAPACIDAD-01 y RN-ESTADO-01 | Confirmación individual, retiro y estados comprobados. 201/409 por último cupo y reintento sin consumo adicional. RN-GRUPO-01 y notificaciones pendientes.                                       |
+| RN-PARADA-01                                                            | pickup-proposals.e2e. Autorización, orden, aceptación, rechazo y cierre comprobados. Aceptación no consume plaza.                                                                                |
+| RF-013/022/024 y RN-VEHICULO-01                                         | phase2.e2e, student-document-policy y Playwright. Sólo autogestión y declaración en entorno sintético. Verificación mediante fuente legítima bloqueada.                                          |
+| RF-017                                                                  | Retirada explícita del alcance vigente. Auth/vehículos comprueban ausencia de administración.                                                                                                    |
+| RF-027 y RN-ABORDAJE-01                                                 | Registro de presencia por conductor, driver-routes.e2e. QR interno pendiente.                                                                                                                    |
+| RF-008/009/010/011/014/028/030                                          | Compensación, calificación, SOS, chat y canales de soporte siguen pendientes.                                                                                                                    |
+| RNF-039/040/045/046/048/050                                             | Sesión/privacidad y arquitectura revisadas. Verificación web y comprobaciones de build documentadas. Accesibilidad completa, rendimiento y dispositivo físico pendientes.                        |
+
+[Informe del corte](../reviews/PRODUCT_REDEFINITION_DELIVERY.md).

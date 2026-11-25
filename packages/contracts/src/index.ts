@@ -7,19 +7,18 @@ export type InstitutionalGroup =
 export interface CurrentUser {
   id: string;
   email: string;
-  role: 'MEMBER' | 'ADMIN';
   capabilities: { passenger: true; driver: boolean };
   profile: { displayName: string };
   membership: {
     status: 'ACTIVE';
     group: InstitutionalGroup;
-    verifiedBy: 'DEMO';
+    verifiedBy: string;
     validUntil: string;
   };
-  demo: true;
+  demo: boolean;
 }
 export interface DemoLoginInput {
-  identity: 'ana' | 'diego' | 'laura' | 'admin';
+  identity: 'ana' | 'diego' | 'laura' | 'sara';
 }
 export interface DemoLoginResponse {
   user: CurrentUser;
@@ -35,13 +34,17 @@ export interface CampusDestination {
 }
 
 export type VehicleType = 'CAR' | 'MOTORCYCLE';
-export type DocumentReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type DocumentVerificationStatus =
+  'DECLARED' | 'VERIFIED' | 'EXPIRED' | 'UNVERIFIED';
+export type DocumentVerificationSource =
+  'SELF_DECLARED' | 'AUTHORIZED_SOURCE' | 'LEGACY_REVIEW';
 export interface DemoLicense {
   revision: number;
   userId: string;
   category: 'CAR' | 'MOTORCYCLE' | 'BOTH';
   expiresAt: string;
-  reviewStatus: DocumentReviewStatus;
+  verificationStatus: DocumentVerificationStatus;
+  verificationSource: DocumentVerificationSource;
   demo: boolean;
 }
 export interface VehicleSummary {
@@ -55,7 +58,8 @@ export interface VehicleSummary {
   color: string;
   demo: boolean;
   soatExpiresAt: string | null;
-  reviewStatus: DocumentReviewStatus;
+  verificationStatus: DocumentVerificationStatus;
+  verificationSource: DocumentVerificationSource;
   eligibleNow: boolean;
 }
 export interface TripRule {
@@ -103,28 +107,12 @@ export interface RegisterDemoLicenseInput {
   category: 'CAR' | 'MOTORCYCLE' | 'BOTH';
   expiresAt: string;
 }
-export interface ReviewDemoDocumentInput {
-  decision: 'APPROVED' | 'REJECTED';
-  revision: number;
-}
-export type PublishTripInput = {
+export interface PublishTripInput {
   vehicleId: string;
   departureAt: string;
   estimatedDurationMinutes: number;
   offeredSeats: number;
   ruleIds: string[];
   providesHelmet?: boolean;
-} & (
-  | {
-      itinerary: ItineraryInput;
-      destinationId?: never;
-      origin?: never;
-      stops?: never;
-    }
-  | {
-      itinerary?: never;
-      destinationId: string;
-      origin: TripPoint;
-      stops: (TripPoint & { position: number })[];
-    }
-);
+  itinerary: ItineraryInput;
+}

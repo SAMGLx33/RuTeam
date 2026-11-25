@@ -4,9 +4,18 @@ import { ViajeController } from './controllers/trips.controller.js';
 import { ViajeService } from './application/trips.service.js';
 import { ViajeRepository } from './infrastructure/repositories/trips.repository.js';
 import { OsrmRoutingProvider } from './infrastructure/routing/osrm-routing.provider.js';
+import { PickupProposalsController } from './controllers/pickup-proposals.controller.js';
+import { PickupProposalsService } from './application/pickup-proposals.service.js';
+import { PickupProposalsRepository } from './infrastructure/repositories/pickup-proposals.repository.js';
 @Module({
   imports: [AuthModule],
-  controllers: [ViajeController],
-  providers: [ViajeService, ViajeRepository, OsrmRoutingProvider],
+  controllers: [ViajeController, PickupProposalsController],
+  providers: [
+    ViajeService,
+    ViajeRepository,
+    OsrmRoutingProvider,
+    PickupProposalsService,
+    PickupProposalsRepository,
+  ],
 })
 export class TripsModule {}

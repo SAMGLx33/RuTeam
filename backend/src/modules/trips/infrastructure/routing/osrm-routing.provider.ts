@@ -37,7 +37,7 @@ export class OsrmRoutingProvider {
   async options(points: readonly TripPoint[]): Promise<RouteOption[]> {
     if (!this.env.ROUTING_BASE_URL)
       throw new ServiceUnavailableException(
-        'Motor vial sin configurar. Puedes importar la geometría o publicar puntos ordenados.',
+        'Motor vial sin configurar. Puedes publicar el itinerario descrito y los puntos ordenados.',
       );
     const coordinates = points
       .map(
@@ -62,7 +62,7 @@ export class OsrmRoutingProvider {
       payload = await response.json();
     } catch {
       throw new BadGatewayException(
-        'El motor vial no respondió. Conserva tu recorrido actual o importa una geometría.',
+        'El motor vial no respondió. Conserva tu recorrido actual o publica el itinerario descrito.',
       );
     }
     const result = responseSchema.safeParse(payload);

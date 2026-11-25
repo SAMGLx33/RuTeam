@@ -1,6 +1,7 @@
 import { expect, test } from '@jest/globals';
 import {
   matchStops,
+  tripDirection,
   validateGeometry,
 } from '../dist/src/modules/trips/domain/models/driver-route.js';
 
@@ -77,4 +78,13 @@ test('una pasada posterior más cercana no descarta paradas válidas de la prime
   };
   const ordered = [...stops.slice(0, -1), { ...end, latitude: 3.38 }];
   expect(() => validateGeometry(repeated, ordered)).not.toThrow();
+});
+
+test('la USC debe ser un extremo asociado al catálogo y el otro debe ser externo', () => {
+  const institutional = { ...origin, campusPointId: 'catalog' };
+  expect(tripDirection([institutional, pickup, end])).toBe('DESDE_USC');
+  expect(tripDirection([pickup, end, institutional])).toBe('HACIA_USC');
+  expect(tripDirection([pickup, institutional, end])).toBeNull();
+  expect(tripDirection([institutional, institutional])).toBeNull();
+  expect(tripDirection([origin, end])).toBeNull();
 });

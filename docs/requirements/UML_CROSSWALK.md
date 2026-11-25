@@ -1,3 +1,65 @@
+# UML y redefinición vigente del 25/11/2026
+
+Consultar PRODUCT_DEFINITION antes de implementar. Este crosswalk conserva el índice
+original00–35 y el cotejo histórico; las modificaciones actuales se especifican abajo.
+No inventa números de diagramas, nuevos RF/HU oficiales ni aprobaciones académicas.
+
+Originales privados recuperados localmente25/11: ERS .doc, UML .drawio de 36 pestañas
+XML no comprimidas y rúbrica .pdf; hashes coinciden con el cotejo conservado. El acceso
+actual corrige el bloqueo de fuentes ausentes registrado24/11. No significa que sus
+originales ya estén editados, sincronizados ni aceptados. Product/Sprint Backlog y actas
+originales no localizados. No versionar originales ni conversiones con PII.
+
+| Pestañas verificadas del original | Modificación vigente requerida                                                                                                                                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 00,01,13,14,27,32                 | Sólo estudiante vigente, identidad/capacidades compatibles, sin actor/permiso ADMIN. Separar control de correo/autenticación/estamento/matrícula/conducción; fuente autorizada falla cerrada                                                      |
+| 02,04,15,33                       | DESDE_USC/HACIA_USC, campus como extremo institucional. Encuentro textual libre y coordenada interior opcional; referencias aproximadas explícitas. Conductor elige/persiste ruta y condiciones; eliminar externo→externo con USC sólo intermedia |
+| 03,23,24,25,26                    | MVC modular Nest/Prisma/PostgreSQL + única app Expo, providers/contratos; retirar panel/servicio ADMIN, sin confundir operación de infraestructura con actor funcional                                                                            |
+| 05,16,31,35                       | Reemplazar Solicitar→aceptar por confirmación directa. Validar y bloquear conductor→viaje, confirmar/ocupar atómicamente, reintento sin duplicar. Grupo sólo con consentimiento temporal explícito; pendientes históricos no se promueven         |
+| 07,12,22                          | Matching descubre viajes existentes por sentido/fecha/paradas/capacidad y calidad geométrica/textual. Sin solicitudes de transporte ni generación de rutas por pasajeros. Paso≠parada autorizada                                                  |
+| 08,11,17,28                       | Separar viaje/ocupación/participación/presencia; retiro futuro permitido libera cupo y conserva historia, cancelación/inicio/final con actores/precondiciones. Condiciones esenciales no cambian silenciosamente; sin multas automáticas          |
+| 09                                | Abordaje exige participación confirmada, sin consumir otra plaza. QR interno específico con expiración/uso único, distinto del carné USC                                                                                                          |
+| 21                                | Autogestión vehículo/documentación y elegibilidad sin revisor ADMIN; separar declaración/formato/vigencia/fuente legítima. Preservar auditoría anterior sin permisos operativos                                                                   |
+| 06,10,18,19,20,29,30,34           | Conservar economía sin lucro, SOS, chat, calificaciones e incidentes compatibles. Acceso por interacción/participación real; retirar derivaciones a ADMIN y explicitar soporte externo pendiente                                                  |
+
+Propuesta HACIA_USC: insertar concepto y secuencia de propuesta→decisión propietario
+separados de confirmación, en las vistas de viaje/paradas/participación pertinentes.
+No atribuirle número de pestaña inexistente; el autor decide crear o adaptar una vista
+con identidad estable al editar el original. Aceptar no cambia geometría, no ocupa plaza
+y no confirma. El pasajero confirma después con disponibilidad.
+
+```mermaid
+sequenceDiagram
+    actor Conductor
+    actor Estudiante
+    participant API as NestJS
+    participant BD as PostgreSQL
+    Conductor->>API: Publicar modalidad, campus, encuentro y ruta elegida
+    API->>BD: Validar y persistir condiciones bajo transacción
+    Estudiante->>API: Buscar viajes existentes
+    API-->>Estudiante: Recorrido y paradas autorizadas
+    opt Propuesta compatible sólo HACIA_USC
+        Estudiante->>API: Proponer recogida
+        Conductor->>API: Aceptar o rechazar propuesta
+        API->>BD: Guardar decisión sin ocupar plaza ni alterar geometría
+    end
+    Estudiante->>API: Confirmar participación
+    API->>BD: Bloquear conductor y viaje, revalidar y ocupar atómicamente
+    BD-->>API: Confirmación o conflicto
+    API-->>Estudiante: Estado y disponibilidad persistidos
+```
+
+La [especificación académica](ACADEMIC_REDEFINITION_CHANGES.md) define aceptación de
+las ediciones; TRACEABILITY/TEST_PLAN enlazan implementación y pruebas requeridas.
+Este diagrama representa comportamiento acordado, no prueba de código completo.
+
+## Índice, cotejo y propuestas históricas 13–24/11
+
+El bloque siguiente conserva las36 pestañas y firmas observadas en aquellos cortes.
+Sus correspondencias de código/estados y propuestas24/11 quedaron sustituidas cuando
+contradicen la definición25/11; no usar ADMIN, aceptación ordinaria, coordenadas manuales
+o USC sólo intermedia como precondiciones vigentes.
+
 # UML ↔ código y divergencias verificadas
 
 Cotejo2026-11-13 America/Bogota. Fuente privada UML_RuTeam_Final.drawio, XML completo:
@@ -85,12 +147,12 @@ ERS: ver ERS_CATALOG. Originales ignorados; compartir por canal privado autoriza
 - RF-024 exige archivo y revisión; demo usa metadatos sintéticos sin recopilar archivos reales.
 - RF-029 admite destino externo excepcional; el producto fija destino exclusivamenteUSC.
 - RNF-038 AES para contraseñas se corrige aArgon2id cuando existan; no AES reversible.
-- RNF-047 iOS14 se documenta excepción por SDK54/iOS15.1+. No teléfono físico probado.
+- RNF-047 iOS14 se documenta excepción por SDK 54/iOS15.1+. No teléfono físico probado.
 - RQ-ACC-01/RQ-GRUPO-01/RQ-RUTA-01 son extensiones UML, no RF nuevos de la ERS.
 
 ## Rúbrica verificada (4 páginas)
 
-Entrega28/11/2026; equipo6; ERS30RF+20RNF+matriz y HU con100%criterios Given/When/Then;
+Entrega 28/11/2026; equipo6; ERS30RF+20RNF+matriz y HU con100%criterios Given/When/Then;
 UML2.5 consistente (8–10clases,≥4secuencias y estados/actividades), MVP+pruebas de
 costos/validación, GitFlow y evidencia real de2sprints. Rúbrica distingue≤50% y>50%
 funcionalidades, sin definir ponderación por RF: NO inferir cumplimiento por sincronizar50filas.

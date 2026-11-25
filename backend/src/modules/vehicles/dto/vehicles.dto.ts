@@ -45,9 +45,8 @@ export class RegisterLicenseDto {
   @IsDateString({ strict: true })
   expiresAt!: string;
 }
-export class ReviewDocumentDto {
-  @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) revision!: number;
-  @ApiProperty({ enum: ['APPROVED', 'REJECTED'] })
-  @IsIn(['APPROVED', 'REJECTED'])
-  decision!: 'APPROVED' | 'REJECTED';
+export class UpdateSoatDto {
+  @ApiProperty({ format: 'date-time' })
+  @IsDateString({ strict: true })
+  soatExpiresAt!: string;
 }

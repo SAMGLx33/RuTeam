@@ -76,11 +76,12 @@ export function ProfileScreen({ user }: { user: CurrentUser }) {
       </Text>
       <Text style={styles.detail}>{user.email}</Text>
       <Text style={styles.detail}>
-        Rol: {user.role === 'ADMIN' ? 'Administración' : 'Miembro'}
-        {user.capabilities.driver ? ' · Conductor demo' : ' · Pasajero'}
+        {user.capabilities.driver
+          ? 'Pasajero y conductor habilitado'
+          : 'Pasajero · Configura tus documentos para conducir'}
       </Text>
       <Link href="/vehicles" style={styles.label}>
-        Vehículos y licencia DEMO
+        Vehículos y licencia
       </Link>
       <Link href="/publish" style={styles.label}>
         Publicar viaje
@@ -94,11 +95,6 @@ export function ProfileScreen({ user }: { user: CurrentUser }) {
       <Link href="/my-reservations" style={styles.label}>
         Mis reservas
       </Link>
-      {user.role === 'ADMIN' && (
-        <Link href="/document-reviews" style={styles.label}>
-          Revisar documentos DEMO
-        </Link>
-      )}
       <Text style={styles.label}>Nombre para mostrar</Text>
       <Controller
         name="displayName"

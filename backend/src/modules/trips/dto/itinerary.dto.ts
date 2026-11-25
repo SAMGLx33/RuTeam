@@ -17,7 +17,11 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
-import type { RouteGeometry, StopAccess } from '@ruteam/contracts';
+import type {
+  RouteGeometry,
+  StopAccess,
+  TripDirection,
+} from '@ruteam/contracts';
 
 export class MeetingPointDto {
   @ApiPropertyOptional({ format: 'uuid' })
@@ -85,6 +89,11 @@ export class RouteGeometryDto implements RouteGeometry {
 }
 
 export class ItineraryDto {
+  @ApiPropertyOptional({ enum: ['DESDE_USC', 'HACIA_USC'] })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsIn(['DESDE_USC', 'HACIA_USC'])
+  direction?: TripDirection;
+
   @ApiProperty({ type: MeetingPointDto })
   @IsDefined()
   @IsObject()
@@ -124,6 +133,7 @@ export class ItineraryDto {
 }
 
 export class RouteOptionsDto extends PickType(ItineraryDto, [
+  'direction',
   'origin',
   'destination',
   'stops',

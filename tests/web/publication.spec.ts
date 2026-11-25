@@ -1,8 +1,23 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { PrismaClient } from '../../backend/src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { randomInt } from 'node:crypto';
-test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
+async function selectMapPoint(page: Page, label: string, x: number, y: number) {
+  const open = page.getByRole('button', { name: `Elegir en mapa · ${label}` });
+  if (await open.isVisible()) await open.click();
+  const map = page.getByRole('button', {
+    name: `Mapa para seleccionar · ${label}`,
+  });
+  const bounds = await map.boundingBox();
+  if (!bounds) throw new Error('El mapa no es visible');
+  await map.click({ position: { x: bounds.width * x, y: bounds.height * y } });
+  await expect(
+    page.getByText(`Ubicación seleccionada · ${label}`),
+  ).toBeVisible();
+  await page.getByRole('button', { name: `Cerrar mapa · ${label}` }).click();
+}
+
+test('viaje desde USC y participación directa en dos sesiones', async ({
   page,
   browser,
 }, testInfo) => {
@@ -15,11 +30,23 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   try {
+    await page.route('https://tiles.ruteam.invalid/**', (route) =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#dcebea"/></svg>',
+      }),
+    );
     await page.goto('/');
+    await page
+      .getByRole('button', { name: 'Abrir acceso de desarrollo' })
+      .click();
     await page.getByRole('radio', { name: /Diego/ }).click();
-    await page.getByRole('button', { name: 'Entrar a la demo' }).click();
-    await page.getByRole('link', { name: 'Vehículos y licencia DEMO' }).click();
-    await page.getByLabel('Placa sintética').fill(plate);
+    await page.getByRole('button', { name: 'Entrar en desarrollo' }).click();
+    await page.getByRole('link', { name: 'Vehículos y licencia' }).click();
+    await page.getByLabel('Placa', { exact: true }).fill(plate);
+    await page.getByLabel('Marca', { exact: true }).fill('Marca sintética');
+    await page.getByLabel('Año del modelo').fill('2020');
+    await page.getByLabel('Vencimiento SOAT (AAAA-MM-DD)').fill('2030-12-31');
     const created = page.waitForResponse(
       (response) =>
         response.url().endsWith('/api/v1/vehicles') &&
@@ -32,26 +59,13 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
     expect(result.status()).toBe(201);
     vehicleId = (await result.json()).id;
     await expect(
-      page.getByText('Vehículo DEMO registrado; revisión pendiente.'),
+      page.getByText(
+        'Vehículo registrado con información declarada; no es verificación oficial.',
+      ),
     ).toBeVisible();
-    const context = await browser.newContext();
-    try {
-      const admin = await context.newPage();
-      await admin.goto('http://localhost:8082');
-      await admin.getByRole('radio', { name: /Administración/ }).click();
-      await admin.getByRole('button', { name: 'Entrar a la demo' }).click();
-      await admin
-        .getByRole('link', { name: 'Revisar documentos DEMO' })
-        .click();
-      const approve = admin.getByRole('button', {
-        name: `Aprobar SOAT ${plate}`,
-        exact: true,
-      });
-      await approve.click();
-      await expect(approve).toHaveCount(0);
-    } finally {
-      await context.close();
-    }
+    await expect(
+      page.getByRole('link', { name: /Revisar documentos/ }),
+    ).toHaveCount(0);
     await page.getByRole('link', { name: 'Volver al perfil' }).click();
     await page
       .getByRole('link', { name: 'Publicar viaje', exact: true })
@@ -66,8 +80,10 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
       .getByRole('radio', { name: /Origen · Plazoleta de los Sabios/ })
       .click();
     await page.getByLabel('Nombre público · Destino').fill(destination);
-    await page.getByLabel('Latitud · Destino').fill('3.469');
-    await page.getByLabel('Longitud · Destino').fill('-76.505');
+    await expect(page.getByLabel(/^(Latitud|Longitud|Geometría)/)).toHaveCount(
+      0,
+    );
+    await selectMapPoint(page, 'Destino', 0.82, 0.2);
     await page
       .getByLabel('Instrucciones · Destino')
       .fill('Esperar en el encuentro público DEMO');
@@ -96,7 +112,7 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
       exact: true,
     });
     const publish = page.getByRole('button', {
-      name: 'Publicar viaje DEMO',
+      name: 'Confirmar publicación',
       exact: true,
     });
     const consent = page.getByRole('checkbox', {
@@ -109,10 +125,9 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
     await page
       .getByRole('button', { name: 'Editar antes de publicar' })
       .click();
-    await page.getByLabel('Latitud · Destino').fill('');
-    await review.click();
-    await expect(page.getByText(/Completa las coordenadas/)).toBeVisible();
-    await page.getByLabel('Latitud · Destino').fill('3.469');
+    await page
+      .getByLabel('Punto de encuentro libre · Origen')
+      .fill('Sótano, junto a la escalera');
     const date = new Date(
       Date.now() +
         (testInfo.project.name === 'desktop' ? 10 : 11) * 86400000 -
@@ -127,28 +142,48 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
       await page
         .getByLabel(`Nombre público · Parada ${index}`)
         .fill(`Parada ${index} DEMO`);
-      await page
-        .getByLabel(`Latitud · Parada ${index}`)
-        .fill(index === 1 ? '3.421' : '3.45');
-      await page
-        .getByLabel(`Longitud · Parada ${index}`)
-        .fill(index === 1 ? '-76.543' : '-76.52');
+      await selectMapPoint(
+        page,
+        `Parada ${index}`,
+        0.5 + index * 0.1,
+        0.5 - index * 0.1,
+      );
       await page
         .getByLabel(`Instrucciones · Parada ${index}`)
         .fill('Junto al letrero DEMO');
     }
     await page.getByRole('radio', { name: 'Sólo paso · Parada 2' }).click();
-    await page.getByLabel('Geometría LineString GeoJSON (opcional)').fill(
-      JSON.stringify({
-        type: 'LineString',
-        coordinates: [
-          [-76.54875, 3.4037],
-          [-76.543, 3.421],
-          [-76.52, 3.45],
-          [-76.505, 3.469],
+    // The HTTP provider is tested separately. This controlled response covers
+    // selecting an alternative and persisting exactly the chosen geometry.
+    await page.route('**/api/v1/trips/route-options', async (route) => {
+      const origin = await db.campusDestination.findUniqueOrThrow({
+        where: { code: 'USC-DEMO-SABIOS' },
+      });
+      const submitted = route.request().postDataJSON();
+      const coordinates = [
+        [Number(origin.longitude), Number(origin.latitude)],
+        ...[...submitted.stops, submitted.destination].map(
+          (point: { longitude: number; latitude: number }) => [
+            point.longitude,
+            point.latitude,
+          ],
+        ),
+      ];
+      await route.fulfill({
+        json: [
+          {
+            geometry: { type: 'LineString', coordinates },
+            distanceMeters: 5000,
+            durationMinutes: 45,
+          },
         ],
-      }),
-    );
+      });
+    });
+    await page
+      .getByRole('checkbox', { name: /Autorizo enviar las coordenadas/ })
+      .click();
+    await page.getByRole('button', { name: 'Consultar rutas viales' }).click();
+    await page.getByRole('button', { name: 'Elegir alternativa 1' }).click();
     await review.click();
     await expect(page.getByText('Resumen para publicar')).toBeVisible();
     await expect(
@@ -165,7 +200,7 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
     expect(response.status()).toBe(201);
     tripId = (await response.json()).id;
     await expect(
-      page.getByText('Viaje publicado en PostgreSQL: PROGRAMADO · DISPONIBLE.'),
+      page.getByText('Viaje publicado. Ya aparece en Mis viajes.'),
     ).toBeVisible();
     await page.getByRole('link', { name: 'Ver mis viajes publicados' }).click();
     await page.reload();
@@ -178,12 +213,16 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
       const passenger = await passengerContext.newPage();
       passenger.on('pageerror', (error) => errors.push(error.message));
       await passenger.goto('http://localhost:8082');
+      await passenger
+        .getByRole('button', { name: 'Abrir acceso de desarrollo' })
+        .click();
       await passenger.getByRole('radio', { name: /Ana/ }).click();
-      await passenger.getByRole('button', { name: 'Entrar a la demo' }).click();
+      await passenger
+        .getByRole('button', { name: 'Entrar en desarrollo' })
+        .click();
       await passenger.getByRole('link', { name: 'Buscar viajes' }).click();
       await passenger.getByLabel('Origen deseado').fill('USC');
-      await passenger.getByLabel('Destino deseado').fill('3.469,-76.505');
-      await passenger.getByLabel('Radio de búsqueda (km)').fill('0.2');
+      await passenger.getByLabel('Destino deseado').fill(destination);
       await passenger
         .getByRole('button', { name: 'Buscar viajes disponibles' })
         .click();
@@ -191,16 +230,16 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
         passenger.getByText(destination, { exact: false }),
       ).toBeVisible();
       await passenger
-        .getByRole('button', { name: 'Ver recorrido y reservar' })
+        .getByRole('button', { name: 'Ver recorrido y participar' })
         .click();
       await expect(
         passenger.getByText('3. Parada 2 DEMO · Sólo paso'),
       ).toBeVisible();
       await expect(
-        passenger.getByRole('radio', { name: 'Abordaje · Parada 2 DEMO' }),
+        passenger.getByRole('radio', { name: 'Encuentro · Parada 2 DEMO' }),
       ).toHaveCount(0);
       await passenger
-        .getByRole('radio', { name: 'Abordaje · Parada 1 DEMO' })
+        .getByRole('radio', { name: 'Encuentro · Sótano, junto a la escalera' })
         .click();
       await passenger
         .getByLabel(/Vista geográfica de la geometría/)
@@ -212,23 +251,55 @@ test('revisión, viaje desde USC y reserva aceptada en dos sesiones', async ({
         fullPage: true,
       });
       await passenger
-        .getByRole('button', { name: 'Solicitar cupo', exact: true })
+        .getByRole('button', { name: 'Confirmar participación', exact: true })
         .click();
       await expect(
-        passenger.getByText('Solicitud enviada. El conductor debe decidir.'),
+        passenger.getByText(
+          'Participación confirmada. Tu plaza ya está registrada.',
+        ),
       ).toBeVisible();
 
+      await expect(
+        passenger.getByLabel('Códigos de acompañantes DEMO (opcional)'),
+      ).toHaveCount(0);
+      expect(
+        await db.reservation.count({ where: { tripId, status: 'CONFIRMED' } }),
+      ).toBe(1);
+      expect(
+        await db.reservation.count({ where: { tripId, status: 'PENDING' } }),
+      ).toBe(0);
+      expect(
+        (await db.trip.findUniqueOrThrow({ where: { id: tripId } }))
+          .occupiedSeats,
+      ).toBe(1);
       await page
-        .getByRole('button', { name: 'Ver recorrido y solicitudes' })
+        .getByRole('button', { name: 'Ver recorrido y participantes' })
         .click();
-      await page.getByRole('button', { name: 'Aceptar solicitud' }).click();
       await expect(
-        page.getByText('Confirmada · Viaje PROGRAMADO'),
-      ).toBeVisible();
-      await passenger.getByRole('link', { name: 'Ver mis reservas' }).click();
+        page.getByRole('button', { name: 'Aceptar solicitud' }),
+      ).toHaveCount(0);
       await expect(
-        passenger.getByText('Confirmada · Viaje PROGRAMADO'),
+        page.getByText('Confirmada · Viaje programado'),
       ).toBeVisible();
+      await passenger
+        .getByRole('link', { name: 'Ver mis participaciones' })
+        .click();
+      await expect(
+        passenger.getByText('Confirmada · Viaje programado'),
+      ).toBeVisible();
+      await passenger
+        .getByRole('button', { name: 'Cancelar participación' })
+        .click();
+      await expect(
+        passenger.getByText('Cancelada · Viaje programado'),
+      ).toBeVisible();
+      expect(
+        (await db.trip.findUniqueOrThrow({ where: { id: tripId } }))
+          .occupiedSeats,
+      ).toBe(0);
+      expect(
+        await db.reservation.count({ where: { tripId, status: 'CANCELLED' } }),
+      ).toBe(1);
     } finally {
       await passengerContext.close();
     }

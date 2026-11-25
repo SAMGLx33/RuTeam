@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Link } from 'expo-router';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import {
   useInfiniteQuery,
   useMutation,
@@ -11,7 +11,7 @@ import {
 import type {
   AvailableTrip,
   CampusMeetingPoint,
-  RequestReservationInput,
+  ConfirmParticipationInput,
   ReservationView,
   TripSearchPage,
 } from '@ruteam/contracts';
@@ -25,14 +25,16 @@ import { api } from '../../services/api/client';
 import { useSession } from '../../providers/session-provider';
 import { Choice } from './itinerary-form';
 import { RoutePreview, travelTime } from './route-preview';
+import { MeetingMapPicker, type Coordinates } from './meeting-map-picker';
+import { PickupProposalForm } from './pickup-proposals';
 
 interface SearchForm {
   from: string;
   to: string;
   after: string;
   before: string;
-  radiusKm: string;
   seats: string;
+  direction: string;
 }
 function localInstant(value: string): string {
   if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value))
@@ -42,15 +44,14 @@ function localInstant(value: string): string {
 
 function ReserveTrip({
   trip,
-  actorId,
+  onConfirmed,
 }: {
   trip: AvailableTrip;
-  actorId: string;
+  onConfirmed: () => void;
 }) {
   const client = useQueryClient();
   const [pickupId, setPickup] = useState(trip.match.pickupId);
   const [dropoffId, setDropoff] = useState(trip.match.dropoffId);
-  const group = useForm({ defaultValues: { memberCodes: '' } });
   const stops = trip.itinerary.stops;
   const pickup = stops.find((stop) => stop.id === pickupId);
   const canDrop = (access: string) => access === 'DROPOFF' || access === 'BOTH';
@@ -59,6 +60,7 @@ function ReserveTrip({
   );
   const pickups = stops.filter(
     (stop) =>
+      (trip.itinerary.direction !== 'DESDE_USC' || stop === stops[0]) &&
       (stop.access === 'PICKUP' || stop.access === 'BOTH') &&
       stops.some((end) => end.position > stop.position && canDrop(end.access)),
   );
@@ -66,41 +68,29 @@ function ReserveTrip({
     ? dropoffId
     : dropoffs[0]?.id;
   const send = useMutation({
-    mutationFn: (body: RequestReservationInput) =>
-      api<ReservationView>(`/trips/${trip.id}/reservation-requests`, {
+    mutationFn: (body: ConfirmParticipationInput) =>
+      api<ReservationView>(`/trips/${trip.id}/participations`, {
         method: 'POST',
         body,
       }),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: ['my-reservations'] }),
+    onSuccess: () => {
+      onConfirmed();
+      void client.invalidateQueries({ queryKey: ['my-reservations'] });
+      void client.invalidateQueries({ queryKey: ['available-trips'] });
+    },
   });
-  const submit = group.handleSubmit(({ memberCodes }) => {
+  const submit = () => {
     if (!selectedDropoffId) return;
-    const members = memberCodes.split(/[\s,]+/).filter(Boolean);
-    send.mutate({
-      memberIds: [actorId, ...members],
-      pickupId,
-      dropoffId: selectedDropoffId,
-    });
-  });
-  if (send.isSuccess)
-    return (
-      <View style={s.section}>
-        <Text accessibilityLiveRegion="polite">
-          Solicitud enviada. El conductor debe decidir.
-        </Text>
-        <Link href="/my-reservations" style={s.link}>
-          Ver mis reservas
-        </Link>
-      </View>
-    );
+    send.mutate({ pickupId, dropoffId: selectedDropoffId });
+  };
+  if (send.isSuccess) return null;
   return (
     <View style={s.section}>
-      <Text style={s.title}>Selecciona el abordaje</Text>
+      <Text style={s.title}>Selecciona el punto de encuentro</Text>
       {pickups.map((stop) => (
         <Choice
           key={stop.id}
-          label={`Abordaje · ${stop.label}`}
+          label={`Encuentro · ${stop.label}`}
           checked={pickupId === stop.id}
           onPress={() => setPickup(stop.id)}
         />
@@ -114,14 +104,9 @@ function ReserveTrip({
           onPress={() => setDropoff(stop.id)}
         />
       ))}
-      <Field
-        control={group.control}
-        name="memberCodes"
-        label="Códigos de acompañantes DEMO (opcional)"
-      />
       <Text style={s.text}>
-        Tu plaza se incluye automáticamente. Añade códigos compartidos por los
-        miembros del grupo, separados por comas.
+        Confirmas únicamente tu plaza. Cada integrante del grupo debe confirmar
+        por sí mismo; las invitaciones grupales todavía no están disponibles.
       </Text>
       {send.error && (
         <Text accessibilityRole="alert" style={s.error}>
@@ -129,7 +114,7 @@ function ReserveTrip({
         </Text>
       )}
       <Button
-        title={send.isPending ? 'Enviando…' : 'Solicitar cupo'}
+        title={send.isPending ? 'Confirmando…' : 'Confirmar participación'}
         disabled={send.isPending || !selectedDropoffId}
         onPress={() => {
           void submit();
@@ -145,20 +130,28 @@ export function SearchTripsScreen() {
   const [inputError, setInputError] = useState('');
   const [expanded, setExpanded] = useState<string>();
   const [catalogFor, setCatalogFor] = useState<'from' | 'to'>();
+  const [showNearby, setShowNearby] = useState(false);
+  const [near, setNear] = useState<Coordinates>();
+  const [radiusKm, setRadiusKm] = useState(0.5);
+  const [confirmed, setConfirmed] = useState(false);
+  const [selectedPoints, setSelectedPoints] = useState<
+    Partial<Record<'from' | 'to', { id: string; label: string }>>
+  >({});
   const form = useForm<SearchForm>({
     defaultValues: {
       from: '',
       to: '',
       after: '',
       before: '',
-      radiusKm: '',
       seats: '1',
+      direction: '',
     },
   });
+  const direction = useWatch({ control: form.control, name: 'direction' });
   const catalog = useQuery({
     queryKey: ['meeting-points'],
     queryFn: () => api<CampusMeetingPoint[]>('/campus/meeting-points'),
-    enabled: !!user && !!catalogFor,
+    enabled: !!user && (!!catalogFor || showNearby),
   });
   const results = useInfiniteQuery({
     queryKey: ['available-trips', user?.id, search],
@@ -174,14 +167,28 @@ export function SearchTripsScreen() {
   const submit = form.handleSubmit((values) => {
     try {
       const params = new URLSearchParams();
-      for (const [key, value] of Object.entries(values)) {
-        if (value.trim())
+      for (const [key, raw] of Object.entries(values)) {
+        const value = raw.trim();
+        if (!value) continue;
+        if (key === 'from' || key === 'to') {
+          const selected = selectedPoints[key];
+          if (selected && selected.label === value)
+            params.set(key, selected.id);
+          else if (value.toUpperCase() === 'USC') params.set(key, 'USC');
+          else params.set(`${key}Text`, value);
+        } else {
           params.set(
             key,
-            key === 'after' || key === 'before'
-              ? localInstant(value.trim())
-              : value.trim(),
+            key === 'after' || key === 'before' ? localInstant(value) : value,
           );
+        }
+      }
+      if (showNearby && near) {
+        params.set(
+          'near',
+          `${near.latitude.toFixed(6)},${near.longitude.toFixed(6)}`,
+        );
+        params.set('radiusKm', String(radiusKm));
       }
       setInputError('');
       setExpanded(undefined);
@@ -194,17 +201,42 @@ export function SearchTripsScreen() {
       );
     }
   });
+  const reference = catalog.data?.find(
+    ({ latitude, longitude }) => latitude !== null && longitude !== null,
+  );
   const trips = results.data?.pages.flatMap(({ items }) => items) ?? [];
   return (
     <ProtectedPage title="Buscar viajes">
       <Link href="/my-reservations" style={s.link}>
-        Mis reservas
+        Mis participaciones
       </Link>
       <Text style={s.text}>
-        Busca por USC, un punto institucional o coordenadas en formato
-        latitud,longitud. Usa un radio menor que 4 km cuando ingreses
-        coordenadas.
+        Busca por barrio, dirección o lugar y elige puntos de encuentro de la
+        USC. Los resultados respetan las paradas y el recorrido publicados.
       </Text>
+      {confirmed && (
+        <View style={s.section}>
+          <Text accessibilityLiveRegion="polite">
+            Participación confirmada. Tu plaza ya está registrada.
+          </Text>
+          <Link href="/my-reservations" style={s.link}>
+            Ver mis participaciones
+          </Link>
+        </View>
+      )}
+      <Text style={s.title}>Sentido del viaje</Text>
+      {[
+        ['', 'Todos los sentidos'],
+        ['DESDE_USC', 'Desde la USC'],
+        ['HACIA_USC', 'Hacia la USC'],
+      ].map(([value, label]) => (
+        <Choice
+          key={value}
+          label={label}
+          checked={direction === value}
+          onPress={() => form.setValue('direction', value)}
+        />
+      ))}
       <Field control={form.control} name="from" label="Origen deseado" />
       <Button
         title="Elegir punto USC para el origen"
@@ -240,21 +272,68 @@ export function SearchTripsScreen() {
                   : `${point.name}${point.demo ? ' · DEMO' : ''}`
               }
               onPress={() => {
-                form.setValue(
-                  catalogFor,
-                  point.kind === 'CAMPUS' ? 'USC' : point.id,
-                );
+                const label = point.kind === 'CAMPUS' ? 'USC' : point.name;
+                setSelectedPoints((current) => ({
+                  ...current,
+                  [catalogFor]: {
+                    id: point.kind === 'CAMPUS' ? 'USC' : point.id,
+                    label,
+                  },
+                }));
+                form.setValue(catalogFor, label);
                 setCatalogFor(undefined);
               }}
             />
           ))}
         </View>
       )}
-      <Field
-        control={form.control}
-        name="radiusKm"
-        label="Radio de búsqueda (km)"
+      <Button
+        title={
+          showNearby
+            ? 'Quitar filtro de proximidad'
+            : 'Buscar cerca de un lugar en el mapa'
+        }
+        secondary
+        onPress={() => {
+          setShowNearby(!showNearby);
+          setNear(undefined);
+        }}
       />
+      {showNearby && (
+        <View style={s.section}>
+          <Text style={s.text}>
+            Se muestran recorridos que pasan cerca. Para abordar, elige una
+            parada autorizada.
+          </Text>
+          {reference?.latitude != null && reference.longitude != null && (
+            <MeetingMapPicker
+              title="Lugar de interés"
+              reference={{
+                latitude: reference.latitude,
+                longitude: reference.longitude,
+              }}
+              value={near}
+              onSelect={setNear}
+            />
+          )}
+          {catalog.isPending && <Text>Cargando referencias del mapa…</Text>}
+          {catalog.error && (
+            <Text accessibilityRole="alert" style={s.error}>
+              {catalog.error.message}
+            </Text>
+          )}
+          {[0.5, 1, 2].map((distance) => (
+            <Choice
+              key={distance}
+              label={
+                distance === 0.5 ? 'Hasta 500 metros' : `Hasta ${distance} km`
+              }
+              checked={radiusKm === distance}
+              onPress={() => setRadiusKm(distance)}
+            />
+          ))}
+        </View>
+      )}
       <Field
         control={form.control}
         name="after"
@@ -310,7 +389,7 @@ export function SearchTripsScreen() {
               title={
                 expanded === trip.id
                   ? 'Ocultar recorrido'
-                  : 'Ver recorrido y reservar'
+                  : 'Ver recorrido y participar'
               }
               secondary
               onPress={() =>
@@ -331,7 +410,13 @@ export function SearchTripsScreen() {
                       : 'Trae tu propio casco'}
                   </Text>
                 )}
-                {user && <ReserveTrip trip={trip} actorId={user.id} />}
+                {user && (
+                  <ReserveTrip
+                    trip={trip}
+                    onConfirmed={() => setConfirmed(true)}
+                  />
+                )}
+                <PickupProposalForm trip={trip} />
               </>
             )}
           </View>

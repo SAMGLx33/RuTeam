@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Link } from 'expo-router';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CampusMeetingPoint,
-  ItineraryInput,
   MeetingPointInput,
   PublishTripInput,
   RouteOption,
@@ -27,7 +26,6 @@ import {
 import {
   Choice,
   emptyPoint,
-  parseGeometry,
   PointEditor,
   pointInput,
   StopAccessEditor,
@@ -35,7 +33,7 @@ import {
 } from './itinerary-form';
 import { RoutePreview } from './route-preview';
 
-type Draft = Extract<PublishTripInput, { itinerary: ItineraryInput }>;
+type Draft = PublishTripInput;
 const emptyCatalog: CampusMeetingPoint[] = [];
 function previewPoint(
   point: MeetingPointInput,
@@ -46,7 +44,7 @@ function previewPoint(
   if (!entry || entry.latitude === null || entry.longitude === null)
     throw new Error('Elige un punto del catálogo con coordenadas.');
   return {
-    label: entry.name,
+    label: point.label || entry.name,
     latitude: entry.latitude,
     longitude: entry.longitude,
     instructions: [entry.description, entry.accessReference, point.instructions]
@@ -57,11 +55,18 @@ function previewPoint(
 
 function routePoints(values: PublishFormValues): RouteOptionsInput {
   return {
-    origin: pointInput(values.origin),
-    destination: pointInput(values.destination),
+    direction: values.direction,
+    origin: pointInput(values.origin, values.direction === 'DESDE_USC'),
+    destination: pointInput(
+      values.destination,
+      values.direction === 'HACIA_USC',
+    ),
     stops: values.stops.map((stop) => ({
       ...pointInput(stop),
-      access: stop.access,
+      access:
+        values.direction === 'DESDE_USC' && stop.access !== 'WAYPOINT'
+          ? 'DROPOFF'
+          : stop.access,
     })),
     publicMeetingPoints: true,
   };
@@ -70,6 +75,10 @@ function routePoints(values: PublishFormValues): RouteOptionsInput {
 export function PublishScreen() {
   const { user } = useSession();
   const client = useQueryClient();
+  const [selectedRoute, setSelectedRoute] = useState<{
+    key: string;
+    option: RouteOption;
+  }>();
   const [vehicleId, setVehicleId] = useState('');
   const [ruleIds, setRuleIds] = useState<string[]>([]);
   const [helmet, setHelmet] = useState(false);
@@ -114,9 +123,10 @@ export function PublishScreen() {
       estimatedDurationMinutes: '45',
       offeredSeats: '1',
       description: '',
-      geometry: '',
+      direction: 'DESDE_USC',
     },
   });
+  const direction = useWatch({ control: form.control, name: 'direction' });
   const stops = useFieldArray({ control: form.control, name: 'stops' });
   const save = useMutation({
     mutationFn: (body: Draft) =>
@@ -153,7 +163,7 @@ export function PublishScreen() {
         throw new Error(
           'Los puntos cambiaron. Consulta las alternativas para el nuevo recorrido.',
         );
-      form.setValue('geometry', JSON.stringify(option.geometry));
+      setSelectedRoute({ key: JSON.stringify(options.variables), option });
       if (option.durationMinutes >= 5 && option.durationMinutes <= 360)
         form.setValue(
           'estimatedDurationMinutes',
@@ -201,7 +211,10 @@ export function PublishScreen() {
           itinerary: {
             ...route,
             description: values.description.trim(),
-            geometry: parseGeometry(values.geometry),
+            geometry:
+              selectedRoute?.key === JSON.stringify(route)
+                ? selectedRoute.option.geometry
+                : undefined,
           },
         },
       });
@@ -259,7 +272,7 @@ export function PublishScreen() {
           />
           {save.isSuccess ? (
             <Text accessibilityLiveRegion="polite">
-              Viaje publicado en PostgreSQL: PROGRAMADO · DISPONIBLE.
+              Viaje publicado. Ya aparece en Mis viajes.
             </Text>
           ) : (
             <>
@@ -270,7 +283,7 @@ export function PublishScreen() {
                 onPress={() => setConfirmedPublic(!confirmedPublic)}
               />
               <Button
-                title={save.isPending ? 'Publicando…' : 'Publicar viaje DEMO'}
+                title={save.isPending ? 'Publicando…' : 'Confirmar publicación'}
                 disabled={!confirmedPublic || save.isPending}
                 onPress={() => save.mutate(draft)}
               />
@@ -297,14 +310,14 @@ export function PublishScreen() {
             {vehicles.data &&
               !vehicles.data.some(({ eligibleNow }) => eligibleNow) && (
                 <Text>
-                  Registra un vehículo y obtén la aprobación DEMO de sus
-                  documentos.
+                  Registra un vehículo y consulta los requisitos vigentes para
+                  conducir.
                 </Text>
               )}
             {vehicles.data?.map((item) => (
               <Choice
                 key={item.id}
-                label={`Vehículo ${item.plate} · ${item.passengerCapacity} plazas · ${item.reviewStatus}`}
+                label={`Vehículo ${item.plate} · ${item.passengerCapacity} plazas · ${item.verificationStatus === 'VERIFIED' ? 'verificado' : item.verificationStatus === 'DECLARED' ? 'declarado' : 'sin vigencia verificada'}`}
                 checked={selected?.id === item.id}
                 onPress={() => setVehicleId(item.id)}
               />
@@ -312,20 +325,41 @@ export function PublishScreen() {
             {selected?.type === 'MOTORCYCLE' && (
               <Choice
                 checkbox
-                label="Casco de pasajero incluido DEMO"
+                label="Casco de pasajero incluido"
                 checked={helmet}
                 onPress={() => setHelmet(!helmet)}
               />
             )}
           </View>
+          <View style={s.section}>
+            <Text style={s.title}>Sentido del viaje</Text>
+            <Choice
+              label="Desde la USC"
+              checked={direction === 'DESDE_USC'}
+              onPress={() => {
+                form.setValue('direction', 'DESDE_USC');
+                form.getValues('stops').forEach(({ access }, index) => {
+                  if (access === 'PICKUP' || access === 'BOTH')
+                    form.setValue(`stops.${index}.access`, 'DROPOFF');
+                });
+              }}
+            />
+            <Choice
+              label="Hacia la USC"
+              checked={direction === 'HACIA_USC'}
+              onPress={() => form.setValue('direction', 'HACIA_USC')}
+            />
+          </View>
           <PointEditor
             title="Origen"
+            institutional={direction === 'DESDE_USC'}
             name="origin"
             control={form.control}
             catalog={catalog}
           />
           <PointEditor
             title="Destino"
+            institutional={direction === 'HACIA_USC'}
             name="destination"
             control={form.control}
             catalog={catalog}
@@ -350,15 +384,9 @@ export function PublishScreen() {
             name="description"
             label="Vías y referencias del recorrido"
           />
-          <Field
-            control={form.control}
-            name="geometry"
-            label="Geometría LineString GeoJSON (opcional)"
-          />
           <Text style={s.text}>
-            Si tienes la geometría de tu ruta, pega el GeoJSON como pares
-            longitud y latitud. También puedes publicar con la descripción y los
-            puntos ordenados.
+            Puedes publicar el itinerario descrito o elegir una alternativa vial
+            si el proveedor está disponible.
           </Text>
           {stops.fields.map((stop, index) => (
             <View key={stop.id} style={s.section}>
@@ -368,7 +396,11 @@ export function PublishScreen() {
                 control={form.control}
                 catalog={catalog}
               />
-              <StopAccessEditor control={form.control} index={index} />
+              <StopAccessEditor
+                control={form.control}
+                index={index}
+                direction={direction}
+              />
               {index > 0 && (
                 <Button
                   title={`Subir parada ${index + 1}`}
@@ -394,7 +426,12 @@ export function PublishScreen() {
             title="Añadir parada"
             disabled={stops.fields.length >= 10}
             secondary
-            onPress={() => stops.append({ ...emptyPoint, access: 'BOTH' })}
+            onPress={() =>
+              stops.append({
+                ...emptyPoint,
+                access: direction === 'DESDE_USC' ? 'DROPOFF' : 'PICKUP',
+              })
+            }
           />
           <View style={s.section}>
             <Text style={s.title}>Reglas de convivencia</Text>

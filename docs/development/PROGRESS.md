@@ -82,3 +82,34 @@ Fase2 aún no integrada en feature. Local validado, no integrado; físico/CI/aud
 Rama local `task/driver-defined-routes` desde `690d486` de feature. El conductor publica un trayecto hacia o desde USC, con puntos DEMO institucionales o públicos personalizados y geometría opcional. El pasajero busca sobre pares autorizados y solicita plazas. El conductor decide, gestiona estados y conserva la ruta. Cupos de grupo validados en PostgreSQL real. Jest 81/81, Playwright 4/4, smoke 6/6 y Expo Doctor 18/18. Export web/Android y Playwright en escritorio y viewport móvil. Fuentes originales privadas y Expo Go físico pendientes.
 
 [Informe](../reviews/DRIVER_DEFINED_ROUTES_DELIVERY.md), [diagnóstico y datos](../handoffs/2026-11-24_driver-defined-routes_diagnostico-datos.md), [publicación y matching](../handoffs/2026-11-24_driver-defined-routes_publicacion-matching.md) y [reservas e integración](../handoffs/2026-11-24_driver-defined-routes_reservas-integracion.md). Validación local. Revisión humana, decisiones PO y promoción pendientes.
+
+## 2026-11-25 — Identidad estudiantil y autogestión documental
+
+Incremento local en task/driver-defined-routes: sesión sólo STUDENT vigente, capacidades
+compatibles, retiro de administración y migración histórica sin reclasificar usuarios.
+Autogestión de licencia/SOAT con procedencia declarada separada de verificación autorizada;
+producción cerrada y acceso sintético por opt-in explícito de desarrollo. ESLint propio
+aprobado; suites reales serializadas por el ejecutor central, ver informe integrado.
+[Decisiones/endpoints](../reviews/STUDENT_IDENTITY_SELF_SERVICE.md) y
+[handoff propio](../handoffs/2026-11-25_identidad-autogestion-estudiantil.md).
+Sin stage/commit/push/PR/merge ni alteración de migraciones tras su aplicación.
+
+## 2026-11-25 — Confirmación directa y recorrido controlado por el conductor
+
+Actualización local de `task/driver-defined-routes` en `72a31d7`. La nueva
+[definición](../requirements/PRODUCT_DEFINITION.md) sustituye las reglas
+incompatibles de los cortes anteriores. Confirmación individual transaccional,
+retiro futuro, abordaje, recogida propuesta hacia USC, publicación con texto
+libre/mapa y descubrimiento por recorrido. Se eliminó la aprobación ordinaria y
+la administración del producto. Invitar grupos y acreditar matrícula real
+siguen pendientes.
+
+Ejecutadas 117/117 Jest, 4/4 Playwright, 6/6 smoke. Dos confirmaciones compitiendo
+por una plaza devolvieron 201/409. Nueve migraciones verificadas en PostgreSQL
+`ruteam` y `ruteam_test`, separadas. La publicación en navegador pasó en escritorio
+y viewport móvil con teselas y respuesta vial controladas.
+
+[Informe y límites](../reviews/PRODUCT_REDEFINITION_DELIVERY.md).
+Handoffs de [identidad](../handoffs/2026-11-25_identidad-autogestion-estudiantil.md),
+[participación](../handoffs/2026-11-25_direct-participation.md) y
+[recorrido e integración](../handoffs/2026-11-25_driver-defined-routes_redefinicion-producto.md).

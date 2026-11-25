@@ -1,29 +1,29 @@
-# Propiedad y revisores
+# Propiedad técnica y revisión cruzada
 
-Asignaciones humanas: todas POR_ASIGNAR; esta tabla propone responsabilidades técnicas.
+Asignaciones humanas POR_ASIGNAR. Propuesta funcional vigente25/11/2026;
+leer PRODUCT_DEFINITION antes de editar. No asigna personas ni acredita integración.
 
-| Rutas                                                               | Frente dueño          | Revisor cruzado                      | Contrato público            |
-| ------------------------------------------------------------------- | --------------------- | ------------------------------------ | --------------------------- |
-| backend/src/modules/auth, profiles, institutional-membership, users | Identidad             | QA                                   | login/me/logout/profile     |
-| backend/src/modules/vehicles, campus, trips                         | Viajes                | Reservas                             | destinations; viajes futuro |
-| backend/src/modules/matching, reservations                          | Matching/reservas     | Viajes                               | pendiente                   |
-| backend/src/modules/ride-execution, boarding                        | Recorrido             | Identidad                            | pendiente                   |
-| backend/src/modules/costs, compensations, chat, ratings, safety     | Comunicación/economía | Recorrido                            | pendiente                   |
-| frontend, tests/web                                                 | Frontend/QA           | Identidad y dueño de cada consumidor | API v1                      |
-| backend/src/modules/administration                                  | Viajes + QA           | Identidad                            | pendiente                   |
+| Rutas / frontera                                                                       | Frente dueño                       | Revisión cruzada / contrato                                                                   |
+| -------------------------------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| backend/src/modules/auth, profiles, institutional-membership, users                    | Identidad/seguridad                | QA y Viajes; sesión, estudiante, capacidades, perfil propio                                   |
+| backend/src/modules/vehicles, campus, trips                                            | Viajes/vehículos/campus            | Identidad, Matching y Recorrido; elegibilidad, modalidades, encuentro, publicación/búsqueda   |
+| backend/src/modules/reservations y matching existente en trips                         | Matching/participaciones           | Viajes, Identidad y Datos; confirmación directa, ocupación, cancelación, idempotencia y grupo |
+| Propuestas de parada en módulo de viajes, ride-execution/boarding cuando implementados | Recorrido con Viajes               | Matching y QA; propietario decide propuesta, geometría inmutable, ninguna plaza automática    |
+| backend/src/modules/costs, compensations, chat, ratings, safety                        | Comunicación/economía/seguridad    | Identidad y Recorrido; consumidores de participación y estado, privacidad e historial         |
+| frontend y tests/web                                                                   | Frontend/integración/QA            | Dueño backend de cada consumidor e Identidad; una app Expo compartida y contrato API          |
+| packages/contracts, API, schema/migraciones/seed                                       | Integrador transversal POR_ASIGNAR | Todos los consumidores, Datos y QA; un escritor coordinado por intervención                   |
 
-Integrador de schema/migraciones/seed: POR_ASIGNAR (coordinación con todos los frentes).
-Integrador Git/CI/lockfile/app.module/variables: POR_ASIGNAR. Ningún agente modifica esos
-puntos de conflicto sin registrar el alcance. packages/contracts y API.md se revisan
-con sus consumidores. Ver [API](../development/API.md). La fundación no asigna personas.
+La administración no es un módulo funcional del producto. El retiro de accesos,
+rutas y dependencias administrativas corresponde a Identidad con Viajes/vehículos
+y Frontend. Datos conserva sólo auditoría histórica necesaria. La existencia de una
+carpeta antigua no autoriza recuperar permisos/paneles ni flujos de aprobación ADMIN.
+Los operadores de PostgreSQL, despliegue e infraestructura son responsabilidades técnicas.
 
-## Traslado estructural — 2026-11-14
+Integrador Git/CI/lockfile/app.module/variables POR_ASIGNAR; cambios requieren alcance
+coordinado. Cada servicio conserva MVC modular, aplicación/dominio/repositorios; React
+no decide elegibilidad ni cupos. No mover matching sólo por la tabla de propiedad:
+la ubicación implementada en trips se mantiene mientras sea coherente.
 
-Las rutas cambian; dueños y revisores por rol no cambian. Backend/frontend conserva
-los módulos/funcionalidades existentes. Coordinación transversal temporal de estructura,
-lockfile/CI/imports/AGENTS: refactor arquitectónico, responsable y revisor POR_ASIGNAR.
-No concede permiso para implementar reservas o refactorizar módulos ajenos.
-
-## Cambios del 24 de noviembre
-
-`backend/src/modules/trips` es dueño de itinerario y matching; revisan Matching/reservas y Recorrido. `backend/src/modules/reservations` es dueño de solicitudes, cupos y transiciones que afectan la participación; revisan Viajes, Datos e Identidad. `packages/contracts/src/routes.ts`, el esquema y las dos migraciones son frontera de revisión compartida. Las asignaciones nominales siguen pendientes.
+Leer WORKSTREAMS para dependencias y PROGRESS/handoff para resultados reales. Las
+[asignaciones anteriores](../history/2026-11-24-guides.md) son antecedentes; no se heredan
+permisos de edición global ni integración por cambiar rutas externas.

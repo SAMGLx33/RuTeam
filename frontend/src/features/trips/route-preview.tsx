@@ -1,10 +1,22 @@
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Constants from 'expo-constants';
-import type { RouteGeometry, StopAccess, TripPoint } from '@ruteam/contracts';
+import type {
+  RouteGeometry,
+  StopAccess,
+  TripPoint,
+  TripSummary,
+} from '@ruteam/contracts';
 import { formStyles as s } from '../../components/ui/protected-page';
 import { Button } from '../../components/ui/button';
 import { colors } from '../../theme/tokens';
+
+export const tripStatusLabel: Record<TripSummary['status'], string> = {
+  PROGRAMADO: 'programado',
+  EN_CURSO: 'en curso',
+  COMPLETADO: 'completado',
+  CANCELADO: 'cancelado',
+};
 
 export const accessLabel: Record<StopAccess, string> = {
   PICKUP: 'Abordaje',
@@ -20,7 +32,7 @@ const height = 200;
 const padding = 22;
 
 const tileSize = 256;
-function worldPoint(longitude: number, latitude: number) {
+export function worldPoint(longitude: number, latitude: number) {
   const degrees = Math.max(-85.05113, Math.min(85.05113, latitude));
   const sine = Math.sin((degrees * Math.PI) / 180);
   return {

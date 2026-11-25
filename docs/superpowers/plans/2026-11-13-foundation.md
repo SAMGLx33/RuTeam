@@ -1,5 +1,10 @@
 # Plan de fundación RuTeam
 
+> Plan histórico del corte indicado, no instrucciones actuales de producto.
+> La [definición vigente](../../requirements/PRODUCT_DEFINITION.md) del 25/11
+> sustituye ADMIN, estamentos no estudiantiles y solicitud/aceptación ordinaria.
+> Conservar antecedentes y consultar PROGRESS para evidencia de cada corte.
+
 > Ejecución inline con superpowers:executing-plans; el prompt maestro solicita implementación inmediata sin ronda de aprobación.
 
 Objetivo: Fase 0 y flujo vertical Fase 1 con PostgreSQL real, dos roles y Expo SDK 54.
@@ -46,7 +51,7 @@ Fase 2 empezará con catálogo campus de lectura; vehículos/publicación quedan
 
 Ajuste por evidencia: auditoría npm encontró vulnerabilidades transitivas de CLI Prisma7.9.1.
 Actualizar a estable7.10.1 (sin cambiar major) y usar --config prisma.config.ts explícito
-para conservar nombre de configuración requerido. No usar audit fix --force ni actualizar SDK54.
+para conservar nombre de configuración requerido. No usar audit fix --force ni actualizar SDK 54.
 RED HTTP observado:12 fallos404 y8pases antes de conectar módulos; GREEN20/20 al conectarlos.
 
 Navegador RED: login/perfil/recarga correctos; logout conservaba UI por client.clear()

@@ -10,6 +10,7 @@ import type {
   TripSummary,
 } from '@ruteam/contracts';
 import type { PlannedItinerary } from '../../application/plan-itinerary.js';
+import { tripDirection } from '../../domain/models/driver-route.js';
 import { Viaje } from '../../domain/models/viaje.js';
 const include = {
   stops: { orderBy: { position: 'asc' as const } },
@@ -31,10 +32,12 @@ export function presentStops(trip: Pick<StoredTrip, 'stops'>): RouteStop[] {
     instructions: stop.instructions,
   }));
 }
-function presentItinerary(trip: StoredTrip): TripItinerary | null {
+export function presentItinerary(trip: StoredTrip): TripItinerary | null {
   if (!trip.routeDescription) return null;
+  const stops = presentStops(trip);
   return {
-    stops: presentStops(trip),
+    direction: tripDirection(stops),
+    stops,
     description: trip.routeDescription,
     geometry: trip.routeGeometry as RouteGeometry | null,
     distanceMeters: trip.routeDistanceMeters,
@@ -118,23 +121,21 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
       data: PublishTripDto,
       end: Date,
       ruleIds: string[],
-      itinerary?: PlannedItinerary,
+      itinerary: PlannedItinerary,
     ) => {
-      const origin = itinerary?.stops[0] ?? data.origin!;
+      const origin = itinerary.stops[0];
       return present(
         await tx.trip.create({
           data: {
             driverId,
             vehicleId: data.vehicleId,
-            destinationId: itinerary
-              ? itinerary.stops.at(-1)?.campusPointId
-              : data.destinationId,
-            routeDescription: itinerary?.description,
-            routeGeometry: itinerary?.geometry && {
+            destinationId: itinerary.stops.at(-1)?.campusPointId,
+            routeDescription: itinerary.description,
+            routeGeometry: itinerary.geometry && {
               type: itinerary.geometry.type,
               coordinates: itinerary.geometry.coordinates,
             },
-            routeDistanceMeters: itinerary?.distanceMeters,
+            routeDistanceMeters: itinerary.distanceMeters,
             originLabel: origin.label,
             originLatitude: origin.latitude,
             originLongitude: origin.longitude,
@@ -143,7 +144,7 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
             estimatedDurationMinutes: data.estimatedDurationMinutes,
             offeredSeats: data.offeredSeats,
             providesHelmet: data.providesHelmet ?? null,
-            stops: { create: itinerary?.stops ?? data.stops },
+            stops: { create: itinerary.stops },
             rules: { create: ruleIds.map((ruleId) => ({ ruleId })) },
             events: { create: { actorId: driverId, type: 'PUBLISHED' } },
           },

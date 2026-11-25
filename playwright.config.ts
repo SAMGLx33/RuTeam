@@ -48,7 +48,13 @@ export default defineConfig({
       url: 'http://localhost:8082',
       timeout: 120000,
       reuseExistingServer: false,
-      env: { CI: '1', EXPO_PUBLIC_API_URL: 'http://localhost:3100/api/v1' },
+      env: {
+        CI: '1',
+        EXPO_PUBLIC_API_URL: 'http://localhost:3100/api/v1',
+        EXPO_PUBLIC_ROUTE_TILE_URL:
+          'https://tiles.ruteam.invalid/{z}/{x}/{y}.png',
+        EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION: 'Teselas sintéticas de prueba',
+      },
     },
   ],
 });

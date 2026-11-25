@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 config({ path: '../.env', quiet: true });
 export default {
   expo: {
-    name: 'RuTeam Demo',
+    name: 'RuTeam',
     slug: 'ruteam-demo',
     version: '0.1.0',
     scheme: 'ruteam',

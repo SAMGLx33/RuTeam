@@ -231,3 +231,29 @@ identidades sintéticas existentes. Capturas inspeccionadas fueraGit en review-a
 El [informe de entrega](../reviews/DRIVER_DEFINED_ROUTES_DELIVERY.md) registra cada comando y alcance comprobado. Playwright usa Chromium en escritorio y viewport iPhone 13 y dos sesiones separadas para observar la aceptación. Las capturas sintéticas se escriben en `/tmp/ruteam-driver-routes-desktop.png` y `/tmp/ruteam-driver-routes-mobile-web.png`. Su comprobación web no prueba Expo Go físico, cartografía oficial ni verificación del dispositivo.
 
 Capturas del panel de geometría de los recorridos de prueba en `/tmp/ruteam-route-geometry-desktop.png` y `/tmp/ruteam-route-geometry-mobile-web.png`. El mapa base optativo no se configuró en este escenario.
+
+## 25 de noviembre de 2026 — Redefinición de producto
+
+Resultados del corte local en `task/driver-defined-routes` sobre `72a31d7`.
+Prevalecen las pruebas del informe nuevo para las reglas redefinidas.
+
+- Jest, 12 suites y 117 pruebas aprobadas, con Supertest y PostgreSQL test real.
+  Último cupo 201/409, reintento conserva el ID, y retiro e inicio/cancelación
+  concurrentes preservan ocupación. La geometría y los cupos quedan iguales al
+  aceptar una recogida. El abordaje registra presencia una sola vez.
+- Playwright, cuatro casos aprobados en escritorio y viewport móvil. Login de
+  desarrollo, perfil persistente, registro de vehículo, mapa, alternativas,
+  vista previa, viaje desde USC, recarga, confirmación y retiro. Para el mapa y
+  alternativas se controló la respuesta del proveedor. El backend y la BD son
+  reales en estas pruebas. Capturas sintéticas guardadas fuera del checkout.
+- Smoke en desarrollo 6/6, health con base disponible y Swagger con 25 rutas.
+  La revisión administrativa quedó ausente de Swagger.
+- Una primera pasada Playwright dio 2/4 por coordenadas del clic no
+  proporcionadas por React Native Web. La adaptación al evento del navegador
+  corrigió ambas publicaciones. La restricción de abordaje desde USC también
+  requirió un segmento válido distinto en una prueba de conflicto.
+- Nueve migraciones verificadas en cada base. Desarrollo se respaldó localmente
+  antes de migrar. Los conteos de filas de tablas previas se conservaron antes
+  del seed. Los viajes y reservas anteriores tenían cero filas en desarrollo.
+
+[Informe y resultados](../reviews/PRODUCT_REDEFINITION_DELIVERY.md).

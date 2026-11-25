@@ -3,7 +3,6 @@ import { Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
-  ReservationDecision,
   ReservationView,
   TripAction,
   TripSummary,
@@ -16,70 +15,56 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { ReservationSummary } from './reservations-screen';
-import { RoutePreview, travelTime } from './route-preview';
+import { RoutePreview, travelTime, tripStatusLabel } from './route-preview';
+import { DriverPickupProposals } from './pickup-proposals';
 
-function DriverRequests({ tripId }: { tripId: string }) {
+function DriverParticipants({ tripId }: { tripId: string }) {
   const client = useQueryClient();
   const { user } = useSession();
-  const queryKey = ['driver-requests', tripId, user?.id];
+  const queryKey = ['driver-participations', tripId, user?.id];
   const requests = useQuery({
     queryKey,
-    queryFn: () =>
-      api<ReservationView[]>(`/trips/${tripId}/reservation-requests`),
+    queryFn: () => api<ReservationView[]>(`/trips/${tripId}/participations`),
   });
-  const decide = useMutation({
-    mutationFn: ({
-      id,
-      decision,
-    }: {
-      id: string;
-      decision: ReservationDecision;
-    }) =>
-      api<ReservationView>(`/reservation-requests/${id}/decision`, {
-        method: 'POST',
-        body: { decision },
-      }),
+  const board = useMutation({
+    mutationFn: (id: string) =>
+      api<ReservationView>(`/participations/${id}/board`, { method: 'POST' }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey });
-      void client.invalidateQueries({ queryKey: ['my-trips'] });
-      void client.invalidateQueries({ queryKey: ['available-trips'] });
+      void client.invalidateQueries({ queryKey: ['my-reservations'] });
     },
   });
   return (
     <View style={s.section}>
-      <Text style={s.title}>Solicitudes del viaje</Text>
-      {requests.isPending && <Text>Cargando solicitudes…</Text>}
-      {requests.data?.length === 0 && <Text>Aún no hay solicitudes.</Text>}
-      {(requests.error || decide.error) && (
+      <Text style={s.title}>Participantes del viaje</Text>
+      <Text style={s.text}>
+        El abordaje registra presencia desde 30 minutos antes de la salida y
+        hasta el final declarado, sin ocupar otra plaza.
+      </Text>
+      {requests.isPending && <Text>Cargando participantes…</Text>}
+      {requests.data?.length === 0 && <Text>Aún no hay participaciones.</Text>}
+      {(requests.error || board.error) && (
         <Text accessibilityRole="alert" style={s.error}>
-          {requests.error?.message ?? decide.error?.message}
+          {requests.error?.message ?? board.error?.message}
         </Text>
       )}
       {requests.data?.map((item) => (
         <View key={item.id} style={s.section}>
           <Text style={s.text}>
-            {item.requesterName ?? 'Solicitante RuTeam'}
+            {item.requesterName ?? 'Estudiante RuTeam'}
           </Text>
           <ReservationSummary item={item} />
-          {item.status === 'PENDING' && item.tripStatus === 'PROGRAMADO' && (
-            <>
+          {item.status === 'CONFIRMED' &&
+            !item.boardedAt &&
+            item.quantity === 1 &&
+            (item.tripStatus === 'PROGRAMADO' ||
+              item.tripStatus === 'EN_CURSO') && (
               <Button
-                title="Aceptar solicitud"
-                disabled={decide.isPending}
-                onPress={() =>
-                  decide.mutate({ id: item.id, decision: 'ACCEPT' })
-                }
+                title="Confirmar abordaje"
+                disabled={board.isPending}
+                onPress={() => board.mutate(item.id)}
               />
-              <Button
-                title="Rechazar solicitud"
-                secondary
-                disabled={decide.isPending}
-                onPress={() =>
-                  decide.mutate({ id: item.id, decision: 'REJECT' })
-                }
-              />
-            </>
-          )}
+            )}
         </View>
       ))}
     </View>
@@ -96,7 +81,9 @@ function TripCard({ trip }: { trip: TripSummary }) {
     onSuccess: () => {
       setConfirmCancel(false);
       void client.invalidateQueries({ queryKey: ['my-trips'] });
-      void client.invalidateQueries({ queryKey: ['driver-requests', trip.id] });
+      void client.invalidateQueries({
+        queryKey: ['driver-participations', trip.id],
+      });
       void client.invalidateQueries({ queryKey: ['available-trips'] });
     },
   });
@@ -107,8 +94,9 @@ function TripCard({ trip }: { trip: TripSummary }) {
       </Text>
       <Text style={s.text}>{travelTime(trip.departureAt)}</Text>
       <Text style={s.text}>
-        {trip.status} · {trip.occupancy} · {trip.availableSeats}/
-        {trip.offeredSeats} plazas
+        Viaje {tripStatusLabel[trip.status]} ·{' '}
+        {trip.occupancy === 'LLENO' ? 'Completo' : 'Con plazas'} ·{' '}
+        {trip.availableSeats}/{trip.offeredSeats} plazas
       </Text>
       <Text style={s.text}>
         {trip.vehicle.plate} · duración declarada{' '}
@@ -129,7 +117,7 @@ function TripCard({ trip }: { trip: TripSummary }) {
           title={
             expanded
               ? 'Ocultar detalles del viaje'
-              : 'Ver recorrido y solicitudes'
+              : 'Ver recorrido y participantes'
           }
           secondary
           onPress={() => setExpanded(!expanded)}
@@ -149,7 +137,8 @@ function TripCard({ trip }: { trip: TripSummary }) {
       {expanded && trip.itinerary && (
         <>
           <RoutePreview {...trip.itinerary} />
-          <DriverRequests tripId={trip.id} />
+          <DriverParticipants tripId={trip.id} />
+          <DriverPickupProposals trip={trip} />
         </>
       )}
       {change.error && (
@@ -176,7 +165,8 @@ function TripCard({ trip }: { trip: TripSummary }) {
       {confirmCancel && (
         <>
           <Text style={s.text}>
-            Se cancelarán las solicitudes y reservas del viaje.
+            Se cancelarán las participaciones del viaje y se conservará su
+            historial.
           </Text>
           <Button
             title="Confirmar cancelación del viaje"

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DemoLoginInput } from '@ruteam/contracts';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../services/api/client';
 import { useSession } from '../../providers/session-provider';
 import { Button } from '../../components/ui/button';
 import { colors } from '../../theme/tokens';
@@ -8,10 +10,17 @@ const identities: { identity: DemoLoginInput['identity']; label: string }[] = [
   { identity: 'ana', label: 'Ana · Pasajera' },
   { identity: 'diego', label: 'Diego · Conductor' },
   { identity: 'laura', label: 'Laura · Inactiva' },
-  { identity: 'admin', label: 'Administración · Demo' },
+  { identity: 'sara', label: 'Sara · Estudiante' },
 ];
 export function LoginScreen() {
   const { signIn } = useSession();
+  const [developmentAccess, setDevelopmentAccess] = useState(false);
+  const access = useQuery({
+    queryKey: ['auth-access'],
+    queryFn: () =>
+      api<{ fixturesAvailable: boolean; reason: string }>('/auth/access'),
+    retry: false,
+  });
   const [identity, setIdentity] = useState<DemoLoginInput['identity']>('ana');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -33,59 +42,86 @@ export function LoginScreen() {
       <Text role="heading" aria-level={1} style={styles.title}>
         Tu comunidad. Un mismo destino.
       </Text>
-      <Text style={styles.subtitle}>Comparte el camino hacia la USC.</Text>
-      <View style={styles.form}>
-        <View accessibilityRole="radiogroup" style={styles.choices}>
-          {identities.map((item) => (
-            <Pressable
-              key={item.identity}
-              accessibilityRole="radio"
-              accessibilityState={{
-                checked: item.identity === identity,
-                disabled: busy,
-              }}
-              disabled={busy}
-              onPress={() => {
-                setIdentity(item.identity);
-                setError(null);
-              }}
-              style={[
-                styles.row,
-                item.identity === identity && {
-                  backgroundColor: colors.selected,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  fontSize: 25,
-                  color:
-                    item.identity === identity ? colors.primary : colors.muted,
-                }}
-              >
-                {item.identity === identity ? '◉' : '○'}
-              </Text>
-              <Text style={styles.identity}>{item.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-        {error && (
-          <Text accessibilityRole="alert" style={styles.error}>
-            {error}
-          </Text>
-        )}
-        <Button
-          title={busy ? 'Verificando vinculación…' : 'Entrar a la demo'}
-          disabled={busy}
-          onPress={() => {
-            void login();
-          }}
-        />
-        <Text style={styles.note}>
-          En esta demostración sólo se utilizan identidades sintéticas para
-          fines académicos. No se valida el QR institucional USC.
+      <Text style={styles.subtitle}>
+        Viajes compartidos entre estudiantes USC.
+      </Text>
+      <Text style={styles.note}>
+        El acceso institucional requiere comprobar identidad y matrícula
+        vigente. La integración autorizada aún no está disponible; el correo o
+        carné por sí solos no permiten entrar.
+      </Text>
+      {access.isPending && <Text>Consultando opciones de acceso…</Text>}
+      {access.error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {access.error.message}
         </Text>
-      </View>
+      )}
+      {access.data?.fixturesAvailable && !developmentAccess && (
+        <Button
+          title="Abrir acceso de desarrollo"
+          secondary
+          onPress={() => setDevelopmentAccess(true)}
+        />
+      )}
+      {developmentAccess && access.data?.fixturesAvailable && (
+        <View style={styles.form}>
+          <Text style={styles.note}>
+            ENTORNO DE DESARROLLO; IDENTIDADES SINTÉTICAS
+          </Text>
+          <View accessibilityRole="radiogroup" style={styles.choices}>
+            {identities.map((item) => (
+              <Pressable
+                key={item.identity}
+                accessibilityRole="radio"
+                accessibilityState={{
+                  checked: item.identity === identity,
+                  disabled: busy,
+                }}
+                disabled={busy}
+                onPress={() => {
+                  setIdentity(item.identity);
+                  setError(null);
+                }}
+                style={[
+                  styles.row,
+                  item.identity === identity && {
+                    backgroundColor: colors.selected,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    fontSize: 25,
+                    color:
+                      item.identity === identity
+                        ? colors.primary
+                        : colors.muted,
+                  }}
+                >
+                  {item.identity === identity ? '◉' : '○'}
+                </Text>
+                <Text style={styles.identity}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {error && (
+            <Text accessibilityRole="alert" style={styles.error}>
+              {error}
+            </Text>
+          )}
+          <Button
+            title={busy ? 'Comprobando fixture…' : 'Entrar en desarrollo'}
+            disabled={busy}
+            onPress={() => {
+              void login();
+            }}
+          />
+          <Text style={styles.note}>
+            En esta demostración sólo se utilizan identidades sintéticas para
+            fines académicos. No se valida el QR institucional USC.
+          </Text>
+        </View>
+      )}
     </View>
   );
 }

@@ -45,6 +45,13 @@ export function reservationView(
     departureAt: row.trip.departureAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     confirmedAt: row.confirmedAt?.toISOString() ?? null,
+    boardedAt: row.boardedAt?.toISOString() ?? null,
+    canCancel:
+      row.requesterId === actorId &&
+      (row.status === 'CONFIRMED' || row.status === 'PENDING') &&
+      !row.boardedAt &&
+      row.trip.status === 'PROGRAMADO' &&
+      row.trip.departureAt.getTime() > Date.now(),
   };
 }
 
@@ -68,20 +75,16 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
       tx.institutionalMembership.findMany({
         where: { userId: { in: ids } },
       }),
-    hasActiveMembers: async (ids: string[]) =>
-      !!(await tx.reservation.findFirst({
-        where: {
-          tripId,
-          status: { in: ['PENDING', 'CONFIRMED'] },
-          members: { some: { userId: { in: ids } } },
-        },
-        select: { id: true },
-      })),
+    activeForMember: (userId: string) =>
+      tx.reservation.findFirst({
+        where: { tripId, status: 'CONFIRMED', members: { some: { userId } } },
+        include: viewInclude,
+      }),
     create: (
       requesterId: string,
-      memberIds: string[],
       pickupId: string,
       dropoffId: string,
+      confirmedAt: Date,
     ) =>
       tx.reservation.create({
         data: {
@@ -89,8 +92,10 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
           requesterId,
           pickupId,
           dropoffId,
-          quantity: memberIds.length,
-          members: { create: memberIds.map((userId) => ({ userId })) },
+          quantity: 1,
+          status: 'CONFIRMED',
+          confirmedAt,
+          members: { create: { userId: requesterId } },
         },
         include: viewInclude,
       }),
@@ -100,6 +105,17 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
         data: { status, confirmedAt },
         include: viewInclude,
       }),
+    board: async (id: string, boardedAt: Date, actorId: string) => {
+      const row = await tx.reservation.update({
+        where: { id },
+        data: { boardedAt },
+        include: viewInclude,
+      });
+      await tx.tripEvent.create({
+        data: { tripId, actorId, type: 'PASSENGER_BOARDED' },
+      });
+      return row;
+    },
     addOccupiedSeats: (quantity: number) =>
       tx.trip.update({
         where: { id: tripId },
@@ -167,7 +183,7 @@ export class ReservationsRepository {
       where: { id },
       select: { tripId: true },
     });
-    if (!row) throw new NotFoundException('Solicitud inexistente');
+    if (!row) throw new NotFoundException('Participación inexistente');
     return row.tripId;
   }
 

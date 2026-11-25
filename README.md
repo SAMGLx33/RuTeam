@@ -1,115 +1,94 @@
 # RuTeam
 
-MVP académico local de carpooling para la comunidad de la Universidad Santiago de Cali. Monorepo
-TypeScript: NestJS + Prisma7/PostgreSQL + **una app Expo Router SDK54** para web y móvil.
+RuTeam permite a estudiantes vigentes de la Universidad Santiago de Cali compartir
+viajes que un estudiante conductor ya prevé realizar. El conductor publica sus condiciones
+y recorrido; los pasajeros descubren viajes y confirman directamente su participación
+si cumplen las reglas y hay plazas. Modalidades: **DESDE_USC** y **HACIA_USC**.
+Los viajes entre dos extremos externos quedan excluidos.
 
-**ENTORNO DE DEMOSTRACIÓN; VINCULACIÓN SIMULADA.** Sólo identidades sintéticas;
-sin integración oficial USC, cobros reales ni despliegue. El corte del 24 de
-noviembre añade viajes definidos por el conductor hacia y desde la USC, matching
-y reservas en la rama local de tarea. Expo Go físico y promoción a dev pendientes.
+Una identidad estudiantil reúne capacidades de pasajero y conductor. El producto no
+incluye administración ni aprobación ordinaria de participantes. Una propuesta adicional
+de recogida sólo en HACIA_USC la decide el propietario; no confirma participación.
+Encuentros interiores aceptan texto libre; los mapas no requieren coordenadas manuales.
 
-## Arranque
+Consultar la [definición vigente](docs/requirements/PRODUCT_DEFINITION.md) antes de cambiar
+negocio. La redefinición del 25/11/2026 corrige una base existente, con adaptación en curso:
+este README describe el producto acordado y no certifica que todos sus flujos estén listos.
+[PROGRESS](docs/development/PROGRESS.md), [trazabilidad](docs/requirements/TRACEABILITY.md)
+y [evidencias](docs/demo/EVIDENCE.md) registran implementación, pruebas y límites reales.
 
-Desde la raíz que contiene este README y package.json (en esta sesión:
-`/home/darik/RuTeam/RuTeam`). Node22.12–22.x, npm10+, PostgreSQL local o Compose.
+## Arquitectura
+
+Monorepo TypeScript strict: backend NestJS MVC modular + Prisma 7/PostgreSQL;
+frontend única app React Native/Web Expo Router SDK 54; packages/contracts compartidos.
+Nest autoriza y aplica invariantes; React presenta e interactúa. Sesiones revocables,
+cookie HttpOnly web y SecureStore nativo. [Estructura](docs/architecture/REPOSITORY_STRUCTURE.md).
+
+## Desarrollo local
+
+Desde la raíz con package.json: Node 22.12–22.x, npm 10+ y PostgreSQL 17/18 o Compose.
+Leer [SETUP](docs/development/SETUP.md) antes de iniciar o migrar una base existente.
 
 ```bash
 npm ci
 test -f .env || cp .env.example .env
-# Configurar DATABASE_URL y TEST_DATABASE_URL; iniciar PostgreSQL antes de continuar.
+# Ajustar URLs e iniciar la BD autorizada. Para fixtures locales, en .env:
+# NODE_ENV=development, DEMO_MODE=true, VERIFICATION_PROVIDER=demo.
 npm run db:generate
 npm run db:migrate
 npm run db:seed
 npm run dev:api
-# En otra terminal:
+# En otra terminal, elegir uno:
 npm run dev:web
-# Para Expo Go, en lugar de dev:web:
-npm run dev:client
+# npm run dev:client
 ```
 
-Web http://localhost:8081; API http://localhost:3000/api/v1/health;
-Swagger http://localhost:3000/api/v1/docs. `node scripts/setup.mjs` ejecuta
-configuración/migración/seed tras instalar dependencias e iniciar PostgreSQL.
-[SETUP](docs/development/SETUP.md) incluye PostgreSQL sin Docker, Compose, Windows,
-VM NAT/puente y teléfono por WiFi. No usar localhost del teléfono para la API.
+Web localhost:8081; API localhost:3000/api/v1; health y docs bajo esa API.
+En el computador principal se documentó PostgreSQL persistente en55432: comprobar
+entorno efectivo, no sustituirlo por5432 automáticamente ni reinicializar datos.
+En teléfono usar IP LAN alcanzable y versión Expo Go compatible, nunca localhost del PC.
 
-## Identidades demo
+## Entornos e integraciones
 
-| Selección      | Afiliación simulada | Estamento / capacidad                    |
-| -------------- | ------------------- | ---------------------------------------- |
-| Ana            | ACTIVA              | Estudiante / pasajera                    |
-| Diego          | ACTIVA              | Docente / conductor demo                 |
-| Laura          | INACTIVA, acceso403 | Trabajadora                              |
-| Administración | ACTIVA              | Administrativo / ADMIN asignado por seed |
+La plantilla .env.example trae DEMO_MODE=false y proveedor official: el acceso queda
+bloqueado hasta disponer de integración legítima. Para fixtures locales, optar
+explícitamente por development + DEMO_MODE=true + VERIFICATION_PROVIDER=demo antes
+de seed/test:setup y reiniciar los servicios. El acceso sintético queda limitado
+a desarrollo/tests por DEMO_MODE y proveedor demo,
+con datos controlados; no es identidad institucional ni acceso alternativo a producción.
+No usar cuentas administrativas o estamentos no estudiantiles como usuarios válidos.
+La acreditación real de matrícula necesita una fuente USC autorizada. Verificar dominio
+o control del correo no la sustituye: producción debe fallar cerrada mientras falte.
+Verificación documental autorizada, geocodificación, motor vial y teselas requieren
+configuración y validación explícitas. No hay servicios de pago obligatorios.
 
-Correos `ana|diego|laura|admin@demo.ruteam.invalid`; sin contraseñas ni datos reales.
-No hay registro libre ni otorgamiento de ADMIN desde el cliente. El login sólo existe
-con DEMO_MODE=true, VERIFICATION_PROVIDER=demo y entorno no productivo.
+Chat, calificaciones, abordaje, compensaciones y seguridad mantienen su lugar en el
+producto; consultar su estado efectivo antes de demostrarlos. No se prometen pagos,
+QR institucional, respuesta de emergencia ni prueba física por existir una pantalla.
 
-Desde el perfil se puede publicar, buscar, solicitar cupos y consultar las reservas.
-El conductor acepta solicitudes y cambia el estado del viaje desde «Mis viajes
-publicados». La [guía de demostración](docs/demo/DEMO_SCRIPT.md) incluye los casos
-de la redefinición y [SETUP](docs/development/SETUP.md) explica el motor vial
-y el mapa base opcionales. QR, chat, costos y panel administrativo general siguen
-pendientes.
-
-## Verificación
+## Validación y equipo
 
 ```bash
 npm run db:test:setup
 npm run typecheck
 npm run lint
+npm run format:check
 npm test
-npx playwright install chromium
+# Tras finalizar Jest:
 npm run test:e2e
-# Con API iniciada:
-npm run smoke
+npm run build:api
+npm run build:web
 npx expo-doctor frontend
 ```
 
-Playwright inicia API3100 + Expo8082 y usa exclusivamente TEST_DATABASE_URL.
-No ejecutar Jest y navegador simultáneamente contra la misma BD de test.
-[TEST_PLAN](docs/development/TEST_PLAN.md) y [EVIDENCE](docs/demo/EVIDENCE.md) separan
-pruebas ejecutadas de límites. Export nativo/Doctor no sustituyen teléfono real.
+[TEST_PLAN](docs/development/TEST_PLAN.md): PostgreSQL_test real y suites secuenciales.
+No inferir resultados del corte actual desde conteos anteriores. Expo Go físico requiere
+prueba propia. [Guion académico](docs/demo/DEMO_SCRIPT.md) demuestra sólo lo acreditado.
 
-## Equipo y continuidad
-
-Leer [AGENTS](AGENTS.md), [CONTRIBUTING](CONTRIBUTING.md),
-[estado integrado](docs/coordination/CURRENT_STATUS.md),
-[PROGRESS e índice de handoffs](docs/development/PROGRESS.md) antes de editar.
-`task/* → feature → dev → main`, sin push/merge automático. Se preserva el commit
-remoto inicial7967674. La fundación local no equivale a integración revisada en dev.
-[TRACEABILITY](docs/requirements/TRACEABILITY.md) coteja50IDs/49prioridades de las fuentes
-privadas sin publicar originales; [OPEN_DECISIONS](docs/decisions/OPEN_DECISIONS.md) registra bloqueos.
-
-## Continuidad local — Fase 2
-
-Rama task/trips-publicacion: vehículos/licencia DEMO, revisión ADMIN versionada, publicación
-hacia USC con recogidas ordenadas, listado propio. Migrar/seed con los mismos comandos
-antes de arrancar; Diego tiene vehículoDEM123 y licencia sintética revisados en seed.
-Un vehículo nuevo quedaPENDING: Administración revisa desde «Revisar documentos DEMO».
-Nada consulta fuentes oficiales. Desde perfil: «Vehículos y licencia DEMO», «Publicar viaje
-hacia USC», «Mis viajes publicados». Mapas/GPS/routing/reservas/costos siguen pendientes.
-Fuentes oficiales del proyecto cotejadas en ERS_CATALOG/TRACEABILITY/UML_CROSSWALK;
-fuentes originales privadas ignoradas. Ver último PROGRESS/handoff para evidencia actual.
-Sin commit autorizado, PR, merge ni push en esta intervención; no integrado en dev.
-
-## Estructura local vigente — 2026-11-14
-
-backend = @ruteam/api; frontend = @ruteam/client (Expo web y móvil); packages/contracts
-permanece. No app/ en raíz ni frontend paralelo. [Árbol y responsabilidades](docs/architecture/REPOSITORY_STRUCTURE.md).
-Los scripts públicos anteriores no cambian. Fase 2 tiene commit publicado bab4e63, aún
-fuera de feature; refactor en task/refactor-monorepo-structure depende de integrarla primero.
-Las notas de falta de commit anteriores describen el corte histórico de Fase 2.
-
-En este entorno .env aún apunta al clúster temporal55432 desaparecido: no basta iniciar
-web para tener login funcional. Ver ARCH_REFACTOR_REVIEW y SETUP, sin crear/reseter bases
-ni sustituir el mensaje de error por éxito ficticio. Refactor sin stage/commit/push/PR/merge.
-
-## Entorno recuperado — 2026-11-14
-
-PostgreSQL persistente real de desarrollo/test operativo en55432, con las mismas variables
-locales.71/71 Jest,4/4 E2E y6/6 smoke actuales; configuración de caché de arranque corregida.
-Las notas anteriores sobre clúster ausente describen el diagnóstico histórico.
-[Procedimiento vigente](docs/development/SETUP.md#entorno-persistente-vigente--recuperación-autorizada-2026-11-14)
-y [resultados](docs/reviews/POSTGRESQL_RECOVERY_VALIDATION.md). Sin integración/commit del refactor.
+Leer [AGENTS](AGENTS.md), [CONTRIBUTING](CONTRIBUTING.md), coordinación y handoff antes
+de editar. Git task/*→feature→dev→main; sin commit/push/PR/merge automáticos.
+Seis frentes sin asignaciones nominales inventadas; entrega 28/11/2026 y
+[sprints≤2d del 21–28](docs/development/SPRINTS.md).
+Los [antecedentes](docs/history/2026-11-24-guides.md) y handoffs conservan los cortes
+anteriores; sus administradores, solicitudes y fechas de estado no son instrucciones vigentes.
+Originales académicos privados nunca se versionan con PII.

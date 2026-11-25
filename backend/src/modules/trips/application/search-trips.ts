@@ -7,10 +7,13 @@ import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.j
 import type { SearchTripsDto } from '../dto/search-trips.dto.js';
 import {
   matchStops,
+  passesNear,
+  tripDirection,
   type StopPreference,
 } from '../domain/models/driver-route.js';
 import {
   presentAvailable,
+  presentItinerary,
   presentStops,
   type TripCursor,
   type ViajeRepository,
@@ -79,11 +82,16 @@ export async function searchTrips(
 ): Promise<TripSearchPage> {
   const from = parsePreference(data.from);
   const to = parsePreference(data.to);
+  const near = parsePreference(data.near);
+  if (near !== undefined && (typeof near !== 'object' || !('latitude' in near)))
+    throw new BadRequestException(
+      'Selecciona una ubicación geográfica para la proximidad',
+    );
   const radiusKm = Number(data.radiusKm ?? 0);
   if (
     (data.radiusKm !== undefined && !(radiusKm > 0 && radiusKm < 4)) ||
     (!radiusKm &&
-      [from, to].some(
+      [from, to, near].some(
         (point) => typeof point === 'object' && 'latitude' in point,
       ))
   )
@@ -126,7 +134,21 @@ export async function searchTrips(
           trip.driver.driverEligibility?.category !== trip.vehicle.type)
       )
         continue;
-      const match = matchStops(presentStops(trip), { from, to, radiusKm });
+      const stops = presentStops(trip);
+      const direction = tripDirection(stops);
+      if (!direction || (data.direction && direction !== data.direction))
+        continue;
+      if (near) {
+        const geometry = presentItinerary(trip)?.geometry;
+        if (!geometry || !passesNear(geometry, near, radiusKm)) continue;
+      }
+      const match = matchStops(stops, {
+        from,
+        to,
+        radiusKm,
+        fromText: data.fromText,
+        toText: data.toText,
+      });
       if (match) items.push(presentAvailable(trip, match));
       if (items.length === 20) break;
     }

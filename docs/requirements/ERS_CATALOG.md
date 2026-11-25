@@ -1,3 +1,37 @@
+# Catálogo ERS: interpretación vigente y fuente histórica
+
+Actualización25/11/2026. [PRODUCT_DEFINITION](PRODUCT_DEFINITION.md) prevalece sobre
+criterios literales incompatibles. Se conservan RF-001..030/RNF-031..050, títulos,
+prioridades e información histórica de la fuente abajo. No se reescribe el original
+ni se acredita aprobación académica por esta anotación. RF-001 sin prioridad unívoca.
+
+| ID oficial / extensión existente        | Interpretación vigente y edición pendiente del original                                                                                                                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-001/002/016; RQ-ACC-01               | Sólo estudiantes vigentes, una identidad/capacidades; control del correo≠matrícula. No imponer contraseña/JWT por texto anterior si la identidad autorizada requiere otra estrategia. Tokens/códigos propios seguros si se implementan |
+| RF-003/004/029; RQ-RUTA-01              | Dos modalidades con USC en un extremo institucional; conductor elige recorrido/condiciones, encuentro interior libre sin GPS propio, ubicaciones externas genéricas. No externo→externo aunque USC intermedia                          |
+| RF-005/018; RQ-RUTA-01                  | Descubrimiento de viajes existentes por modalidad/horario/texto/paradas/proximidad según calidad de datos; sin solicitudes de transporte ni itinerario recalculado. UI sin coordenadas técnicas y sin inventar precisión geográfica    |
+| RF-006                                  | Sustituir Solicitar→aceptación por confirmación directa; cupos transaccionales en ese momento. Conductor consulta confirmados. Notificaciones, si existen, no son autorización ordinaria                                               |
+| RF-007/012/015                          | Retiro futuro permitido libera plazas y conserva historial; lleno≠iniciado. Estados/actores explícitos, cambios esenciales no silenciosos; contradicción de penalidad sin resolver, ningún cobro automático                            |
+| RF-013/024/022                          | Vehículos autogestionados y elegibilidad sin revisión ADMIN; conservar titularidad/capacidad/casco/licencia/SOAT y diferenciar declaración de verificación autorizada                                                                  |
+| RF-017                                  | Retirado del alcance funcional vigente por decisión explícita; conservar ID/historia. No panel/login/permisos/endpoints ni métricas administrativas como producto                                                                      |
+| RQ-GRUPO-01 y RF-006                    | Grupos con identidad/consentimiento explícito, invitaciones temporales y lote atómico; no UUID público como código ni plazas retenidas indefinidamente. Individual seguro prioritario mientras falte mecanismo                         |
+| Propuesta HACIA_USC                     | Nueva regla RN-PARADA-01, no inventar RF/HU oficial. Entidad separada, decide propietario, no cambia geometría ni confirma/consume plazas                                                                                              |
+| RF-027                                  | Abordaje separado de participación, sólo confirmada y sin segunda plaza; QR interno seguro no acredita carné institucional                                                                                                             |
+| RF-014/010/008/009/011/028/030          | Conservar objetivos compatibles de chat, ratings, economía y seguridad con participantes reales y privacidad. Retirar destinatario ADMIN; soporte legítimo pendiente. Sin pagos/multas/SOS ficticios                                   |
+| RNF-038/039/040/041/045/046/048/049/050 | Sesión/PII/consentimiento, rate limiting, historial, MVC/contratos y UX compartida siguen aplicando. Sin cuenta administrativa, sin secretos públicos, sin cobertura RNF inferida de tests                                             |
+
+Las propuestas de corrección1..5 en RF-010, género/moto/exclusividad, fórmula económica,
+penalidades y excepciones de plataforma siguen en OPEN_DECISIONS cuando no resueltas.
+La rúbrica no se modifica unilateralmente. Ver
+[edición académica precisa](ACADEMIC_REDEFINITION_CHANGES.md),
+[trazabilidad actual](TRACEABILITY.md) y [UML](UML_CROSSWALK.md).
+La correspondencia documental no acredita implementación ni porcentaje funcional.
+
+## Transcripción/cotejo histórico del 13/11/2026
+
+Todo el bloque siguiente preserva el texto de la fuente y sus divergencias en ese corte;
+expresiones como ADMIN, docente/trabajador o aceptación ordinaria no son reglas vigentes.
+
 # Catálogo de requisitos cotejado (derivado sin PII)
 
 Cotejo: 2026-11-13, America/Bogota. Fuente privada ERS_RuTeam.doc, extraída íntegramente

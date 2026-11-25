@@ -7,57 +7,22 @@ import {
   IsDateString,
   IsDefined,
   IsInt,
-  IsNumber,
   IsObject,
   IsOptional,
-  IsString,
   IsUUID,
-  Length,
   Max,
   Min,
   ValidateNested,
-  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ItineraryDto } from './itinerary.dto.js';
-export class GeoPointDto {
-  @ApiProperty() @IsString() @Length(2, 100) label!: string;
-  @ApiProperty()
-  @IsNumber({ allowNaN: false, allowInfinity: false })
-  @Min(-90)
-  @Max(90)
-  latitude!: number;
-  @ApiProperty()
-  @IsNumber({ allowNaN: false, allowInfinity: false })
-  @Min(-180)
-  @Max(180)
-  longitude!: number;
-}
-export class TripStopDto extends GeoPointDto {
-  @ApiProperty() @IsInt() @Min(1) @Max(10) position!: number;
-}
 export class PublishTripDto {
   @ApiProperty() @IsUUID() vehicleId!: string;
-  @ApiPropertyOptional()
-  @ValidateIf(
-    (dto: PublishTripDto, value) => !dto.itinerary || value !== undefined,
-  )
-  @IsUUID()
-  destinationId?: string;
-  @ApiPropertyOptional({ type: GeoPointDto })
-  @ValidateIf(
-    (dto: PublishTripDto, value) => !dto.itinerary || value !== undefined,
-  )
-  @IsDefined()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => GeoPointDto)
-  origin?: GeoPointDto;
   @ApiProperty({ format: 'date-time' })
   @IsDateString({ strict: true })
   departureAt!: string;
   @ApiProperty({
-    description: 'Duración DEMO declarada para solapamientos, no ETA real',
+    description: 'Duración estimada para validar el intervalo del viaje',
     minimum: 5,
     maximum: 360,
   })
@@ -76,21 +41,12 @@ export class PublishTripDto {
   @ArrayUnique()
   @IsUUID(undefined, { each: true })
   ruleIds!: string[];
-  @ApiPropertyOptional({ type: [TripStopDto] })
-  @ValidateIf(
-    (dto: PublishTripDto, value) => !dto.itinerary || value !== undefined,
-  )
-  @IsArray()
-  @ArrayMaxSize(10)
-  @ValidateNested({ each: true })
-  @Type(() => TripStopDto)
-  stops?: TripStopDto[];
-  @ApiPropertyOptional({ type: ItineraryDto })
-  @ValidateIf((_, value) => value !== undefined)
+  @ApiProperty({ type: ItineraryDto })
+  @IsDefined()
   @IsObject()
   @ValidateNested()
   @Type(() => ItineraryDto)
-  itinerary?: ItineraryDto;
+  itinerary!: ItineraryDto;
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
   @IsBoolean()

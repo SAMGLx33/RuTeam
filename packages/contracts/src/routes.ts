@@ -21,15 +21,17 @@ export interface CampusMeetingPoint {
   level: string | null;
   demo: boolean;
 }
+export type TripDirection = 'DESDE_USC' | 'HACIA_USC';
 export type StopAccess = 'PICKUP' | 'DROPOFF' | 'BOTH' | 'WAYPOINT';
 export type MeetingPointInput = (
-  { campusPointId: string } | (TripPoint & { campusReference?: 'USC' })
+  { campusPointId: string; label?: string } | TripPoint
 ) & { instructions?: string };
 export interface RouteGeometry {
   type: 'LineString';
   coordinates: [longitude: number, latitude: number][];
 }
 export interface ItineraryInput {
+  direction?: TripDirection;
   origin: MeetingPointInput;
   destination: MeetingPointInput;
   stops: (MeetingPointInput & { access: StopAccess })[];
@@ -47,6 +49,7 @@ export interface RouteStop extends TripPoint {
   instructions: string | null;
 }
 export interface TripItinerary {
+  direction: TripDirection | null;
   stops: RouteStop[];
   description: string;
   geometry: RouteGeometry | null;
@@ -76,10 +79,8 @@ export interface TripSearchPage {
 
 export type ReservationStatus =
   'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED';
-export type ReservationDecision = 'ACCEPT' | 'REJECT';
 export type TripAction = 'START' | 'FINISH' | 'CANCEL';
-export interface RequestReservationInput {
-  memberIds: string[];
+export interface ConfirmParticipationInput {
   pickupId: string;
   dropoffId: string;
 }
@@ -100,14 +101,27 @@ export interface ReservationView {
   departureAt: string;
   createdAt: string;
   confirmedAt: string | null;
+  boardedAt: string | null;
+  canCancel: boolean;
 }
 
 export type RouteOptionsInput = Pick<
   ItineraryInput,
-  'origin' | 'destination' | 'stops' | 'publicMeetingPoints'
+  'origin' | 'destination' | 'stops' | 'publicMeetingPoints' | 'direction'
 >;
 export interface RouteOption {
   geometry: RouteGeometry;
   distanceMeters: number;
   durationMinutes: number;
+}
+
+export interface PickupProposalInput extends TripPoint {
+  instructions?: string;
+}
+
+export interface PickupProposalView extends PickupProposalInput {
+  id: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+  requesterName: string | null;
+  acceptedStopId: string | null;
 }

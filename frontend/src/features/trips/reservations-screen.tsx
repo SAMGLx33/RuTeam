@@ -9,12 +9,12 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
-import { travelTime } from './route-preview';
+import { travelTime, tripStatusLabel } from './route-preview';
 
 const statusLabel: Record<ReservationStatus, string> = {
-  PENDING: 'Pendiente',
+  PENDING: 'Solicitud histórica pendiente (no confirmada)',
   CONFIRMED: 'Confirmada',
-  REJECTED: 'Rechazada',
+  REJECTED: 'Solicitud histórica rechazada',
   CANCELLED: 'Cancelada',
 };
 export function ReservationSummary({ item }: { item: ReservationView }) {
@@ -27,10 +27,15 @@ export function ReservationSummary({ item }: { item: ReservationView }) {
         {travelTime(item.departureAt)} · {item.quantity} plazas
       </Text>
       <Text style={s.text}>
-        {statusLabel[item.status]} · Viaje {item.tripStatus}
+        {item.status === 'CONFIRMED' && item.tripStatus === 'COMPLETADO'
+          ? 'Completada'
+          : item.boardedAt && item.status === 'CONFIRMED'
+            ? 'Abordada'
+            : statusLabel[item.status]}{' '}
+        · Viaje {tripStatusLabel[item.tripStatus]}
       </Text>
       <Text style={s.text}>
-        Abordaje · {item.pickup.label} · {item.pickup.latitude},{' '}
+        Encuentro · {item.pickup.label} · {item.pickup.latitude},{' '}
         {item.pickup.longitude}
         {item.pickup.instructions ? ` · ${item.pickup.instructions}` : ''}
       </Text>
@@ -53,29 +58,24 @@ export function ReservationsScreen() {
   });
   const cancel = useMutation({
     mutationFn: (id: string) =>
-      api<ReservationView>(`/reservation-requests/${id}/cancel`, {
+      api<ReservationView>(`/participations/${id}/cancel`, {
         method: 'POST',
       }),
-    onSuccess: () =>
-      client.invalidateQueries({ queryKey: ['my-reservations'] }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['my-reservations'] });
+      void client.invalidateQueries({ queryKey: ['available-trips'] });
+    },
   });
   return (
-    <ProtectedPage title="Mis reservas">
+    <ProtectedPage title="Mis participaciones">
       <Link href="/search-trips" style={s.link}>
         Buscar viajes
       </Link>
-      {user && (
-        <View style={s.section}>
-          <Text style={s.text}>
-            Comparte tu código DEMO con el responsable de tu grupo para
-            participar.
-          </Text>
-          <Text selectable style={s.text}>
-            {user.id}
-          </Text>
-        </View>
-      )}
-      {list.isPending && <Text>Consultando tus reservas…</Text>}
+      <Text style={s.text}>
+        Cada estudiante confirma su propia plaza. Retirarte de un viaje futuro
+        antes de abordar libera la plaza y conserva tu historial.
+      </Text>
+      {list.isPending && <Text>Consultando tus participaciones…</Text>}
       {list.error && (
         <Text accessibilityRole="alert" style={s.error}>
           {list.error.message}
@@ -86,15 +86,17 @@ export function ReservationsScreen() {
           {cancel.error.message}
         </Text>
       )}
-      {list.data?.length === 0 && (
-        <Text>Aún no tienes reservas ni solicitudes.</Text>
-      )}
+      {list.data?.length === 0 && <Text>Aún no tienes participaciones.</Text>}
       {list.data?.map((item) => (
         <View key={item.id} style={s.section}>
           <ReservationSummary item={item} />
-          {item.isRequester && item.status === 'PENDING' && (
+          {item.canCancel && (
             <Button
-              title="Retirar solicitud"
+              title={
+                item.status === 'PENDING'
+                  ? 'Retirar solicitud histórica'
+                  : 'Cancelar participación'
+              }
               secondary
               disabled={cancel.isPending}
               onPress={() => cancel.mutate(item.id)}

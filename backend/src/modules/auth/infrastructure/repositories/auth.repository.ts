@@ -4,6 +4,7 @@ const userInclude = {
   profile: true,
   membership: true,
   driverEligibility: true,
+  vehicles: { include: { document: true } },
 } as const;
 @Injectable()
 export class AuthRepository {

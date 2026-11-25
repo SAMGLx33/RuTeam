@@ -1,0 +1,486 @@
+{
+  "head": "72a31d784a902c5a24d583707237742255d54b57",
+  "stageEmpty": true,
+  "files": [
+    {
+      "status": "M",
+      "path": ".env.example"
+    },
+    {
+      "status": "M",
+      "path": ".github/workflows/ci.yml"
+    },
+    {
+      "status": "M",
+      "path": "AGENTS.md"
+    },
+    {
+      "status": "M",
+      "path": "CONTRIBUTING.md"
+    },
+    {
+      "status": "M",
+      "path": "README.md"
+    },
+    {
+      "status": "M",
+      "path": "backend/AGENTS.md"
+    },
+    {
+      "status": "M",
+      "path": "backend/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "path": "backend/prisma/seed.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/infrastructure/verification/demo-institutional-verification.provider.ts"
+    },
+    {
+      "status": "D",
+      "path": "backend/src/modules/administration/application/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "backend/src/modules/administration/controllers/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "backend/src/modules/administration/domain/events/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "backend/src/modules/administration/domain/models/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "backend/src/modules/administration/domain/policies/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "backend/src/modules/administration/dto/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "backend/src/modules/administration/infrastructure/repositories/.gitkeep"
+    },
+    {
+      "status": "D",
+      "path": "backend/src/modules/administration/tests/.gitkeep"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/auth/application/auth.service.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/auth/controllers/auth.controller.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/auth/dto/demo-login.dto.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/auth/infrastructure/repositories/auth.repository.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/institutional-membership/domain/membership.policy.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/profiles/controllers/profiles.controller.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/reservations/application/reservations.service.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/reservations/controllers/reservations.controller.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/reservations/dto/reservation.dto.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/reservations/infrastructure/repositories/reservations.repository.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/application/plan-itinerary.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/application/search-trips.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/application/trips.service.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/domain/models/driver-route.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/dto/itinerary.dto.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/dto/publish-trip.dto.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/dto/search-trips.dto.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/infrastructure/repositories/trips.repository.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/infrastructure/routing/osrm-routing.provider.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/trips/trips.module.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/vehicles/application/vehicles.service.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/vehicles/controllers/vehicles.controller.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/vehicles/domain/policies/vehiculo.policy.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/vehicles/dto/vehicles.dto.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/src/modules/vehicles/infrastructure/repositories/vehicles.repository.ts"
+    },
+    {
+      "status": "M",
+      "path": "backend/test/auth.e2e.test.mjs"
+    },
+    {
+      "status": "M",
+      "path": "backend/test/driver-route-policy.test.mjs"
+    },
+    {
+      "status": "M",
+      "path": "backend/test/driver-routes.e2e.test.mjs"
+    },
+    {
+      "status": "M",
+      "path": "backend/test/membership.test.mjs"
+    },
+    {
+      "status": "M",
+      "path": "backend/test/phase2.e2e.test.mjs"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/ADRs/0001-demo-sessions.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/ADRs/0002-driver-defined-itineraries.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/DATA_MODEL.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/MODULES.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/OVERVIEW.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/REPOSITORY_STRUCTURE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/architecture/UML-CROSSWALK.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/coordination/INTEGRATION_CHECKLIST.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/coordination/MODULE_OWNERSHIP.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/coordination/WORKSTREAMS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/decisions/OPEN_DECISIONS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/demo/DEMO_SCRIPT.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/demo/EVIDENCE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/API.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/DRIVER_DEFINED_ROUTES_PLAN.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/FASE3_RESERVAS_PLAN.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/PROGRESS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/SETUP.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/SPRINTS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/development/TEST_PLAN.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/requirements/ACCEPTANCE.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/requirements/ERS_CATALOG.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/requirements/TRACEABILITY.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/requirements/UML_CROSSWALK.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/superpowers/plans/2026-11-13-foundation.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/superpowers/plans/2026-11-13-phase2.md"
+    },
+    {
+      "status": "M",
+      "path": "frontend/AGENTS.md"
+    },
+    {
+      "status": "M",
+      "path": "frontend/app.config.ts"
+    },
+    {
+      "status": "D",
+      "path": "frontend/app/(admin)/document-reviews.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/app/index.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/components/ui/protected-page.tsx"
+    },
+    {
+      "status": "D",
+      "path": "frontend/src/features/admin/document-reviews-screen.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/auth/login-screen.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/auth/profile-screen.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/trips/itinerary-form.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/trips/my-trips-screen.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/trips/publish-screen.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/trips/reservations-screen.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/trips/route-preview.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/trips/search-trips-screen.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/trips/vehicles-screen.tsx"
+    },
+    {
+      "status": "M",
+      "path": "packages/contracts/src/index.ts"
+    },
+    {
+      "status": "M",
+      "path": "packages/contracts/src/routes.ts"
+    },
+    {
+      "status": "M",
+      "path": "playwright.config.ts"
+    },
+    {
+      "status": "M",
+      "path": "reference/README.md"
+    },
+    {
+      "status": "M",
+      "path": "tests/web/auth.spec.ts"
+    },
+    {
+      "status": "M",
+      "path": "tests/web/publication.spec.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/migrations/20261125000200_participation_boarding/migration.sql"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/migrations/20261125000300_pickup_proposals/migration.sql"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/prisma/migrations/20261125010000_student_identity_self_service/migration.sql"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/application/pickup-proposals.service.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/controllers/pickup-proposals.controller.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/dto/pickup-proposal.dto.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/src/modules/trips/infrastructure/repositories/pickup-proposals.repository.ts"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/participation-policy.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/pickup-proposals.e2e.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/student-auth-policy.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "backend/test/student-document-policy.test.mjs"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/architecture/ADRs/0003-student-participation-redefinition.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/development/PRODUCT_REDEFINITION_PLAN.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/handoffs/2026-11-25_direct-participation.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/handoffs/2026-11-25_driver-defined-routes_redefinicion-producto.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/handoffs/2026-11-25_identidad-autogestion-estudiantil.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/history/2026-11-24-guides.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/requirements/ACADEMIC_REDEFINITION_CHANGES.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/requirements/PRODUCT_DEFINITION.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/PRODUCT_REDEFINITION_DELIVERY.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/STUDENT_IDENTITY_SELF_SERVICE.md"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-25-product/changes.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-25-product/migrations.json"
+    },
+    {
+      "status": "untracked",
+      "path": "docs/reviews/evidence/2026-11-25-product/validation.json"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/trips/meeting-map-picker.tsx"
+    },
+    {
+      "status": "untracked",
+      "path": "frontend/src/features/trips/pickup-proposals.tsx"
+    }
+  ]
+}

@@ -1,13 +1,46 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
+  IsIn,
   IsNumberString,
   IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
 
+import type { TripDirection } from '@ruteam/contracts';
+
 export class SearchTripsDto {
+  @ApiPropertyOptional({ enum: ['DESDE_USC', 'HACIA_USC'] })
+  @IsOptional()
+  @IsIn(['DESDE_USC', 'HACIA_USC'])
+  direction?: TripDirection;
+
+  @ApiPropertyOptional({
+    description: 'Nombre o referencia del punto de abordaje',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  fromText?: string;
+
+  @ApiPropertyOptional({
+    description: 'Nombre o referencia del punto de descenso',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  toText?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Marcador próximo a la geometría publicada, como latitud,longitud',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  near?: string;
+
   @ApiPropertyOptional({
     description: 'USC, UUID de punto institucional o latitud,longitud',
   })

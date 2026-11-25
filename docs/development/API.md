@@ -1,3 +1,81 @@
+# API v1 vigente
+
+Contrato operativo del corte local del 25 de noviembre de 2026. Consultar
+[definición de producto](../requirements/PRODUCT_DEFINITION.md) y Swagger en
+`/api/v1/docs`. Las rutas de la API se muestran relativas a `/api/v1`.
+
+## Identidad y vehículos
+
+| Operación                                         | Reglas                                                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| GET /health                                       | Readiness PostgreSQL.                                                                            |
+| GET /auth/access                                  | Informa disponibilidad institucional y de fixtures, sin datos privados.                          |
+| POST /auth/demo/login                             | Sólo fixtures opt-in de desarrollo/test, cuerpo `{identity}`. Es un mecanismo local y explícito. |
+| GET /auth/me, GET /me                             | Identidad de estudiante vigente y capacidades derivadas.                                         |
+| PATCH /me/profile                                 | Nombre de presentación de la cuenta autenticada.                                                 |
+| POST /auth/logout                                 | Revoca sesión, 204.                                                                              |
+| GET /vehicles, POST /vehicles                     | Vehículos propios. Registro controla datos, capacidad y placa única.                             |
+| GET /vehicles/catalog                             | Tipos y configuraciones de vehículo.                                                             |
+| PATCH /vehicles/:id/soat                          | Renovación declarada por el propietario, `{soatExpiresAt}`.                                      |
+| GET /driver-eligibility, POST /driver-eligibility | Licencia propia. Declaración mediante `{category, expiresAt}`.                                   |
+
+La documentación pública temporal distingue `DECLARED`, `VERIFIED`,
+`EXPIRED` y `UNVERIFIED`. El fixture puede usar declaraciones de desarrollo.
+Producción requiere una verificación autorizada. Se retiraron `/admin/demo/*`,
+cuentas administrativas operativas y los permisos de aprobación. Los usuarios
+históricos incompatibles están deshabilitados y sus sesiones revocadas.
+
+## Publicación y búsqueda
+
+- `GET /campus/meeting-points`, `GET /campus/destinations` y `GET /trip-rules` consultan catálogos.
+- `POST /trips/route-options` acepta origen, destino, puntos de paso, sentido y
+  consentimiento para consultar el motor vial configurado. Devuelve alternativas.
+- `POST /trips` requiere vehículo, salida, plazas, duración, reglas e
+  `itinerary`; la forma anterior sin itinerario se retira. La geometría opcional
+  debe corresponder al orden publicado. La vista selecciona, Nest valida.
+- Un extremo se representa con `{campusPointId, label?, instructions?}`. El FK
+  debe ser una referencia activa USC. Un nombre libre conserva las coordenadas
+  aproximadas de la referencia. El extremo externo usa `{label, latitude,
+longitude, instructions}` obtenido por selección en el mapa.
+- `direction` admite `DESDE_USC` o `HACIA_USC`. El servidor lo deriva de los
+  extremos y rechaza contradicciones, dos extremos externos, o internos ambos.
+  En DESDE_USC se aborda en origen y las demás paradas son de descenso o de paso.
+- `GET /trips/available` filtra dirección, `fromText`/`toText`, catálogo,
+  franja, plazas y cursor. Búsqueda textual no acredita proximidad. Los filtros
+  técnicos de proximidad por puntos se conservan. El marcador
+  `near=latitud,longitud` filtra por geometría vial guardada con `radiusKm` sin
+  generar un punto de abordaje.
+- `GET /trips/my` mantiene lectura histórica del propietario, incluidos formatos anteriores.
+
+## Participación y recorrido
+
+| Operación                                         | Actor y efecto                                                                                                                             |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| POST /trips/:tripId/participations                | Estudiante, `{pickupId, dropoffId}`. 201 directo y reintento con el mismo identificador. Consume una sola plaza.                           |
+| GET /trips/:tripId/participations                 | Propietario del viaje, consulta confirmaciones e historial.                                                                                |
+| GET /reservations/my                              | Participaciones e historial del estudiante.                                                                                                |
+| POST /participations/:id/cancel                   | Titular, retiro futuro antes de abordar. Libera plazas en la misma transacción.                                                            |
+| POST /participations/:id/board                    | Conductor, presencia individual confirmada. Desde 30 min antes de salir hasta el final declarado.                                          |
+| POST /trips/:tripId/transition                    | Conductor, `{action: START                                                                                                                 | FINISH                                                                     | CANCEL}`. Estado y capacidad coherentes. |
+| GET /trips/:tripId/pickup-proposals               | El conductor ve las propuestas del viaje. Los demás ven sólo las propias.                                                                  |
+| POST /trips/:tripId/pickup-proposals              | Estudiante distinto del conductor. Referencia pública, ubicación de mapa, indicaciones opcionales. Sólo hacia USC con geometría validable. |
+| POST /trips/:tripId/pickup-proposals/:id/decision | Conductor, `{decision: ACCEPT                                                                                                              | REJECT}`. Incorpora una parada compatible sin cambiar geometría ni plazas. |
+
+El último cupo y las transiciones se serializan en PostgreSQL. Los endpoints de
+solicitudes y aprobación ordinaria se retiraron. Las solicitudes anteriores se
+leen como historial y nunca se convierten en confirmaciones. El flujo grupal
+con consentimiento se mantiene en el backlog.
+
+Errores comunes: 400 DTO, sentido o secuencia inválida, 401 sesión ausente o
+expirada, 403 elegibilidad o titularidad, 404 recurso o ruta retirada, 409
+duplicación incompatible, viaje cerrado o sin plazas, 429 límite y 503 dependencia
+no disponible. Ejemplos y DTO tipados residen en los contratos y Swagger.
+
+## Referencia histórica del corte anterior
+
+El contenido siguiente describe el API anterior al 25 de noviembre. Sus rutas,
+permisos y formatos incompatibles quedaron sustituidos por los descritos arriba.
+
 # API v1 implementada
 
 Base /api/v1; Swagger UI /api/v1/docs y JSON /api/v1/docs-json. DTOs validan y rechazan

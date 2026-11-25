@@ -1,35 +1,38 @@
-# Modelo implementado
+# Modelo de datos y transición
 
-UUID homogéneo; timestamptz UTC; Profile/User 1:1; InstitutionalMembership/User 1:1;
-AuthSession/User N:1; VerificationAttempt/User N:1. User.role MEMBER/ADMIN; estamentos
-STUDENT, TEACHER, ADMINISTRATIVE, WORKER, OTHER. driverDemoApproved es una capacidad
-sintética de presentación, no autoriza publicación ni sustituye vehículo/licencia/SOAT.
+Diseño del 25/11/2026. Mantener UUID, timestamps UTC, FKs, índices y constraints existentes
+compatibles. El esquema/migraciones efectivos y los resultados de migración se publican
+por el integrador en API/PROGRESS; esta especificación no declara que ya se aplicaron.
 
-CampusDestination tiene Decimal(9,6), constraints latitud/longitud y campus=USC,
-catálogo activo DEMO. No hay puntos certificados oficialmente. Constraints en nueva
-migración incremental; seed no actualiza ni borra registros existentes.
+| Agregado / datos existentes                      | Evolución y conservación requerida                                                                                                                                                                                                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User/Profile/InstitutionalMembership/AuthSession | Identidad única estudiantil. Capacidades derivadas, no autoconcedidas. Distinguir verificación de correo de estamento/vigencia; sesiones hasheadas/expirables/revocables. Usuarios antiguos no estudiantiles pierden acceso operativo sin reclasificación automática            |
+| Roles/revisores/documentos históricos            | Retirar ADMIN del modelo activo/permisos/seed/API; conservar sólo relaciones de auditoría necesarias. No borrar revisores/documentos a ciegas ni convertirlos en cuentas estudiantiles                                                                                          |
+| Vehicle/VehicleDocument/DriverEligibility        | Titularidad/capacidad/tipo/vigencia/estado. Diferenciar declarado, aportado, formato validado y fuente autorizada. Revisión ADMIN previa no es verificación externa ni requisito operativo vigente                                                                              |
+| CampusDestination/TripStop                       | Identidad institucional y metadatos de campus/espacios. Encuentro textual sin coordenada propia válido; distinguir referencia general aproximada y punto exacto. Snapshot de paradas autorizadas/paso en orden; FK y coordenadas opcionales coherentes, sin valores arbitrarios |
+| Trip                                             | Modalidad DESDE_USC/HACIA_USC y un extremo institucional, condiciones elegidas por conductor, geometría/descripcion y capacidad de pasajeros. Mantener geometría e IDs históricos; no convertir automáticamente externos→externos en viajes válidos                             |
+| Reservation/ReservationMember                    | Semántica de confirmación directa. Estados históricos pendientes no se elevan a confirmados. Duplicidad/ocupación/idempotencia bajo transacción; FKs compuestas preservan pertenencia de paradas. Retiro/cancelación conserva filas e historia                                  |
+| Grupo/invitación                                 | Sólo habilitar lote con estudiantes/consentimientos comprobables; código temporal no es UUID público. No retener plazas por invitaciones pendientes. No crear tablas sin caso de uso y contrato acordados                                                                       |
+| Propuesta de recogida                            | Entidad separada de participación: viaje HACIA_USC, proponente, punto compatible, estado/decisión propietario, timestamps. Aceptación no modifica geometría ni ocupación. Duplicados/terminales controlados                                                                     |
+| Abordaje/eventos y módulos complementarios       | Vínculos a participación/estado autorizados. QR interno específico si se implementa; costos exactos sin Float inapropiado, mensajes/calificaciones/seguridad con privacidad e historial                                                                                         |
 
-Tablas futuras se agregarán por casos de uso: Vehicle/VehicleDocument/DriverEligibility;
-Trip/RoutePoint/TripStop/Event/Location; Reservation/Member/BoardingToken;
-CostEstimate/Expense/Settlement/Share/Compensation; ChatMessage/Rating/Incident/
-EmergencyContact/Notification. Dinero entero COP; sin Float; pruebas de conservación.
-Referencias originales ausentes: modelo inicial provisional, pendiente crosswalk.
+## Invariantes transaccionales
 
-## Ampliación Fase 2
+Capacidad por viaje completo, pasajeros sin conductor: auto≤4/moto≤1. Ocupación derivada
+o materializada coherente con participaciones que consumen plaza. Lock conductor→viaje
+para confirmar y operaciones concurrentes compatibles. Validar recursos, estado, reloj,
+afiliación y documentos bajo lock; no check seguido de inserción independiente.
+Reintento no duplica filas/ocupación; cancelación válida libera una sola vez.
 
-Vehicle(ownerId,placa única,tipo,capacidad pasajeros,marca,año,color), VehicleDocument
-(SOAT_DEMO,vigencia,PENDING/APPROVED/REJECTED,revision,revisor/fecha), DriverEligibility
-(categoría sintética,vigencia/revisión equivalente), TripRuleDefinition/Selection.
-Trip enlaza conductor/vehículo/destinoUSC, origen y salida, duración/final DEMO, cupos,
-estado/version/helmet; TripStop con UNIQUE(tripId,position); TripEvent PUBLISHED auditable.
-Coordenadas Decimal; constraints capacidad/placa/año/color/intervalos; UUID y timestamptz.
-No se borraron columnas/tablas previas; driverDemoApproved queda legado sin autoridad:
-auth/me deriva capacidad conductor de licencia revisada y publicación revalida vehículo.
-Migraciones nuevas:20261114014345_phase2_vehicle_publication y
-20261114015557_phase2_document_revisions. Reservas y dinero no se añadieron.
+## Migraciones
 
-## Itinerarios y reservas de la redefinición
+Siempre nuevas migraciones; no editar aplicadas ni resets/drops. Diseñar prueba desde
+usuarios/revisores/vehículos/viajes/paradas/geometrías/reservas pendientes y confirmadas
+anteriores. Mantener IDs, FKs e historial; no promover pendientes, certificar documentos
+ni convertir docentes/trabajadores/admin en estudiantes. Listados históricos distinguen
+formatos legados sin abrir un bypass de nuevas reglas.
 
-El agregado conserva `Trip` y `TripStop`. `CampusDestination` incorpora tipos, instrucciones, metadatos de nivel y coordenadas opcionales por pareja. `Trip.routeGeometry` es JSONB; `routeDescription` distingue itinerarios nuevos. La FK de destino sigue válida cuando existe, y nunca se reubican históricos. Los extremos nuevos también son `TripStop` para que todos los puntos reservables tengan IDs homogéneos.
-
-Cada `Reservation` relaciona la solicitud/confirmación con un viaje, un solicitante, un abordaje y un descenso. Las dos relaciones compuestas enlazan paradas del mismo viaje. `ReservationMember` asocia miembros concretos. El lock por viaje serializa las comprobaciones de duplicidad y ocupación. Se mantienen todas las filas al cambiar estados. Índices y comprobaciones están en las dos migraciones nuevas. Ver [ADR 0002](ADRs/0002-driver-defined-itineraries.md).
+SQL/schema/seed/contratos se revisan con un único integrador de Datos. Aplicar primero
+a la base_test independiente autorizada y reportar resultados reales. No tocar otras
+bases. Ver [TEST_PLAN](../development/TEST_PLAN.md), [ADR0003](ADRs/0003-student-participation-redefinition.md)
+y [modelo anterior](../history/2026-11-24-guides.md).

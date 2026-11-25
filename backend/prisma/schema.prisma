@@ -6,10 +6,6 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-enum UserRole {
-  MEMBER
-  ADMIN
-}
 enum MembershipStatus {
   ACTIVE
   INACTIVE
@@ -28,9 +24,8 @@ enum VerificationOutcome {
 model User {
   id String @id @default(uuid()) @db.Uuid
   email String @unique @db.VarChar(254)
-  demoIdentity String @unique @db.VarChar(32)
-  role UserRole @default(MEMBER)
-  driverDemoApproved Boolean @default(false)
+  demoIdentity String? @unique @db.VarChar(32)
+  disabledAt DateTime? @db.Timestamptz(3)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   profile Profile?
   membership InstitutionalMembership?
@@ -44,6 +39,7 @@ model User {
   tripEvents TripEvent[]
   reservationRequests Reservation[]
   reservationMemberships ReservationMember[]
+  pickupProposals PickupProposal[]
 }
 model Profile {
   id String @id @default(uuid()) @db.Uuid
@@ -135,6 +131,7 @@ enum TripStatus {
   CANCELADO
 }
 model DriverEligibility {
+  verificationSource String @default("SELF_DECLARED") @db.VarChar(32)
   revision Int @default(1)
   userId String @id @db.Uuid
   category DemoLicenseCategory
@@ -163,6 +160,7 @@ model Vehicle {
   @@index([ownerId, createdAt])
 }
 model VehicleDocument {
+  verificationSource String @default("SELF_DECLARED") @db.VarChar(32)
   revision Int @default(1)
   id String @id @default(uuid()) @db.Uuid
   vehicleId String @unique @db.Uuid
@@ -210,6 +208,7 @@ model Trip {
   rules TripRuleSelection[]
   events TripEvent[]
   reservations Reservation[]
+  pickupProposals PickupProposal[]
   @@index([driverId, departureAt, expectedEndAt])
   @@index([status, departureAt, id])
 }
@@ -226,6 +225,7 @@ model TripStop {
   longitude Decimal @db.Decimal(9,6)
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
   campusPoint CampusDestination? @relation(fields: [campusPointId], references: [id], onDelete: Restrict)
+  acceptedProposal PickupProposal?
   pickups Reservation[] @relation("ReservationPickup")
   dropoffs Reservation[] @relation("ReservationDropoff")
   @@unique([tripId, position])
@@ -266,6 +266,7 @@ model Reservation {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   confirmedAt DateTime? @db.Timestamptz(3)
+  boardedAt DateTime? @db.Timestamptz(3)
   trip Trip @relation(fields: [tripId], references: [id])
   requester User @relation(fields: [requesterId], references: [id])
   pickup TripStop @relation("ReservationPickup", fields: [tripId, pickupId], references: [tripId, id])
@@ -281,4 +282,30 @@ model ReservationMember {
   user User @relation(fields: [userId], references: [id])
   @@id([reservationId, userId])
   @@index([userId])
+}
+
+enum PickupProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model PickupProposal {
+  id String @id @default(uuid()) @db.Uuid
+  tripId String @db.Uuid
+  requesterId String @db.Uuid
+  label String @db.VarChar(100)
+  instructions String? @db.VarChar(240)
+  latitude Decimal @db.Decimal(9, 6)
+  longitude Decimal @db.Decimal(9, 6)
+  status PickupProposalStatus @default(PENDING)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  decidedAt DateTime? @db.Timestamptz(3)
+  acceptedStopId String? @db.Uuid
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  requester User @relation(fields: [requesterId], references: [id], onDelete: Restrict)
+  acceptedStop TripStop? @relation(fields: [tripId, acceptedStopId], references: [tripId, id], onDelete: NoAction)
+  @@unique([tripId, acceptedStopId])
+  @@index([tripId, status, createdAt])
+  @@index([requesterId])
 }

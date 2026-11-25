@@ -1,80 +1,77 @@
-# RuTeam — instrucciones permanentes para cualquier IA
+# RuTeam — instrucciones permanentes
 
-Antes de trabajar, revisa `git status`, este archivo y el AGENTS.md del módulo,
-`CONTRIBUTING.md`, `docs/coordination/CURRENT_STATUS.md`, `WORKSTREAMS.md`,
-`MODULE_OWNERSHIP.md`, `docs/development/PROGRESS.md`, la matriz RF/RNF,
-UML relevante y el handoff más reciente del módulo. Las rutas de coordinación son
-relativas a `docs/coordination/`. No dependas de la memoria de un chat o plugin.
+Leer antes de cambiar reglas: [definición vigente](docs/requirements/PRODUCT_DEFINITION.md),
+AGENTS del módulo, CONTRIBUTING, docs/architecture/REPOSITORY_STRUCTURE.md,
+coordinación CURRENT_STATUS/WORKSTREAMS/MODULE_OWNERSHIP, PROGRESS, trazabilidad,
+UML derivado y handoff reciente. Inspeccionar rama, commit y árbol de trabajo.
+La definición funcional del 25 de noviembre de 2026 prevalece sobre interpretaciones
+anteriores incompatibles; los RF/RNF y HU originales conservan sus identificadores.
 
-Programa en tu rama individual `task/*` desde `feature` actualizada; presenta PR a
-`feature`. El integrador humano promociona a `dev` y luego `main`. No uses
-`feature/*`: colisiona con la rama literal `feature`. No hagas push/merge sin
-autorización. La excepción de fundación local en main ya fue solicitada en el
-prompt maestro; no habilita nuevos cambios directos a ramas compartidas.
+## Producto y autoridad
 
-Al cerrar CADA avance: prueba, documenta código/decisiones/migraciones, genera un
-handoff NUEVO en `docs/handoffs/`, enlázalo en PROGRESS y entrega traspaso. Editar
-código sin actualizar la documentación constituye una tarea incompleta. Actualiza
-WORKSTREAMS; CURRENT_STATUS sólo cambia por el integrador al validar `dev`.
-No declares INTEGRADO un cambio no fusionado y comprobado en dev.
+- Sólo estudiantes USC con vigencia acreditada. Una identidad con capacidades compatibles
+  de pasajero y conductor; Nest decide la elegibilidad. Ningún rol, acceso, panel,
+  endpoint, seed o flujo funcional de administración. La operación técnica de infraestructura
+  es distinta. Preservar auditoría histórica sin convertir usuarios antiguos en estudiantes.
+- Control de correo, autenticación, estamento, matrícula y permiso para conducir son
+  comprobaciones distintas. Correo @usc.edu.co, foto o QR no acreditan vigencia.
+  Fuente institucional autorizada bloqueada mientras no exista acceso legítimo; producción
+  falla cerrada. No scraping ni almacenamiento de contraseñas institucionales.
+- El conductor publica un desplazamiento previsto y fija ruta, fecha, vehículo,
+  plazas de pasajeros, paradas y condiciones. DESDE_USC parte de campus USC;
+  HACIA_USC termina allí. Dos extremos externos se rechazan aunque haya USC intermedia.
+  Validar campus con identidad institucional, nunca sólo con nombres de texto.
+- Buscar descubre viajes; no crea solicitudes de transporte ni cambia el recorrido.
+  Una confirmación ordinaria válida ocupa plaza directamente, sin aprobación del conductor.
+  Sin duplicados ni participación en viaje propio. Cupos por viaje completo: auto≤4,
+  moto≤1; concurrencia e idempotencia en PostgreSQL real, también frente a cancelaciones.
+- Propuestas de recogida sólo HACIA_USC y sobre recorrido compatible. Decide el conductor
+  propietario. Aceptarlas no cambia geometría, no reserva y no confirma participación.
+- Encuentro libre por texto, incluido interior/piso/sótano, vinculado al campus.
+  Ubicación general aproximada y punto exacto son distintos. No exigir coordenadas
+  propias al encuentro interior ni inventarlas. UI sin latitud/longitud/GeoJSON/UUID manuales.
+- Grupos requieren identidad y consentimiento explícito de cada integrante; un lote
+  conjunto es atómico. Invitaciones temporales pendientes no retienen plazas.
+  Priorizar confirmación individual segura mientras no exista ese mecanismo.
+- Estado del viaje, disponibilidad, participación y abordaje son distintos. Abordar
+  requiere participación confirmada y no consume otra plaza. Cancelar conserva historial;
+  retiro futuro permitido libera plazas. Sin cambios esenciales silenciosos ni multas.
+- Conservar vehículos, chat, calificaciones, seguridad y compensaciones compatibles.
+  Autogestión documental no equivale a verificación oficial. No inventar RUNT, USC,
+  pagos, reputación, despacho SOS o resultados de pruebas.
 
-## Reglas
+## Arquitectura y continuidad
 
-- Referencias en `reference/` o `referencias/`: leer ERS, rúbrica y las 36 páginas
-  XML drawio antes de cambiar el modelo. Si faltan, anótalo: no inventes requisitos,
-  prioridades, páginas UML o aprobaciones.
-- Precedencia: producto explícito del prompt > UML compatible > ERS/rúbrica > guía > ADR.
-- Stack: TypeScript strict, Nest monolito modular MVC, Prisma 7 + pg/PostgreSQL,
-  una app Expo Router SDK 54 React Native/Web. No Vite/Vue/Next/Firebase/Supabase,
-  pasarelas, microservicios ni servicios comerciales obligatorios.
-- React presenta, Nest decide, repositorios Prisma persisten. Contratos públicos
-  en packages/contracts y docs/development/API.md; no Prisma en cliente.
-- Afiliación ACTIVA y vigente en cada acceso protegido; demo siempre rotulada.
-  Provider USC oficial falla cerrado; no afirmar integración QR institucional.
-- El conductor fija itinerario y paradas. La USC puede ser origen, destino o punto
-  de encuentro. Los viajes sin vínculo USC quedan pendientes del PO. Matching y
-  reservas respetan paradas autorizadas en orden, capacidad por viaje (auto≤4,
-  moto≤1) y pruebas concurrentes reales. No automatizar género, penalidades o cobros
-  pendientes de aprobación.
-- No tocar módulos ajenos ni schema/lockfile/app.module sin coordinación. No editar
-  migraciones aplicadas: crear nuevas. Tests en BD independiente con sufijo _test.
-- Prohibidos reset --hard, clean -fd, branch -D, force push, migrate reset compartido.
-- No secretos, PII real, carnés, dumps, tokens ni outputs generados en Git.
-- .gitkeep sólo en hojas planificadas vacías; quitarlo al agregar contenido útil.
-- DoD: código + pruebas reales + contrato + trazabilidad + ADR si cambia decisión +
-  nuevo handoff + PROGRESS en el mismo commit; si falta algo, PARCIAL.
+TypeScript strict, monolito modular MVC Nest, Prisma 7/adapter-pg/PostgreSQL y una
+app Expo Router SDK 54 React Native/Web. React presenta; controllers traducen HTTP;
+application orquesta; domain conserva invariantes; repositorios persisten.
+Contratos en packages/contracts y API.md, nunca Prisma en React. No frontend paralelo,
+capas MVC globales ni reorganizaciones por preferencia. .web/.native sólo cuando se requieren.
 
-## Continuidad de Fase 2
+Sesiones revocables con expiración, cookie HttpOnly web y SecureStore móvil; proteger
+Origin/CSRF/CORS, límites y autorización por recurso. Fixtures/proveedores sintéticos
+exclusivos de desarrollo y tests aislados; no constituyen acceso alternativo a producción.
+No PII real, documentos, originales privados, secretos, tokens ni dumps en Git.
 
-Fuentes privadas leídas en `docs/RuTeam_Referencias_Codex_PRIVADO/reference-private/`
-(ubicación recibida) o `reference-private/` (ubicación esperada). Ambas están ignoradas.
-No versionar el paquete, conversiones ni PII; sólo derivados en ERS_CATALOG/TRACEABILITY
-y requirements/UML_CROSSWALK. IDs oficiales RF-001..030 y RNF-031..050 cotejados;
-RF-001 sin prioridad unívoca en la matriz original. No inventarla.
+Antes de tocar schema, migraciones, contratos, lockfile o app.module coordinar un único
+integrador. Migraciones incrementales, sin modificar aplicadas, resets, drops ni borrado
+indiscriminado. Preservar geometrías y FKs históricas; no promover pendientes antiguas
+silenciosamente a confirmadas. TEST_DATABASE_URL independiente terminada en _test;
+suites que escriben en la misma BD se ejecutan secuencialmente. No tocar bases de PULSO.
 
-Fase2 en task/trips-publicacion: registro/listado propios, documentos DEMO pendientes,
-revisión ADMIN versionada, publicación/listado de viajes USC. No reservas ni transiciones
-operativas todavía. Verificar código+tests+docs+handoff antes de cierre; este corte no
-autoriza commit/push/PR/merge. Mantener los cambios revisables sin stage si no hay permiso.
+Git: task/* → feature → dev → main. Reutilizar task activa pertinente, sin feature/*.
+No stage/commit/push/PR/merge sin autorización; prohibidos reset --hard, clean -fd,
+branch -D y force push. Respetar cambios ajenos. Dueños humanos POR_ASIGNAR.
+CURRENT_STATUS sólo cambia por integrador; avances locales no son integración.
 
-## Estructura vigente tras traslado local — 2026-11-14
+Cada incremento exige código/pruebas reales, contrato, trazabilidad, decisiones,
+PROGRESS y handoff NUEVO, aunque falle o sea parcial. Estados: implementado y verificado,
+parcial, pendiente, bloqueado externo o aceptación PO pendiente. No inferir cobertura por
+actualizar docs ni prueba física por export/viewport. Fecha académica: 28/11/2026;
+sprints≤2 días, sin ceremonias ni responsables inventados. Consultar SPRINTS.
 
-Workspaces backend (antes apps/api), frontend (antes apps/client) y packages/contracts.
-Leer backend/AGENTS.md o frontend/AGENTS.md y docs/architecture/REPOSITORY_STRUCTURE.md
-antes de cambiar el subárbol. Probar y documentar después de CADA avance, aunque falle
-o quede parcial; nuevo handoff + PROGRESS obligatorios para los agentes de seis integrantes.
-No replicar una plantilla ni reorganizar las capas internas por cambiar la ruta exterior.
-
-Backend conserva MVC por módulo: controllers→application→domain/repositorios; common es
-transversal y Prisma permanece en infraestructura/backend. La vista visual vive sólo en
-frontend. Frontend conserva Expo Router app y src/features, components/providers/services.
-No crear root app, backend/src/backend/api/mvc, capas MVC globales, frontend/frontend o
-segundo frontend web. Capacidad de driver/passenger no desplaza autoridad Nest al cliente.
-.gitkeep permanece en hojas planificadas vacías; no generar implementación ficticia.
-
-Excepción de base autorizada: task/refactor-monorepo-structure parte de bab4e63 de Fase 2
-porque feature todavía no la integra. No promover este refactor a feature antes de integrar
-Fase 2 y revisar que su diff sólo contenga el traslado. No stage/commit/push/PR/merge aquí.
-Las notas anteriores son cortes históricos; consultar PROGRESS/handoff y Git para estado.
-La actualización del 24 de noviembre se documenta en
-docs/architecture/ADRs/0002-driver-defined-itineraries.md.
+Originales privados localizables en docs/RuTeam_Referencias_Codex_PRIVADO; ignorados.
+Leer sólo por canal local autorizado; no versionar originales ni conversiones con PII.
+Los cotejos históricos 50 RF/RNF y 36 pestañas permanecen en ERS_CATALOG/UML_CROSSWALK.
+RF-001 sigue sin prioridad unívoca. Guías previas conservadas como
+[historia](docs/history/2026-11-24-guides.md), junto con reviews/handoffs fechados.

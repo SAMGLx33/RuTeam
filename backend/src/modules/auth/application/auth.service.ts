@@ -13,6 +13,7 @@ import {
   type SessionUser,
 } from '../infrastructure/repositories/auth.repository.js';
 import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
 export interface SessionPrincipal {
   userId: string;
   sessionId: string;
@@ -24,11 +25,23 @@ export class AuthService {
     private readonly verification: InstitutionalVerificationProvider,
     @Inject(ENVIRONMENT) private readonly env: Environment,
   ) {}
+  accessConfiguration() {
+    return {
+      institutionalAuthentication: 'UNAVAILABLE' as const,
+      studentEligibilityVerification: 'UNAVAILABLE' as const,
+      reason:
+        'Falta acceso a una fuente institucional autorizada de autenticación y matrícula vigente. El correo o carné por sí solos no acreditan elegibilidad.',
+      fixturesAvailable:
+        this.env.demo &&
+        this.env.NODE_ENV !== 'production' &&
+        this.env.VERIFICATION_PROVIDER === 'demo',
+    };
+  }
   async loginDemo(identity: string) {
     if (!this.env.demo || this.env.VERIFICATION_PROVIDER !== 'demo')
       throw new NotFoundException();
     const user = await this.repository.findIdentity(identity);
-    if (!user)
+    if (!user || user.disabledAt)
       throw new UnauthorizedException(
         'Identidad demo no disponible; ejecuta seed',
       );
@@ -42,11 +55,12 @@ export class AuthService {
     const expiresAt = new Date(
       Date.now() + this.env.SESSION_TTL_SECONDS * 1000,
     );
+    const presentedUser = this.presentUser(user);
     await this.repository.createSession(user.id, this.hash(token), expiresAt);
     return {
       token,
       expiresAt: expiresAt.toISOString(),
-      user: this.presentUser(user),
+      user: presentedUser,
     };
   }
   async authenticate(
@@ -62,9 +76,13 @@ export class AuthService {
       session.expiresAt.getTime() <= Date.now()
     )
       throw new UnauthorizedException('Sesión inválida o expirada');
+    const actor = await this.repository.findUser(session.userId);
+    if (!actor || actor.disabledAt)
+      throw new ForbiddenException('Cuenta deshabilitada');
     if (
       requireActiveMembership &&
-      !(await this.verification.verify(session.userId))
+      (!isActiveMembership(actor.membership, new Date()) ||
+        !(await this.verification.verify(session.userId)))
     )
       throw new ForbiddenException(
         'Acceso denegado: vinculación institucional inactiva o vencida (simulada)',
@@ -84,6 +102,7 @@ export class AuthService {
   }
   private presentUser(user: SessionUser) {
     if (
+      user.disabledAt ||
       !user.profile ||
       !user.membership ||
       !isActiveMembership(user.membership, new Date())
@@ -92,21 +111,25 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      role: user.role,
       capabilities: {
         passenger: true as const,
         driver:
-          user.driverEligibility?.reviewStatus === 'APPROVED' &&
-          user.driverEligibility.expiresAt.getTime() > Date.now(),
+          VehiculoPolicy.esPublicable(user.driverEligibility, new Date()) &&
+          user.vehicles.some(
+            (vehicle) =>
+              VehiculoPolicy.esPublicable(vehicle.document, new Date()) &&
+              (user.driverEligibility?.category === 'BOTH' ||
+                user.driverEligibility?.category === vehicle.type),
+          ),
       },
       profile: { displayName: user.profile.displayName },
       membership: {
         status: 'ACTIVE' as const,
         group: user.membership.group,
-        verifiedBy: 'DEMO' as const,
+        verifiedBy: user.membership.verifiedBy,
         validUntil: user.membership.validUntil.toISOString(),
       },
-      demo: true as const,
+      demo: user.membership.verifiedBy === 'DEMO',
     };
   }
 }

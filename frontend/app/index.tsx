@@ -38,9 +38,11 @@ export default function Home() {
             <Text style={styles.brand}>RuTeam</Text>
             <Text style={styles.caption}>Carpooling académico</Text>
           </View>
-          <Text style={styles.banner}>
-            ENTORNO DE DEMOSTRACIÓN; VINCULACIÓN SIMULADA
-          </Text>
+          {session.user?.demo && (
+            <Text style={styles.banner}>
+              ENTORNO DE DESARROLLO; IDENTIDADES SINTÉTICAS
+            </Text>
+          )}
           {session.loading ? (
             <View style={styles.loading}>
               <ActivityIndicator

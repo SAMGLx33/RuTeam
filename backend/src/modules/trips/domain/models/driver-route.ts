@@ -4,19 +4,40 @@ import type {
   RouteStop,
   StopMatch,
   TripPoint,
+  TripDirection,
 } from '@ruteam/contracts';
 
 type Coordinates = Pick<TripPoint, 'latitude' | 'longitude'>;
 type RouteAnchor = Pick<
   RouteStop,
-  'position' | 'id' | 'access' | 'campus' | 'campusPointId'
+  | 'position'
+  | 'id'
+  | 'access'
+  | 'campus'
+  | 'campusPointId'
+  | 'label'
+  | 'instructions'
 > &
   Coordinates;
 export type StopPreference = 'USC' | { campusPointId: string } | Coordinates;
+export function tripDirection(
+  stops: readonly Pick<RouteStop, 'campus' | 'campusPointId'>[],
+): TripDirection | null {
+  if (stops.length < 2) return null;
+  const isUsc = (point: Pick<RouteStop, 'campus' | 'campusPointId'>) =>
+    point.campus === 'USC' && point.campusPointId !== null;
+  const startsAtUsc = isUsc(stops[0]);
+  const endsAtUsc = isUsc(stops[stops.length - 1]);
+  if (startsAtUsc === endsAtUsc) return null;
+  return startsAtUsc ? 'DESDE_USC' : 'HACIA_USC';
+}
+
 export interface StopPreferences {
   from?: StopPreference;
   to?: StopPreference;
   radiusKm: number;
+  fromText?: string;
+  toText?: string;
 }
 
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
@@ -40,17 +61,40 @@ function preferenceDistance(
   return distanceKm(point, preference);
 }
 
+const searchableText = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
+
+function matchesText(point: RouteAnchor, text?: string) {
+  return (
+    !text ||
+    searchableText(
+      `${point.label} ${point.instructions ?? ''} ${point.campus ?? ''}`,
+    ).includes(searchableText(text))
+  );
+}
+
 export function matchStops(
   stops: readonly RouteAnchor[],
   preferences: StopPreferences,
 ): StopMatch | null {
   let match: StopMatch | null = null;
+  const direction = tripDirection(stops);
   for (const pickup of stops) {
-    if (pickup.access !== 'PICKUP' && pickup.access !== 'BOTH') continue;
+    if (direction === 'DESDE_USC' && pickup !== stops[0]) continue;
+    if (
+      (pickup.access !== 'PICKUP' && pickup.access !== 'BOTH') ||
+      !matchesText(pickup, preferences.fromText)
+    )
+      continue;
     const from = preferenceDistance(pickup, preferences.from);
     if (from > preferences.radiusKm) continue;
     for (const dropoff of stops) {
       if (
+        !matchesText(dropoff, preferences.toText) ||
         dropoff.position <= pickup.position ||
         (dropoff.access !== 'DROPOFF' && dropoff.access !== 'BOTH')
       )
@@ -80,6 +124,7 @@ export function allowsSegment(
   return (
     !!pickup &&
     !!dropoff &&
+    (tripDirection(stops) !== 'DESDE_USC' || pickup === stops[0]) &&
     pickup.position < dropoff.position &&
     (pickup.access === 'PICKUP' || pickup.access === 'BOTH') &&
     (dropoff.access === 'DROPOFF' || dropoff.access === 'BOTH')
@@ -93,13 +138,14 @@ function firstAlignedFraction(
   start: Coordinates,
   end: Coordinates,
   earliest: number,
+  threshold = ROUTE_ALIGNMENT_KM,
 ): number | null {
   const distanceAt = (fraction: number) =>
     distanceKm(point, {
       latitude: start.latitude + fraction * (end.latitude - start.latitude),
       longitude: start.longitude + fraction * (end.longitude - start.longitude),
     });
-  if (distanceAt(earliest) <= ROUTE_ALIGNMENT_KM) return earliest;
+  if (distanceAt(earliest) <= threshold) return earliest;
 
   const scale = Math.cos(radians(point.latitude));
   const dx = (end.longitude - start.longitude) * scale;
@@ -111,12 +157,12 @@ function firstAlignedFraction(
       (point.latitude - start.latitude) * dy) /
     lengthSquared;
   let upper = Math.min(1, Math.max(earliest, projection));
-  if (distanceAt(upper) > ROUTE_ALIGNMENT_KM) return null;
+  if (distanceAt(upper) > threshold) return null;
 
   let lower = earliest;
   for (let step = 0; step < 16; step++) {
     const fraction = (lower + upper) / 2;
-    if (distanceAt(fraction) <= ROUTE_ALIGNMENT_KM) upper = fraction;
+    if (distanceAt(fraction) <= threshold) upper = fraction;
     else lower = fraction;
   }
   return upper;
@@ -187,4 +233,55 @@ export function validateGeometry(
       'La geometría debe representar un trayecto con distancia positiva',
     );
   return meters;
+}
+
+export function pickupInsertionPosition(
+  geometry: RouteGeometry,
+  stops: readonly Coordinates[],
+  proposed: Coordinates,
+): number {
+  if (stops.length >= 12)
+    throw new DomainPolicyError(
+      'El recorrido ya contiene el máximo de paradas',
+    );
+  if (stops.some((stop) => distanceKm(stop, proposed) < 0.03))
+    throw new DomainPolicyError(
+      'Usa el punto publicado que ya existe cerca de ese lugar',
+    );
+
+  const positions: number[] = [];
+  for (let index = 1; index < stops.length; index++) {
+    try {
+      validateGeometry(geometry, [
+        ...stops.slice(0, index),
+        proposed,
+        ...stops.slice(index),
+      ]);
+      positions.push(index);
+    } catch (error) {
+      if (!(error instanceof DomainPolicyError)) throw error;
+    }
+  }
+  if (positions.length !== 1)
+    throw new DomainPolicyError(
+      'El punto debe ubicarse sin ambigüedad sobre el recorrido publicado',
+    );
+  return positions[0];
+}
+
+export function passesNear(
+  geometry: RouteGeometry,
+  point: Coordinates,
+  radiusKm: number,
+): boolean {
+  const path = geometry.coordinates.map(([longitude, latitude]) => ({
+    longitude,
+    latitude,
+  }));
+  return path
+    .slice(1)
+    .some(
+      (end, index) =>
+        firstAlignedFraction(point, path[index], end, 0, radiusKm) !== null,
+    );
 }

@@ -1,73 +1,44 @@
-# Frentes de trabajo
+# Frentes de trabajo vigentes
 
-Inicio diagnóstico/fundación: 2026-11-13. Cierres: no confirmados.
-Todos los responsables humanos están POR_ASIGNAR.
+Redefinición25/11/2026; entrega 28/11. Leer PRODUCT_DEFINITION y el
+[plan de incrementos](../development/PRODUCT_REDEFINITION_PLAN.md).
+Los seis frentes son técnicos; responsables/revisores humanos POR_ASIGNAR.
+Esta tabla coordina trabajo pendiente del corte, no certifica implementación ni integración.
+Los avances verificables se registran en PROGRESS/review/handoff por el integrador.
 
-| Frente                  | Rama sugerida           | Objetivo                   | Dependencia/bloqueo               | Estado local                                                      |
-| ----------------------- | ----------------------- | -------------------------- | --------------------------------- | ----------------------------------------------------------------- |
-| Identidad               | task/auth-afiliacion    | Verificación y sesión      | API oficial USC ausente           | Fundación implementada, revisión pendiente                        |
-| Viajes                  | task/trips-publicacion  | Vehículos/destinos/paradas | Datos y contrato de identidad     | Fase2 local en task/trips-publicacion; revisión/commit pendientes |
-| Matching/reservas       | task/reservations-cupos | Atomicidad grupal          | Modelo de viajes                  | Pendiente                                                         |
-| Recorrido               | task/ride-execution     | GPS foreground/QR interno  | Viajes/reservas                   | Pendiente                                                         |
-| Comunicación/economía   | task/chat-costs         | WS/chat/costos sin lucro   | Viajes, decisiones PO             | Pendiente                                                         |
-| Frontend/integración/QA | task/client-login       | Expo web/móvil y pruebas   | Teléfono físico y versión Expo Go | Fundación local; móvil físico no verificado                       |
+| Frente                          | Responsabilidad del incremento                                                                                                                               | Dependencia y coordinación                                                                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identidad/seguridad             | Sólo estudiantes vigentes, capacidades compatibles, sesiones, retiro de acceso ADMIN y aislamiento de fixtures; arquitectura de fuente legítima              | USC autorizada bloqueada; publicar política antes de operaciones nuevas. Datos/vehículos revisan migración histórica y no reclasificación de usuarios |
+| Viajes/vehículos/campus         | Autogestión sin aprobación interna, documento declarado≠verificado; DESDE_USC/HACIA_USC, campus institucional, encuentro libre y snapshot de condiciones     | Contratos/identidad; capacidad/licencia/SOAT/propiedad bajo autoridad Nest; sin cambios esenciales silenciosos                                        |
+| Matching/participaciones        | Descubrir viajes existentes, confirmar directamente, duplicados/idempotencia, retiro y último cupo; historial y grupos con consentimiento                    | Locks conductor→viaje, estado/paradas/afiliación revalidados. No aprobación ordinaria ni UUID como invitación; grupos pendientes explícitos           |
+| Recorrido                       | Selección por mapa/resultados, distinguir paso/parada y campus aproximado; propuestas sólo HACIA_USC, decisión del dueño separada de participación; abordaje | Motor/teselas/geocodificación autorizados, geometría persistida. No validar teléfono por export; propuestas no cambian ruta ni cupos                  |
+| Comunicación/economía/seguridad | Mantener chat, ratings, compensaciones, SOS/reportes compatibles según estado real; acceso por participante y datos mínimos                                  | Contratos de participación/estado. Sin lucro/pasarelas/multas o despacho ficticio; fuente de soporte humano sin rol ADMIN de aplicación               |
+| Frontend/integración/QA         | Navegación estudiantil, confirmación directa, formularios sin campos técnicos, errores y responsive; regresión y cierre documental                           | Consumir contratos acordados. API/BD_test y navegador secuenciales; pruebas físicas e integraciones son evidencia independiente                       |
 
-Agente de fundación: Codex, main por excepción solicitada; no sustituye dueño humano.
-Para cada avance, editar sólo fila propia y enlazar nuevo handoff desde PROGRESS.
+## Fronteras de edición
 
-## Frente activo de esta intervención
+Coordinación central de schema, nuevas migraciones, seed, contracts, lockfile,
+app.module y configuración. Un solo integrador de datos y contratos; ningún frente
+sobrescribe cambios ajenos. Tests que comparten BD se ejecutan uno a la vez.
+Frontend/pruebas/docs pueden avanzar con contrato explícito y archivos asignados.
+No delegar sin transmitir PRODUCT_DEFINITION actualizada.
 
-Codex implementa vehículos/publicación + consumidores Expo/contratos + migraciones nuevas
-en task/trips-publicacion desde feature=e3841bc. Inicio2026-11-13, cierre humano sin confirmar;
-responsable y revisor humanoPOR_ASIGNAR. Se coordinan schema, app.module, seed, guard de
-capacidad auth/me y componentes compartidos como dependencias del flujo autorizado.
-El checkpoint f637499 fue leído antes de cambiar de rama, sin copiarlo ni fusionarlo.
-Fuentes privadas del usuario excluidas antes de switch, sin editar/mover/borrar originales.
-No se necesita su integración para estas tareas aisladas; coordinación para futura fusión pendiente.
+Rama pertinente del encargo: task/driver-defined-routes; comprobar Git al retomar.
+No stage/commit/push/PR/merge automáticos. task/*→feature→dev→main; CURRENT_STATUS
+sólo cambia bajo autoridad del integrador, no por terminar una tarea local.
+Cada avance: pruebas, docs, trazabilidad y handoff NUEVO incluso si parcial/fallido.
 
-## Auditoría y preparación posterior — 2026-11-13
+## Antecedentes
 
-Frente Viajes: auditoría Codex del árbol existente, sin cambios runtime ni stage.
-Revisión independiente del parche completada; dictamen humano propuesto APROBAR CON
-CONDICIONES. Responsables/revisores de datos, backend, cliente, QA, documentación e
-integración: POR_ASIGNAR. Evidencias nuevas y autorización de commit pendientes de
-revisión humana; ningún frente se declara integrado. Sin sobrescribir trabajo de terceros.
+[Guías anteriores](../history/2026-11-24-guides.md), reviews y handoffs fechados conservan
+fundación, Fase2, traslado y corte24/11. Sus revisiones ADMIN, solicitud/aceptación
+ordinaria y referencias a PG ausente o ramas antiguas describen aquellos cortes.
+No definen responsabilidades ni reglas vigentes. La planificación21–28 está en SPRINTS.
 
-Frente Matching/reservas: sólo [plan técnico](../development/FASE3_RESERVAS_PLAN.md),
-con locks PostgreSQL, N identidades y pruebas concurrentes propuestas. No implementación;
-comenzar después de revisión e integración autorizadas de Fase 2 y acuerdos PO.
-Secuencia propuesta task→feature→dev→main y reconciliación f637499 en
-[FASE2_REVIEW](../reviews/FASE2_REVIEW.md). Handoff de auditoría enlazado en PROGRESS.
+## Identidad y autogestión — avance local 2026-11-25
 
-## Frente de refactor arquitectónico — 2026-11-14
-
-| Frente                 | Rama / base                                | Responsable / revisor                   | Estado                                                                                                                                     |
-| ---------------------- | ------------------------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Estructura transversal | task/refactor-monorepo-structure / bab4e63 | POR_ASIGNAR / POR_ASIGNAR; agente Codex | Traslado completo backend/frontend, sin negocio; revisión estructural favorable, validación HTTP bloqueada por entorno y sin stage/commit. |
-
-Scope coordinado: rutas npm/lockfile, Prisma dotenv, Expo/contracts, fixture Node,
-ESLint/ignore/CI y documentación. No modificar frentes funcionales ni iniciar reservas.
-Fase 2 publicada, no integrada en feature; esta task depende de esa integración previa.
-Servicios demo propios API3000/web8081; PG55432 no disponible y ajeno5432 intacto.
-Ver [review](../reviews/ARCH_REFACTOR_REVIEW.md) y nuevo handoff enlazado en PROGRESS.
-
-## Validación de infraestructura y refactor — 2026-11-14
-
-Codex: entorno PostgreSQL nuevo autorizado, persistente y separado desarrollo/test;
-validación Fase1/2 verde71Jest/4E2E/6smoke, conservación216archivos/133gitkeep. Cambios
-adicionales sólo arranque de caché en package.json/playwright.config; negocio/SQL intactos.
-Responsables/revisores POR_ASIGNAR. Handoff de recuperación enlazado en PROGRESS.
-No Fase3 ni promoción: primero integración autorizada de Fase2 y revisión del refactor.
-
-## Corte de tarea del 24 de noviembre
-
-| Frente                  | Evidencia o responsabilidad pendiente                                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Viajes/vehículos/campus | Publicación y catálogo DEMO en la tarea local. Revisar migración e integridad con Datos y QA.                                  |
-| Matching/reservas       | Búsqueda y último cupo comprobados en PostgreSQL. Confirmar políticas provisionales de grupo con PO.                           |
-| Recorrido               | Vista GeoJSON, proveedor vial/teselas optativos. Calibrar con proveedor de Cali y validar Expo Go físico.                      |
-| Identidad               | Regresión DEMO. Conservar bloqueo de integración oficial y revisar datos públicos del viaje.                                   |
-| Comunicación/economía   | Mantener el backlog. Sólo conectar futuros consumidores a reservas confirmadas y estados persistidos.                          |
-| Frontend/integración/QA | Repetir flujos completos, revisar datos/contratos con los seis frentes y promover autorizado desde task a feature y luego dev. |
-
-Dueños nominales y revisión del integrador POR_ASIGNAR. CURRENT_STATUS conserva la fuente de estado integrado.
+Contrato sin rol ADMIN; acceso sólo STUDENT vigente; declaraciones documentales sin
+aprobación interna, con integraciones autorizadas todavía bloqueadas. Migración histórica
+y fixtures separados coordinados con viajes/participaciones. ESLint propio aprobado;
+ejecución PostgreSQL integrada serializada. Responsable/revisión humana POR_ASIGNAR.
+[Handoff](../handoffs/2026-11-25_identidad-autogestion-estudiantil.md). Sin promoción Git.

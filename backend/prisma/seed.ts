@@ -13,37 +13,24 @@ const db = new PrismaClient({
 });
 try {
   const identities = [
-    {
-      key: 'ana',
-      name: 'Ana Demo',
-      group: 'STUDENT',
-      status: 'ACTIVE',
-      role: 'MEMBER',
-      driver: false,
-    },
+    { key: 'ana', name: 'Ana Desarrollo', group: 'STUDENT', status: 'ACTIVE' },
     {
       key: 'diego',
-      name: 'Diego Demo',
-      group: 'TEACHER',
+      name: 'Diego Desarrollo',
+      group: 'STUDENT',
       status: 'ACTIVE',
-      role: 'MEMBER',
-      driver: true,
+    },
+    {
+      key: 'sara',
+      name: 'Sara Desarrollo',
+      group: 'STUDENT',
+      status: 'ACTIVE',
     },
     {
       key: 'laura',
-      name: 'Laura Demo',
-      group: 'WORKER',
+      name: 'Laura Desarrollo',
+      group: 'STUDENT',
       status: 'INACTIVE',
-      role: 'MEMBER',
-      driver: false,
-    },
-    {
-      key: 'admin',
-      name: 'Administración Demo',
-      group: 'ADMINISTRATIVE',
-      status: 'ACTIVE',
-      role: 'ADMIN',
-      driver: false,
     },
   ] as const;
   await db.$transaction(async (tx) => {
@@ -53,9 +40,7 @@ try {
         update: {},
         create: {
           demoIdentity: identity.key,
-          email: `${identity.key}@demo.ruteam.invalid`,
-          role: identity.role,
-          driverDemoApproved: identity.driver,
+          email: `${identity.key}@student-fixtures.ruteam.invalid`,
         },
       });
       await tx.profile.upsert({
@@ -78,9 +63,6 @@ try {
     const driver = await tx.user.findUniqueOrThrow({
       where: { demoIdentity: 'diego' },
     });
-    const admin = await tx.user.findUniqueOrThrow({
-      where: { demoIdentity: 'admin' },
-    });
     await tx.driverEligibility.upsert({
       where: { userId: driver.id },
       update: {},
@@ -88,28 +70,30 @@ try {
         userId: driver.id,
         category: 'BOTH',
         expiresAt: new Date('2030-12-31T23:59:59Z'),
-        reviewStatus: 'APPROVED',
-        reviewedById: admin.id,
-        reviewedAt: new Date('2026-11-13T12:00:00Z'),
+        reviewStatus: 'PENDING',
+        verificationSource: 'SELF_DECLARED',
+        demo: true,
       },
     });
     await tx.vehicle.upsert({
-      where: { plate: 'DEM123' },
+      where: { plate: 'STU123' },
       update: {},
       create: {
         ownerId: driver.id,
-        plate: 'DEM123',
+        plate: 'STU123',
         type: 'CAR',
         passengerCapacity: 3,
-        brand: 'Marca Demo',
+        brand: 'Marca sintética',
         modelYear: 2020,
         color: 'GRIS',
+        demo: true,
         document: {
           create: {
             expiresAt: new Date('2030-12-31T23:59:59Z'),
-            reviewStatus: 'APPROVED',
-            reviewedById: admin.id,
-            reviewedAt: new Date('2026-11-13T12:00:00Z'),
+            reviewStatus: 'PENDING',
+            verificationSource: 'SELF_DECLARED',
+            kind: 'SOAT',
+            demo: true,
           },
         },
       },
@@ -195,7 +179,7 @@ try {
     }
   });
   console.log(
-    'Seed idempotente: cuatro identidades, licencia/vehículo sintéticos y catálogo USC/reglas DEMO; conserva registros existentes.',
+    'Seed idempotente: cuatro estudiantes sintéticos, licencia/vehículo declarados de desarrollo y catálogo USC/reglas DEMO; conserva registros existentes.',
   );
 } finally {
   await db.$disconnect();

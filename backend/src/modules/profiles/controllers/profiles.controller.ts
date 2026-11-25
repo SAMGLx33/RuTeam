@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Patch, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Patch,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   SessionGuard,
@@ -17,7 +25,9 @@ export class ProfilesController {
     private readonly profiles: ProfilesService,
     private readonly auth: AuthService,
   ) {}
-  @Get() me(@Req() req: AuthenticatedRequest) {
+  @Get()
+  @Header('Cache-Control', 'no-store')
+  me(@Req() req: AuthenticatedRequest) {
     return this.auth.currentUser(req.principal.userId);
   }
   @Patch('profile') update(

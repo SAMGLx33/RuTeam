@@ -1,5 +1,11 @@
 # Continuidad de rutas definidas por el conductor
 
+> Plan histórico, sustituido en sus reglas incompatibles el25/11/2026.
+> Leer [PRODUCT_DEFINITION](../requirements/PRODUCT_DEFINITION.md) y
+> [plan vigente](PRODUCT_REDEFINITION_PLAN.md) antes de implementar.
+> No recuperar aprobación ordinaria, ADMIN ni viajes con USC sólo intermedia.
+> Sus contratos/propuestas no acreditan implementación del corte vigente.
+
 Fecha 2026-11-24. Base local `690d486` de `feature`. Alcance funcional autorizado en el encargo del 24 de noviembre. Revisión y promoción a cargo del integrador.
 
 1. Ampliar `CampusDestination` y `TripStop`. Conservar FKs y registros de Fase 2. Usar paradas de extremo para el itinerario nuevo y conservar la entrada y salida HTTP histórica de publicación. Guardar la geometría LineString en JSONB sin PostGIS. Verificar las cuentas, capacidad, orden y referencia USC dentro de la publicación transaccional.

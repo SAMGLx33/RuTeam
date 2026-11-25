@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Header,
+  Inject,
   HttpCode,
   Post,
   Req,
@@ -10,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import type { Request, Response } from 'express';
 import { AuthService } from '../application/auth.service.js';
 import { DemoLoginDto } from '../dto/demo-login.dto.js';
@@ -21,7 +24,14 @@ import {
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    @Inject(ENVIRONMENT) private readonly env: Environment,
+  ) {}
+  @Get('access')
+  access() {
+    return this.auth.accessConfiguration();
+  }
   @Post('demo/login')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   async login(
@@ -36,13 +46,14 @@ export class AuthController {
     res.cookie('ruteam_session', token, {
       httpOnly: true,
       sameSite: 'strict',
-      secure: false,
+      secure: this.env.NODE_ENV === 'production',
       path: '/api/v1',
       expires: new Date(session.expiresAt),
     });
     return session;
   }
   @Get('me')
+  @Header('Cache-Control', 'no-store')
   @ApiCookieAuth()
   @ApiBearerAuth()
   @UseGuards(SessionGuard)
@@ -60,6 +71,7 @@ export class AuthController {
     res.clearCookie('ruteam_session', {
       httpOnly: true,
       sameSite: 'strict',
+      secure: this.env.NODE_ENV === 'production',
       path: '/api/v1',
     });
   }
