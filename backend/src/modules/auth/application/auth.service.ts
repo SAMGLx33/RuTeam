@@ -33,12 +33,16 @@ export class AuthService {
         'Falta acceso a una fuente institucional autorizada de autenticación y matrícula vigente. El correo o carné por sí solos no acreditan elegibilidad.',
       fixturesAvailable:
         this.env.demo &&
-        this.env.NODE_ENV !== 'production' &&
+        this.env.NODE_ENV === 'test' &&
         this.env.VERIFICATION_PROVIDER === 'demo',
     };
   }
   async loginDemo(identity: string) {
-    if (!this.env.demo || this.env.VERIFICATION_PROVIDER !== 'demo')
+    if (
+      this.env.NODE_ENV !== 'test' ||
+      !this.env.demo ||
+      this.env.VERIFICATION_PROVIDER !== 'demo'
+    )
       throw new NotFoundException();
     const user = await this.repository.findIdentity(identity);
     if (!user || user.disabledAt)
@@ -49,7 +53,7 @@ export class AuthService {
     await this.repository.recordVerification(user.id, allowed);
     if (!allowed)
       throw new ForbiddenException(
-        'Acceso denegado: vinculación institucional inactiva o vencida (simulada)',
+        'Acceso reservado a cuentas con correo confirmado y matrícula vigente',
       );
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(
@@ -79,13 +83,20 @@ export class AuthService {
     const actor = await this.repository.findUser(session.userId);
     if (!actor || actor.disabledAt)
       throw new ForbiddenException('Cuenta deshabilitada');
+    if (actor.demoIdentity != null && !this.syntheticAllowed(actor))
+      throw new ForbiddenException(
+        'Las cuentas sintéticas están aisladas del entorno real',
+      );
     if (
       requireActiveMembership &&
-      (!isActiveMembership(actor.membership, new Date()) ||
+      (!actor.emailVerifiedAt ||
+        !isActiveMembership(actor.membership, new Date()) ||
+        (actor.membership?.verifiedBy === 'DEMO' &&
+          !this.syntheticAllowed(actor)) ||
         !(await this.verification.verify(session.userId)))
     )
       throw new ForbiddenException(
-        'Acceso denegado: vinculación institucional inactiva o vencida (simulada)',
+        'Acceso reservado a cuentas con correo confirmado y matrícula vigente',
       );
     return { userId: session.userId, sessionId: session.id };
   }
@@ -96,6 +107,54 @@ export class AuthService {
   }
   async logout(sessionId: string): Promise<void> {
     await this.repository.revokeSession(sessionId);
+  }
+  syntheticAllowed(user: Pick<SessionUser, 'demoIdentity'>): boolean {
+    return (
+      user.demoIdentity != null &&
+      this.env.NODE_ENV !== 'production' &&
+      this.env.demo &&
+      this.env.VERIFICATION_PROVIDER === 'demo'
+    );
+  }
+  capabilitiesFor(user: SessionUser, eligible: boolean) {
+    const synthetic = this.syntheticAllowed(user);
+    const license = user.driverEligibility;
+    const driver =
+      eligible &&
+      !!license &&
+      (!license.demo || synthetic) &&
+      VehiculoPolicy.esPublicable(license, new Date()) &&
+      user.vehicles.some(
+        (vehicle) =>
+          (!vehicle.document?.demo || synthetic) &&
+          VehiculoPolicy.esPublicable(vehicle.document, new Date()) &&
+          (license.category === 'BOTH' || license.category === vehicle.type),
+      );
+    return {
+      passenger: eligible,
+      driverAccess:
+        eligible &&
+        (user.usagePreference === 'DRIVER_AND_PASSENGER' ||
+          !!license ||
+          user.vehicles.length > 0),
+      driver,
+    };
+  }
+  async createIdentitySession(userId: string, expectedPasswordHash: string) {
+    const token = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(
+      Date.now() + this.env.SESSION_TTL_SECONDS * 1000,
+    );
+    if (
+      !(await this.repository.createCredentialSession(
+        userId,
+        expectedPasswordHash,
+        this.hash(token),
+        expiresAt,
+      ))
+    )
+      throw new UnauthorizedException('Credenciales inválidas');
+    return { token, expiresAt: expiresAt.toISOString() };
   }
   private hash(token: string): string {
     return createHash('sha256').update(token).digest('hex');
@@ -113,14 +172,7 @@ export class AuthService {
       email: user.email,
       capabilities: {
         passenger: true as const,
-        driver:
-          VehiculoPolicy.esPublicable(user.driverEligibility, new Date()) &&
-          user.vehicles.some(
-            (vehicle) =>
-              VehiculoPolicy.esPublicable(vehicle.document, new Date()) &&
-              (user.driverEligibility?.category === 'BOTH' ||
-                user.driverEligibility?.category === vehicle.type),
-          ),
+        driver: this.capabilitiesFor(user, true).driver,
       },
       profile: { displayName: user.profile.displayName },
       membership: {
@@ -129,7 +181,8 @@ export class AuthService {
         verifiedBy: user.membership.verifiedBy,
         validUntil: user.membership.validUntil.toISOString(),
       },
-      demo: user.membership.verifiedBy === 'DEMO',
+      demo:
+        this.syntheticAllowed(user) && user.membership.verifiedBy === 'DEMO',
     };
   }
 }

@@ -1,3 +1,4 @@
+import type { ReputationSummary } from './ratings.js';
 import type { TripPoint, TripRule, VehicleType } from './index.js';
 
 export type CampusPointKind =
@@ -20,6 +21,15 @@ export interface CampusMeetingPoint {
   accessReference: string | null;
   level: string | null;
   demo: boolean;
+  campusSiteId?: string | null;
+  sourceUrl?: string | null;
+}
+export interface GeocodedPlace extends TripPoint {
+  context: string;
+}
+export interface PlaceSearchResponse {
+  items: GeocodedPlace[];
+  attribution: string;
 }
 export type TripDirection = 'DESDE_USC' | 'HACIA_USC';
 export type StopAccess = 'PICKUP' | 'DROPOFF' | 'BOTH' | 'WAYPOINT';
@@ -37,6 +47,7 @@ export interface ItineraryInput {
   stops: (MeetingPointInput & { access: StopAccess })[];
   description: string;
   geometry?: RouteGeometry;
+  routingSelection?: string;
   /** Confirma que paradas, geometría e instrucciones son apropiadas para compartir. */
   publicMeetingPoints: true;
 }
@@ -46,6 +57,9 @@ export interface RouteStop extends TripPoint {
   access: StopAccess;
   campusPointId: string | null;
   campus: string | null;
+  campusSiteId?: string | null;
+  estimatedOffsetSeconds?: number | null;
+  reachedAt?: string | null;
   instructions: string | null;
 }
 export interface TripItinerary {
@@ -63,6 +77,7 @@ export interface StopMatch {
 export interface AvailableTrip {
   id: string;
   driverName: string | null;
+  driverReputation: ReputationSummary;
   vehicle: { type: VehicleType; brand: string; color: string };
   departureAt: string;
   estimatedDurationMinutes: number;
@@ -92,6 +107,9 @@ export interface ReservationView {
   id: string;
   tripId: string;
   requesterName: string | null;
+  passengerReputation?: ReputationSummary;
+  driverName: string | null;
+  vehicle: { type: VehicleType; brand: string; color: string };
   isRequester: boolean;
   quantity: number;
   status: ReservationStatus;
@@ -102,6 +120,7 @@ export interface ReservationView {
   createdAt: string;
   confirmedAt: string | null;
   boardedAt: string | null;
+  noShowAt?: string | null;
   canCancel: boolean;
 }
 
@@ -113,6 +132,8 @@ export interface RouteOption {
   geometry: RouteGeometry;
   distanceMeters: number;
   durationMinutes: number;
+  routingSelection?: string;
+  legDurationsSeconds?: number[];
 }
 
 export interface PickupProposalInput extends TripPoint {

@@ -1,5 +1,8 @@
 import type { ItineraryInput, TripItinerary } from './routes.js';
 export type * from './routes.js';
+export type * from './accounts.js';
+export type * from './mobility.js';
+export type * from './chat.js';
 
 /** API v1. Tipos públicos; ninguna regla de negocio vive en este paquete. */
 export type InstitutionalGroup =
@@ -82,6 +85,8 @@ export interface TripSummary {
   origin: TripPoint;
   departureAt: string;
   expectedEndAt: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
   estimatedDurationMinutes: number;
   offeredSeats: number;
   occupiedSeats: number;
@@ -116,3 +121,14 @@ export interface PublishTripInput {
   providesHelmet?: boolean;
   itinerary: ItineraryInput;
 }
+
+export * from './ratings.js';
+export type { TripSafetyContext } from './trip-safety.js';
+export type {
+  TripExpenseDetails,
+  TripExpenseEstimate,
+  TripExpenseInput,
+} from './expenses.js';
+export type * from './groups.js';
+export type * from './trip-tracking.js';
+export type * from './boarding.js';

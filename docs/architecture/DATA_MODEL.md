@@ -36,3 +36,19 @@ SQL/schema/seed/contratos se revisan con un único integrador de Datos. Aplicar 
 a la base_test independiente autorizada y reportar resultados reales. No tocar otras
 bases. Ver [TEST_PLAN](../development/TEST_PLAN.md), [ADR0003](ADRs/0003-student-participation-redefinition.md)
 y [modelo anterior](../history/2026-11-24-guides.md).
+
+## Entidades de la consolidación
+
+- `TripRating` registra viaje, emisor, receptor, capacidad histórica, valor entero,
+  comentario privado y fecha. El índice por receptor/capacidad soporta los promedios.
+- `TripGroup` fija viaje, tramo, organizador, tamaño, hash y vencimiento del código.
+  `TripGroupMember` registra consentimiento, posible retiro y vínculo único a una
+  participación individual al confirmar el grupo.
+- `ReservationBoardingPass` guarda un hash vigente por participación y punto de
+  recogida, con vencimiento y consumo.
+- `TripDriverPosition` conserva una muestra por viaje, con tiempos de obtención
+  y publicación. Caduca, se puede retirar y se borra al cerrar.
+- `TripExpenseEstimate` conserva combustible, peajes y estacionamiento en COP enteros
+  como estimación privada. La suma se calcula con los tres importes guardados.
+- `TripNotification` guarda disponibilidad de evaluación y confirmación de grupo
+  junto a avisos de coincidencia y chat.

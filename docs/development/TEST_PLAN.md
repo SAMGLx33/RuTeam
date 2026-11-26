@@ -69,3 +69,49 @@ son pasos adicionales aplicables. Guardar comandos, resultados, primer fallo/cor
 concurrencia, bases anonimizadas y limitaciones sin secretos. Rendimiento RNF-031,
 consumo/precisión, WCAG y seguridad productiva necesitan mediciones propias; no inferir
 cumplimiento de totales de tests ni de tener un workflow CI.
+
+## Casos de la transformación local
+
+- Jest `account-policy`, `account-smtp` y `account.e2e`: hash, captura controlada,
+  normalización, registro pendiente, enlace único, expiración, recuperación y revocación.
+- Jest `mobility-policy` y `mobility.e2e`: fuente, sentido, campus, horarios, proximidad,
+  propiedad, paginación, aislamiento, dedupe, lease vencido y disponibilidad tras cambios.
+- Playwright `auth.spec.ts` y `publication.spec.ts`: formulario convencional, acceso
+  denegado por URL, persistencia de perfil/onboarding, panel según capacidades, publicar,
+  aviso interno, detalle, participación y liberación. Chromium escritorio y viewport móvil.
+- Las suites HTTP y web corren en serie sobre `ruteam_test`. Los resultados observados
+  se anotan en la [revisión](../reviews/PRODUCT_TRANSFORMATION_DELIVERY.md).
+
+## Regresión de continuidad, 26/11/2026
+
+Mantener suites PostgreSQL en serie. Comprobar sede distinta, recolección al día siguiente,
+integridad de prueba de ruta y persistencia de offsets. Para chat, comprobar rechazo de ajenos,
+repetición concurrente, paginación, leído, retiro, cierre y expiración. El recorrido web prueba
+selección por texto, llegada desde aviso, confirmación, chat y liberación de plazas.
+El test SMTP usa su propia base y captura local. La fuente de los resultados viales
+controlados se detalla en [revisión](../reviews/PRODUCT_CONTINUITY.md).
+
+## Consolidación y aceptación por módulo
+
+| Frente               | Escenarios                                                                                                                                  | Evidencia                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| RF-010               | 1 y 5 estrellas, 0/6/decimales, dirección por capacidad histórica, ajeno/ausencia/autocalificación, 201/409 concurrente, promedio y recarga | `ratings-policy.test.mjs`, `ratings.e2e.test.mjs`, `ratings.spec.ts`                          |
+| Grupos               | Consentir sin reservar, invitación rotada o expirada, baja de elegibilidad, dos grupos y carrera con individual, inicio y retiro            | `groups.e2e.test.mjs`, `groups.spec.ts`. Las reservas individuales comparten capacidad y chat |
+| QR                   | Titular, propietario, estado, recogida, vigencia, reutilización y control conjunto con abordaje manual                                      | `boarding-qr.e2e.test.mjs`. Cámara física se registra por separado                            |
+| Seguridad y posición | Propietario/confirmado, retirada, denegación, codificación de ubicación, límite, eliminación, cierre y selección del sistema controlada     | `trip-safety.e2e.test.mjs`, `trip-tracking.e2e.test.mjs`, `safety.spec.ts`                    |
+| Costos estimados     | Pesos exactos, visibilidad privada, validación, edición antes de iniciar y recarga                                                          | `expenses-policy.test.mjs`, `expenses.e2e.test.mjs`, tramo de navegador en `ratings.spec.ts`  |
+| Restauración         | Copia restaurada, filas, restricciones y checksums derivados                                                                                | [Ensayo de restauración](../reviews/POSTGRESQL_RESTORE_DRILL.md)                              |
+
+El navegador usa las bases PostgreSQL y los procesos Nest y Expo reales. El GPS
+web y el selector externo se controlan en pruebas. Para permisos nativos y red
+del teléfono usa [MOBILE_TESTING](MOBILE_TESTING.md).
+
+Para Playwright, el servidor web de pruebas ejecuta la exportación real de Expo y la
+sirve sólo en loopback. Nest conserva su proceso y base PostgreSQL de pruebas.
+Las aserciones y recorridos permanecen iguales. Esta preparación evita compilar Metro
+durante el primer inicio de sesión y tras recargar, especialmente en VMs con memoria limitada.
+
+La suite comparte una sola dirección de loopback. Cuando Nest devuelve 429 en
+el login de fixtures, Playwright espera el valor real de `Retry-After` y vuelve
+a intentar una vez. Los límites de autenticación y las aserciones originales
+siguen activos.

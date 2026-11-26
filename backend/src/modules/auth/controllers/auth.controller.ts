@@ -15,6 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import type { Request, Response } from 'express';
 import { AuthService } from '../application/auth.service.js';
+import { AccountService } from '../application/account.service.js';
 import { DemoLoginDto } from '../dto/demo-login.dto.js';
 import {
   SessionGuard,
@@ -27,10 +28,14 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     @Inject(ENVIRONMENT) private readonly env: Environment,
+    private readonly accounts: AccountService,
   ) {}
   @Get('access')
   access() {
-    return this.auth.accessConfiguration();
+    return {
+      ...this.auth.accessConfiguration(),
+      accountEmailAvailable: this.accounts.emailAvailable(),
+    };
   }
   @Post('demo/login')
   @Throttle({ default: { limit: 20, ttl: 60000 } })

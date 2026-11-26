@@ -10,7 +10,9 @@ const declaration = {
 const student = {
   id: 'student',
   disabledAt: null,
-  email: 'student@fixtures.ruteam.invalid',
+  email: 'ana@student-fixtures.ruteam.invalid',
+  demoIdentity: 'ana',
+  emailVerifiedAt: new Date('2026-11-25T00:00:00Z'),
   profile: { displayName: 'Estudiante sintético' },
   membership: {
     status: 'ACTIVE',
@@ -83,6 +85,23 @@ test('licencia sin vehículo compatible no otorga capacidad de conductor', async
   expect((await service.currentUser('student')).capabilities.driver).toBe(
     false,
   );
+});
+test('vencer la licencia bloquea publicación y conserva pasajero y renovación', () => {
+  const { service } = setup();
+  const expired = {
+    ...student,
+    driverEligibility: { ...student.driverEligibility, expiresAt: new Date(0) },
+  };
+  expect(service.capabilitiesFor(expired, true)).toEqual({
+    passenger: true,
+    driverAccess: true,
+    driver: false,
+  });
+  expect(service.capabilitiesFor(expired, false)).toEqual({
+    passenger: false,
+    driverAccess: false,
+    driver: false,
+  });
 });
 test('producción publica indisponibilidad institucional y nunca ofrece fixtures', async () => {
   const { service } = setup(student, {

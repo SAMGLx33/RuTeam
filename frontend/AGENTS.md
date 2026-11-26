@@ -9,11 +9,23 @@ Mantener estructura interna útil; .web/.native sólo por necesidad de plataform
 Nest decide elegibilidad, capacidad, confirmación y autorización por recurso.
 TanStack Query para remoto; Context de sesión; RHF/Zod sólo validación de UX.
 Una identidad estudiantil con capacidades de pasajero y conductor compatibles.
-Sin menús/pantallas/login/revisión ADMIN. Login sintético sólo explícito en desarrollo
-pruebas; no presentación normal del producto ni bypass de vigencia en producción.
+Sin menús/pantallas/login/revisión ADMIN. Login normal convencional (correo y contraseña
+propia RuTeam), registro, verificación y recuperación cuando funcional. Sin selector de
+identidades o botón desarrollo; pruebas usan el mismo formulario/ciclo de sesión y
+providers aislados. No botones de identidad oficial inexistente ni bypass de vigencia.
+Cuenta autenticada pendiente tiene pantalla de cuenta/verificación, sin feed protegido.
+Preferencia de conducción no concede permisos; onboarding guarda y retoma sus pasos.
+Leer AUTHORIZATION_MATRIX/FRONTEND_NAVIGATION/USER_FLOWS y BUSINESS_RULES.
 
-Navegación orientada a buscar/publicar, mis viajes, mis participaciones, perfil/vehículos
-y comunicación disponible. No anunciar apartados futuros como funcionales.
+Navegación con Inicio útil, Viajes disponibles (Para ti/Desde/Hacia/Todos), participaciones,
+perfil/configuración y notificaciones reales; publicar/propios sólo para conducción
+autorizada. Perfil fuera del inicio y vehículos desde habilitación/gestión correspondiente.
+Feed consume API sin búsqueda manual obligatoria ni preferencias previas. Movilidad
+privada configura campus/zonas/horarios/avisos, nunca solicitud de transporte. Conductor
+conserva experiencia pasajero y distingue propios de participaciones ajenas. Web aprovecha
+layout lateral y ancho; móvil pestañas principales/pantallas secundarias, una sola app.
+Capturas e interacción de ambas vistas verifican menús y estados según capacidades.
+No anunciar apartados futuros como funcionales.
 Búsqueda filtra viajes existentes; acción ordinaria «Confirmar participación» directa.
 El propietario consulta confirmados sin aprobarlos individualmente. Propuestas de parada
 sólo HACIA_USC, decisión separada, sin indicar que aceptarla reserva automáticamente.
@@ -39,3 +51,23 @@ Verificar typecheck/lint/expo install --check/Doctor/export/Playwright aplicable
 Export o viewport móvil no acredita Expo Go físico; registrar modelo/OS/versión y resultado.
 Después de cada avance: pruebas y límites reales, contrato/docs/PROGRESS y handoff nuevo.
 Revisores humanos POR_ASIGNAR; no Git compartido sin autorización.
+
+Notificación interna persistente no es reserva, push, correo ni tiempo real. Reconsultar
+detalle/estado actual al abrir; datos/razones de compatibilidad vienen de backend. Sin
+preferencias o coincidencias, orientar a Todos y configuración, no inventar recomendaciones.
+Al cambiar cuenta/elegibilidad, limpiar/cancelar caché privada y reevaluar navegación.
+Probar negativos por UI y URL directa, más API; no declarar autorización por ocultar botón.
+
+Buscar lugares sólo con una acción explícita y confirmar el resultado o marcador.
+Mostrar la sede y su estado de configuración. Distinguir hora estimada de llegada
+registrada. Las acciones de avance dependen de la parada alcanzada. Chat usa la misma
+app y bandeja, con actualización periódica y modo de lectura al completar.
+
+## Consolidación
+
+Mantener estrellas accesibles, estado pendiente y confirmación persistida.
+Presentar los resúmenes del servidor por capacidad. Crear grupos desde un
+tramo válido y distinguir consentir de confirmar. El escáner QR va en
+nativo y el abordaje manual sigue disponible. Solicitar ubicación en primer
+plano por acción explícita. El usuario confirma antes de abrir el selector o
+teléfono. Conservar las guías de QA en MOBILE_TESTING.

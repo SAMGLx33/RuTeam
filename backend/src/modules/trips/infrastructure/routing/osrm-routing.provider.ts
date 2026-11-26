@@ -21,6 +21,10 @@ const responseSchema = z.object({
 const routeSchema = z.object({
   distance: z.number().positive(),
   duration: z.number().positive(),
+  legs: z
+    .array(z.object({ duration: z.number().nonnegative().max(21600) }))
+    .max(11)
+    .optional(),
   geometry: z.object({
     type: z.literal('LineString'),
     coordinates: z
@@ -53,6 +57,7 @@ export class OsrmRoutingProvider {
       const response = await fetch(
         `${base}/route/v1/driving/${coordinates}?${query}`,
         {
+          headers: { 'User-Agent': 'RuTeam/0.1' },
           redirect: 'error',
           signal: AbortSignal.timeout(4000),
         },
@@ -80,10 +85,22 @@ export class OsrmRoutingProvider {
         if (!parsed.success) continue;
         try {
           validateGeometry(parsed.data.geometry, points);
+          const legs = parsed.data.legs?.map(({ duration }) =>
+            Math.round(duration),
+          );
+          const seconds = legs?.reduce((total, leg) => total + leg, 0) ?? 0;
+          const reliable =
+            legs?.length === points.length - 1 &&
+            seconds > 0 &&
+            seconds <= 21600 &&
+            Math.abs(seconds - parsed.data.duration) <= points.length;
           options.push({
             geometry: parsed.data.geometry,
             distanceMeters: Math.round(parsed.data.distance),
-            durationMinutes: Math.max(1, Math.round(parsed.data.duration / 60)),
+            durationMinutes: reliable
+              ? Math.max(5, Math.ceil(seconds / 60))
+              : Math.max(1, Math.round(parsed.data.duration / 60)),
+            ...(reliable && { legDurationsSeconds: legs }),
           });
         } catch (error) {
           if (!(error instanceof DomainPolicyError)) throw error;

@@ -5,63 +5,105 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { TripAction } from '@ruteam/contracts';
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
-import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
-import {
-  allowsSegment,
-  tripDirection,
-} from '../../trips/domain/models/driver-route.js';
+import type { BoardingPass, TripAction } from '@ruteam/contracts';
+
+import { allowsSegment } from '../../trips/domain/models/driver-route.js';
 import { presentStops } from '../../trips/infrastructure/repositories/trips.repository.js';
+import {
+  checkDriver,
+  checkMembers,
+  checkOpen,
+  type BookableTrip,
+} from './participation-eligibility.js';
 import type { ConfirmParticipationDto } from '../dto/reservation.dto.js';
+import {
+  currentReachedStop,
+  isNextStop,
+  originBoardingWindow,
+} from '../domain/trip-progress.js';
 import {
   ReservationsRepository,
   reservationView,
   type ReservationUnit,
 } from '../infrastructure/repositories/reservations.repository.js';
 
-type BookableTrip = Awaited<ReturnType<ReservationUnit['trip']>>;
-function checkDriver(trip: BookableTrip, now: Date): void {
+import {
+  createBoardingPass,
+  hashBoardingPass,
+} from '../infrastructure/boarding-pass-token.js';
+
+type BoardableReservation = NonNullable<
+  Awaited<ReturnType<ReservationUnit['find']>>
+>;
+
+async function checkBoarding(
+  unit: ReservationUnit,
+  trip: BookableTrip,
+  row: BoardableReservation,
+  now: Date,
+): Promise<void> {
   if (
-    !isActiveMembership(trip.driver.membership, now) ||
-    !VehiculoPolicy.esPublicable(trip.vehicle.document, trip.expectedEndAt) ||
-    !VehiculoPolicy.esPublicable(
-      trip.driver.driverEligibility,
-      trip.expectedEndAt,
-    ) ||
-    (trip.driver.driverEligibility?.category !== 'BOTH' &&
-      trip.driver.driverEligibility?.category !== trip.vehicle.type)
+    row.status !== 'CONFIRMED' ||
+    row.quantity !== 1 ||
+    row.noShowAt ||
+    (trip.status !== 'PROGRAMADO' && trip.status !== 'EN_CURSO')
   )
     throw new ConflictException(
-      'El conductor o el vehículo ya no están habilitados',
+      'El abordaje requiere una participación individual confirmada',
+    );
+  if (trip.status === 'PROGRAMADO') {
+    if (
+      row.pickupId !== trip.stops[0]?.id ||
+      !originBoardingWindow(trip.departureAt, trip.expectedEndAt, now)
+    )
+      throw new ConflictException(
+        'Antes de iniciar sólo se registra abordaje en el origen dentro de la ventana de salida',
+      );
+    checkDriver(trip, now);
+  }
+  await checkMembers(
+    unit,
+    row.members.map(({ userId }) => userId),
+    now,
+  );
+  if (
+    !row.boardedAt &&
+    trip.status === 'EN_CURSO' &&
+    currentReachedStop(trip.stops)?.id !== row.pickupId
+  )
+    throw new ConflictException(
+      'Registra la llegada a la recogida antes del abordaje',
     );
 }
-function checkOpen(trip: BookableTrip, now: Date): void {
-  if (
-    !trip.routeDescription ||
-    !tripDirection(presentStops(trip)) ||
-    trip.status !== 'PROGRAMADO' ||
-    trip.departureAt <= now
-  )
-    throw new ConflictException('El viaje ya no admite participaciones');
+
+function requireBoardingDriver(trip: BookableTrip, actorId: string): void {
+  if (trip.driverId !== actorId)
+    throw new ForbiddenException(
+      'Sólo el conductor del viaje confirma el abordaje',
+    );
 }
-async function checkMembers(
-  unit: ReservationUnit,
-  memberIds: string[],
-  now: Date,
-) {
-  const memberships = await unit.memberships(memberIds);
-  if (
-    memberships.length !== memberIds.length ||
-    memberships.some((membership) => !isActiveMembership(membership, now))
-  )
-    throw new ForbiddenException('Se requiere condición de estudiante vigente');
-}
+
 const transitions = {
   START: { from: 'PROGRAMADO', to: 'EN_CURSO' },
   FINISH: { from: 'EN_CURSO', to: 'COMPLETADO' },
   CANCEL: { from: 'PROGRAMADO', to: 'CANCELADO' },
 } as const;
+
+function presentTransition(trip: {
+  id: string;
+  status: BookableTrip['status'];
+  occupiedSeats: number;
+  startedAt: Date | null;
+  finishedAt: Date | null;
+}) {
+  return {
+    id: trip.id,
+    status: trip.status,
+    occupiedSeats: trip.occupiedSeats,
+    startedAt: trip.startedAt?.toISOString() ?? null,
+    finishedAt: trip.finishedAt?.toISOString() ?? null,
+  };
+}
 
 @Injectable()
 export class ReservationsService {
@@ -137,32 +179,126 @@ export class ReservationsService {
     const tripId = await this.repository.tripForRequest(id);
     return this.repository.withTripLock(tripId, async (unit) => {
       const trip = await unit.trip();
-      if (trip.driverId !== actorId)
-        throw new ForbiddenException(
-          'Sólo el conductor del viaje confirma el abordaje',
-        );
+      requireBoardingDriver(trip, actorId);
       const row = await unit.find(id);
       if (!row) throw new NotFoundException('Participación inexistente');
       const now = new Date();
-      // Ventana de presencia: 30 minutos antes de la salida hasta el final declarado.
-      if (
-        row.status !== 'CONFIRMED' ||
-        row.quantity !== 1 ||
-        (trip.status !== 'PROGRAMADO' && trip.status !== 'EN_CURSO') ||
-        now.getTime() < trip.departureAt.getTime() - 30 * 60000 ||
-        now >= trip.expectedEndAt
-      )
-        throw new ConflictException(
-          'Abordaje disponible para participación individual confirmada desde 30 minutos antes de salir y hasta el final declarado',
-        );
-      checkDriver(trip, now);
-      await checkMembers(
-        unit,
-        row.members.map(({ userId }) => userId),
-        now,
-      );
+      await checkBoarding(unit, trip, row, now);
       if (row.boardedAt) return reservationView(row, actorId);
       return reservationView(await unit.board(id, now, actorId), actorId);
+    });
+  }
+
+  async issueBoardingPass(actorId: string, id: string): Promise<BoardingPass> {
+    const tripId = await this.repository.tripForRequest(id);
+    return this.repository.withTripLock(tripId, async (unit) => {
+      const trip = await unit.trip();
+      const row = await unit.find(id);
+      if (
+        !row ||
+        row.requesterId !== actorId ||
+        !row.members.some(({ userId }) => userId === actorId)
+      )
+        throw new NotFoundException('Participación inexistente');
+      const now = new Date();
+      await checkBoarding(unit, trip, row, now);
+      if (row.boardedAt)
+        throw new ConflictException('El abordaje ya está registrado');
+      const pass = createBoardingPass(now);
+      await unit.issueBoardingPass(
+        row.id,
+        row.pickupId,
+        pass.hash,
+        pass.expiresAt,
+      );
+      return { code: pass.code, expiresAt: pass.expiresAt.toISOString() };
+    });
+  }
+
+  redeemBoardingPass(actorId: string, tripId: string, code: string) {
+    return this.repository.withTripLock(tripId, async (unit) => {
+      const trip = await unit.trip();
+      requireBoardingDriver(trip, actorId);
+      const now = new Date();
+      const pass = await unit.boardingPass(hashBoardingPass(code));
+      if (!pass || pass.consumedAt || pass.expiresAt <= now)
+        throw new ConflictException(
+          'El QR venció, ya se usó o no corresponde a este viaje',
+        );
+      const row = await unit.find(pass.reservationId);
+      if (
+        !row ||
+        row.pickupId !== pass.pickupId ||
+        row.boardedAt ||
+        !row.members.some(({ userId }) => userId === row.requesterId)
+      )
+        throw new ConflictException(
+          'El QR ya no corresponde a un abordaje pendiente',
+        );
+      await checkBoarding(unit, trip, row, now);
+      const boarded = await unit.board(row.id, now, actorId);
+      await unit.consumeBoardingPass(row.id, now);
+      return reservationView(boarded, actorId);
+    });
+  }
+
+  async noShow(actorId: string, id: string) {
+    const tripId = await this.repository.tripForRequest(id);
+    return this.repository.withTripLock(tripId, async (unit) => {
+      const trip = await unit.trip();
+      if (trip.driverId !== actorId)
+        throw new ForbiddenException('Sólo el conductor registra la ausencia');
+      const row = await unit.find(id);
+      if (!row) throw new NotFoundException('Participación inexistente');
+      if (
+        trip.status !== 'EN_CURSO' ||
+        row.status !== 'CONFIRMED' ||
+        row.quantity !== 1 ||
+        row.boardedAt
+      )
+        throw new ConflictException(
+          'La participación no admite registrar ausencia',
+        );
+      if (row.noShowAt) return reservationView(row, actorId);
+      if (currentReachedStop(trip.stops)?.id !== row.pickupId)
+        throw new ConflictException(
+          'Sólo se registra ausencia en la recogida alcanzada',
+        );
+      return reservationView(
+        await unit.noShow(id, new Date(), actorId),
+        actorId,
+      );
+    });
+  }
+
+  reachStop(actorId: string, tripId: string, stopId: string) {
+    return this.repository.withTripLock(tripId, async (unit) => {
+      const trip = await unit.trip();
+      if (trip.driverId !== actorId)
+        throw new ForbiddenException('Sólo el conductor registra la llegada');
+      if (trip.status !== 'EN_CURSO')
+        throw new ConflictException(
+          'Sólo se registran llegadas en un viaje en curso',
+        );
+      const stop = trip.stops.find(({ id }) => id === stopId.toLowerCase());
+      if (!stop) throw new NotFoundException('Parada inexistente en el viaje');
+      if (stop.reachedAt)
+        return {
+          id: stop.id,
+          position: stop.position,
+          reachedAt: stop.reachedAt.toISOString(),
+        };
+      if (!isNextStop(trip.stops, stop.id))
+        throw new ConflictException(
+          'Registra las paradas en el orden del recorrido',
+        );
+      const reachedAt = new Date();
+      await unit.reachStop(stop.id, reachedAt, actorId);
+      return {
+        id: stop.id,
+        position: stop.position,
+        reachedAt: reachedAt.toISOString(),
+      };
     });
   }
 
@@ -183,13 +319,22 @@ export class ReservationsService {
           'Sólo el conductor del viaje puede cambiar su estado',
         );
       const { from, to } = transitions[action];
-      if (trip.status === to)
-        return { id: trip.id, status: to, occupiedSeats: trip.occupiedSeats };
+      if (trip.status === to) return presentTransition(trip);
       if (trip.status !== from)
         throw new ConflictException(
           'El estado actual no permite esa transición',
         );
-      return unit.transition(actorId, to);
+      const now = new Date();
+      if (action === 'START') {
+        checkDriver(trip, now);
+        const origin = trip.stops[0];
+        if (!origin)
+          throw new ConflictException('El viaje no tiene un origen registrado');
+        return presentTransition(
+          await unit.transition(actorId, to, now, origin.id),
+        );
+      }
+      return presentTransition(await unit.transition(actorId, to, now));
     });
   }
 }

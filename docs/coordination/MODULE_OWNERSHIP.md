@@ -27,3 +27,19 @@ la ubicación implementada en trips se mantiene mientras sea coherente.
 Leer WORKSTREAMS para dependencias y PROGRESS/handoff para resultados reales. Las
 [asignaciones anteriores](../history/2026-11-24-guides.md) son antecedentes; no se heredan
 permisos de edición global ni integración por cambiar rutas externas.
+
+La transformación añade `backend/src/modules/mobility` como responsabilidad de
+movilidad y recomendaciones, incluidos feed, detalle y avisos internos. Viajes
+y participaciones conservan el dominio transaccional e invocan la cola cuando cambia
+la disponibilidad. Identidad revisa elegibilidad de destinatarios y QA valida
+deduplicación, recuperación de leases y privacidad. Responsables humanos POR_ASIGNAR.
+
+Continuidad 26/11: Cartografía revisa `geocoding` y el catálogo con Viajes. Datos valida
+sede y fechas persistidas. Participaciones depende del contrato de recorrido para el
+avance. Comunicación es dueña de `chat` y coordina avisos con Mobility. Personas POR_ASIGNAR.
+
+En consolidación, Comunicación mantiene `ratings` y el aviso de calificación.
+Participaciones mantiene `groups` y reutiliza sus reglas de tramo, vigencia y
+bloqueo para confirmación y QR. Seguridad mantiene contexto y última posición.
+Economía mantiene `expenses`; Producto revisa futuras reglas de reparto.
+Los contratos transversales y las migraciones se revisan con Datos y QA.

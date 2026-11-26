@@ -98,17 +98,17 @@ export function PublishScreen() {
   const vehicles = useQuery({
     queryKey: ['vehicles', user?.id],
     queryFn: () => api<VehicleSummary[]>('/vehicles'),
-    enabled: !!user,
+    enabled: !!user?.capabilities.driver,
   });
   const points = useQuery({
     queryKey: ['meeting-points'],
     queryFn: () => api<CampusMeetingPoint[]>('/campus/meeting-points'),
-    enabled: !!user,
+    enabled: !!user?.capabilities.driver,
   });
   const rules = useQuery({
     queryKey: ['trip-rules'],
     queryFn: () => api<TripRule[]>('/trip-rules'),
-    enabled: !!user,
+    enabled: !!user?.capabilities.driver,
   });
   const catalog = points.data ?? emptyCatalog;
   const selected =
@@ -134,6 +134,7 @@ export function PublishScreen() {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['my-trips'] });
       void client.invalidateQueries({ queryKey: ['available-trips'] });
+      void client.invalidateQueries({ queryKey: ['trip-feed'] });
     },
   });
   const options = useMutation({
@@ -183,6 +184,10 @@ export function PublishScreen() {
     save.reset();
     try {
       const route = routePoints(values);
+      const chosen =
+        selectedRoute?.key === JSON.stringify(route)
+          ? selectedRoute.option
+          : undefined;
       const previewStops = [
         { ...previewPoint(route.origin, catalog), access: 'PICKUP' as const },
         ...route.stops.map((point) => ({
@@ -205,16 +210,16 @@ export function PublishScreen() {
           vehicleId: selected.id,
           departureAt: `${values.departureAt.replace(' ', 'T')}:00-05:00`,
           offeredSeats: Number(values.offeredSeats),
-          estimatedDurationMinutes: Number(values.estimatedDurationMinutes),
+          estimatedDurationMinutes: chosen?.routingSelection
+            ? chosen.durationMinutes
+            : Number(values.estimatedDurationMinutes),
           ruleIds,
           ...(selected.type === 'MOTORCYCLE' && { providesHelmet: helmet }),
           itinerary: {
             ...route,
             description: values.description.trim(),
-            geometry:
-              selectedRoute?.key === JSON.stringify(route)
-                ? selectedRoute.option.geometry
-                : undefined,
+            geometry: chosen?.geometry,
+            routingSelection: chosen?.routingSelection,
           },
         },
       });
@@ -226,7 +231,7 @@ export function PublishScreen() {
   });
   const draft = preview?.draft;
   return (
-    <ProtectedPage title="Publicar viaje">
+    <ProtectedPage title="Publicar viaje" requires="driver">
       <Link href="/vehicles" style={s.link}>
         Gestionar vehículos y licencia
       </Link>

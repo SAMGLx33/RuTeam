@@ -16,19 +16,35 @@ const headers = {
   'Content-Type': 'application/json',
   'x-ruteam-client': 'native',
 };
-const inactive = await call('/auth/demo/login', {
-  method: 'POST',
-  headers,
-  body: JSON.stringify({ identity: 'laura' }),
-});
-assert(inactive.status === 403, 'inactiva rechazada');
-const login = await call('/auth/demo/login', {
-  method: 'POST',
-  headers,
-  body: JSON.stringify({ identity: 'ana' }),
-});
+const password = process.env.AUTH_FIXTURE_PASSWORD;
+if (!password)
+  throw new Error(
+    'AUTH_FIXTURE_PASSWORD debe coincidir con la usada en el seed aislado',
+  );
+const signIn = (identity) =>
+  call('/auth/login', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      email: `${identity}@student-fixtures.ruteam.invalid`,
+      password,
+    }),
+  });
+const inactive = await signIn('laura');
+const inactiveHeaders = {
+  ...headers,
+  Authorization: `Bearer ${inactive.body.token}`,
+};
 assert(
-  login.status === 201 && typeof login.body.token === 'string',
+  inactive.status === 200 &&
+    !inactive.body.account.capabilities.passenger &&
+    (await call('/trips/feed', { headers: inactiveHeaders })).status === 403,
+  'cuenta inactiva autenticada y viajes bloqueados',
+);
+await call('/auth/logout', { method: 'POST', headers: inactiveHeaders });
+const login = await signIn('ana');
+assert(
+  login.status === 200 && typeof login.body.token === 'string',
   'sesión activa persistida',
 );
 const authorized = { ...headers, Authorization: `Bearer ${login.body.token}` };

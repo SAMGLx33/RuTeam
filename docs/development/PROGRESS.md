@@ -113,3 +113,32 @@ y viewport móvil con teselas y respuesta vial controladas.
 Handoffs de [identidad](../handoffs/2026-11-25_identidad-autogestion-estudiantil.md),
 [participación](../handoffs/2026-11-25_direct-participation.md) y
 [recorrido e integración](../handoffs/2026-11-25_driver-defined-routes_redefinicion-producto.md).
+
+## 25/11/2026 | Transformación de cuentas, navegación y recomendaciones
+
+Avance local en `task/driver-defined-routes` desde `5af65f2`. Registro, contraseña
+propia, verificación de buzón, recuperación y onboarding se integraron con los guards
+de cuenta y producto. Inicio y perfil se separaron y la navegación responde a capacidades
+efectivas. PostgreSQL conserva preferencias múltiples privadas, jobs y avisos internos.
+Los viajes mantienen dirección USC, ruta del conductor, propuestas, participación directa
+y capacidad transaccional. Ver [revisión de entrega](../reviews/PRODUCT_TRANSFORMATION_DELIVERY.md).
+La acreditación USC real, el dispositivo físico y la revisión/promoción humana siguen pendientes.
+
+## 26/11/2026 | Continuidad operativa
+
+Se reprodujo el punto de control anterior y se prepararon incrementos separados.
+Esta intervención añade verificación de correo con buzón local, geocodificación,
+sedes, estimaciones viales, progreso de paradas y conversación del viaje. Ver
+[revisión de continuidad](../reviews/PRODUCT_CONTINUITY.md) para resultados,
+autorizaciones, pruebas y pendientes. El estado integrado sigue a cargo de la persona
+integradora.
+
+## 26/11/2026 · Consolidación funcional
+
+Con un punto de control separado se repitieron 184 pruebas de backend y cuatro
+recorridos web del corte previo. El incremento implementa RF-010 con su regla
+aprobada, grupos consentidos con plaza atómica, pases QR internos, contexto de
+seguridad, ubicación voluntaria en viaje activo y una estimación privada de
+costos. El ensayo PostgreSQL restauró en una base nueva el respaldo histórico.
+Los resultados, el flujo completo y los asuntos pendientes están en la
+[revisión del corte](../reviews/PRODUCT_CONSOLIDATION.md).

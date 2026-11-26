@@ -38,7 +38,11 @@ function usePickupProposals(tripId: string, enabled: boolean) {
   return { endpoint, proposals, refresh };
 }
 
-export function PickupProposalForm({ trip }: { trip: AvailableTrip }) {
+export function PickupProposalForm({
+  trip,
+}: {
+  trip: Pick<AvailableTrip, 'id' | 'itinerary'>;
+}) {
   const reference = trip.itinerary.stops[0];
   const enabled =
     trip.itinerary.direction === 'HACIA_USC' &&

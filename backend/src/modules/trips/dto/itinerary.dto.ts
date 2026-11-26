@@ -127,6 +127,12 @@ export class ItineraryDto {
   @Type(() => RouteGeometryDto)
   geometry?: RouteGeometryDto;
 
+  @ApiPropertyOptional({ description: 'Selección vial firmada por RuTeam' })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsString()
+  @Length(10, 524)
+  routingSelection?: string;
+
   @ApiProperty({ enum: [true] })
   @Equals(true)
   publicMeetingPoints!: true;

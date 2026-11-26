@@ -15,6 +15,7 @@ export class DemoInstitutionalVerificationProvider extends InstitutionalVerifica
     const membership = user?.membership ?? null;
     return (
       !!user &&
+      !!user.demoIdentity &&
       !user.disabledAt &&
       membership?.verifiedBy === 'DEMO' &&
       isActiveMembership(membership, new Date())

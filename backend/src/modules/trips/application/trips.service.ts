@@ -14,11 +14,13 @@ import { searchTrips } from './search-trips.js';
 import type { SearchTripsDto } from '../dto/search-trips.dto.js';
 import type { RouteOptionsDto } from '../dto/itinerary.dto.js';
 import { OsrmRoutingProvider } from '../infrastructure/routing/osrm-routing.provider.js';
+import { RoutingSelections } from './routing-selections.js';
 @Injectable()
 export class ViajeService {
   constructor(
     private readonly repository: ViajeRepository,
     private readonly routing: OsrmRoutingProvider,
+    private readonly selections: RoutingSelections,
   ) {}
   listarPropios(driverId: string) {
     return this.repository.listarPropios(driverId);
@@ -34,6 +36,7 @@ export class ViajeService {
         const now = new Date();
         if (
           !actor ||
+          !!actor.disabledAt ||
           !isActiveMembership(actor.membership, now) ||
           !VehiculoPolicy.esPublicable(actor.driverEligibility, now)
         )
@@ -43,7 +46,10 @@ export class ViajeService {
         return resolveRouteStops(input, unit);
       },
     );
-    return this.routing.options(stops);
+    const options = await this.routing.options(stops);
+    return options.map((option) =>
+      this.selections.offer(driverId, stops, option),
+    );
   }
   reglas() {
     return this.repository.reglas();
@@ -53,7 +59,11 @@ export class ViajeService {
       const now = new Date();
       const end = Viaje.validarPublicacion({ ...data, stops: [] }, now);
       const actor = await unit.actor();
-      if (!actor || !isActiveMembership(actor.membership, now))
+      if (
+        !actor ||
+        actor.disabledAt ||
+        !isActiveMembership(actor.membership, now)
+      )
         throw new ForbiddenException('Afiliación USC no activa');
       const vehicle = await unit.vehicle(data.vehicleId);
       if (!vehicle || vehicle.ownerId !== driverId)
@@ -61,6 +71,8 @@ export class ViajeService {
           'El vehículo debe pertenecer al conductor',
         );
       if (
+        (!actor.demoIdentity &&
+          (vehicle.document?.demo || actor.driverEligibility?.demo)) ||
         !VehiculoPolicy.esPublicable(vehicle.document, end) ||
         !VehiculoPolicy.esPublicable(actor.driverEligibility, end)
       )
@@ -88,6 +100,21 @@ export class ViajeService {
           'Casco debe declararse sólo para motocicleta',
         );
       const itinerary = await planItinerary(data.itinerary, unit);
+      if (data.itinerary.routingSelection) {
+        const selected = this.selections.verify(
+          data.itinerary.routingSelection,
+          driverId,
+          itinerary.stops,
+          itinerary.geometry,
+          data.estimatedDurationMinutes,
+        );
+        let elapsed = 0;
+        for (const [index, stop] of itinerary.stops.entries()) {
+          stop.estimatedOffsetSeconds = elapsed;
+          elapsed += selected.legs[index] ?? 0;
+        }
+        itinerary.distanceMeters = selected.distance;
+      }
       const rules = await unit.rules(data.ruleIds);
       if (rules.length !== (data.ruleIds.length || 1))
         throw new BadRequestException('Reglas inexistentes o deshabilitadas');

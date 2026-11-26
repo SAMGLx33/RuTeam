@@ -12,6 +12,10 @@ import type {
 import type { PlannedItinerary } from '../../application/plan-itinerary.js';
 import { tripDirection } from '../../domain/models/driver-route.js';
 import { Viaje } from '../../domain/models/viaje.js';
+import {
+  emptyReputation,
+  reputationsByRole,
+} from '../../../ratings/infrastructure/reputation.read.js';
 const include = {
   stops: { orderBy: { position: 'asc' as const } },
   rules: { include: { rule: true } },
@@ -28,6 +32,9 @@ export function presentStops(trip: Pick<StoredTrip, 'stops'>): RouteStop[] {
     longitude: Number(stop.longitude),
     access: stop.access,
     campusPointId: stop.campusPointId,
+    campusSiteId: stop.campusSiteId,
+    estimatedOffsetSeconds: stop.estimatedOffsetSeconds,
+    reachedAt: stop.reachedAt?.toISOString() ?? null,
     campus: stop.campus,
     instructions: stop.instructions,
   }));
@@ -65,6 +72,8 @@ function present(trip: StoredTrip): TripSummary {
     },
     departureAt: trip.departureAt.toISOString(),
     expectedEndAt: trip.expectedEndAt.toISOString(),
+    startedAt: trip.startedAt?.toISOString() ?? null,
+    finishedAt: trip.finishedAt?.toISOString() ?? null,
     estimatedDurationMinutes: trip.estimatedDurationMinutes,
     offeredSeats: trip.offeredSeats,
     occupiedSeats: trip.occupiedSeats,
@@ -147,6 +156,7 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
             stops: { create: itinerary.stops },
             rules: { create: ruleIds.map((ruleId) => ({ ruleId })) },
             events: { create: { actorId: driverId, type: 'PUBLISHED' } },
+            recommendationJob: { create: {} },
           },
           include,
         }),
@@ -154,7 +164,7 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
     },
   };
 }
-const searchableInclude = {
+export const searchableInclude = {
   ...include,
   driver: {
     include: { membership: true, driverEligibility: true, profile: true },
@@ -173,6 +183,7 @@ export function presentAvailable(
   return {
     id: trip.id,
     driverName: trip.driver.profile?.displayName ?? null,
+    driverReputation: emptyReputation('DRIVER'),
     vehicle: {
       type: trip.vehicle.type,
       brand: trip.vehicle.brand,
@@ -206,6 +217,19 @@ export class ViajeRepository {
       return operation(publicationUnit(tx, driverId));
     });
   }
+  async attachDriverReputations<T>(
+    rows: readonly { driverId: string; card: T }[],
+  ) {
+    const reputation = await reputationsByRole(
+      this.db,
+      rows.map(({ driverId }) => driverId),
+      'DRIVER',
+    );
+    return rows.map(({ driverId, card }) => ({
+      ...card,
+      driverReputation: reputation.get(driverId) ?? emptyReputation('DRIVER'),
+    }));
+  }
   async listarPropios(driverId: string) {
     return (
       await this.db.trip.findMany({
@@ -214,6 +238,12 @@ export class ViajeRepository {
         orderBy: { departureAt: 'asc' },
       })
     ).map(present);
+  }
+  recommendationTrip(id: string) {
+    return this.db.trip.findUnique({
+      where: { id },
+      include: searchableInclude,
+    });
   }
   searchCandidates({
     now,

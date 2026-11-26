@@ -157,6 +157,30 @@ test('sólo el conductor incorpora una recogida compatible sin reservar ni cambi
     .send({ decision: 'ACCEPT' })
     .expect(403);
   expect((await requestAt('get', path, 'sara').expect(200)).body).toEqual([]);
+  const { body: seat } = await requestAt(
+    'post',
+    `/trips/${trip.id}/participations`,
+    'sara',
+  )
+    .send({
+      pickupId: trip.itinerary.stops[0].id,
+      dropoffId: trip.itinerary.stops.at(-1).id,
+    })
+    .expect(201);
+  await requestAt('post', decision).send({ decision: 'ACCEPT' }).expect(409);
+  expect(
+    (
+      await db.pickupProposal.findUniqueOrThrow({
+        where: { id: proposed.body.id },
+      })
+    ).status,
+  ).toBe('PENDING');
+  const withdrawn = await requestAt(
+    'post',
+    `/participations/${seat.id}/cancel`,
+    'sara',
+  ).expect(200);
+  expect(withdrawn.body.status).toBe('CANCELLED');
   const accepted = await requestAt('post', decision)
     .send({ decision: 'ACCEPT' })
     .expect(200);

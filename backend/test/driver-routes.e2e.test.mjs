@@ -595,3 +595,136 @@ test('confirmación revalida documentos hasta final y cancelación simultánea l
       .status,
   ).toBe('CANCELLED');
 });
+
+test('registra llegada intermedia una vez, distingue abordaje y ausencia y preserva plazas', async () => {
+  const response = await call('post', '/trips')
+    .send({
+      ...weekday(168, {
+        origin: floralia,
+        destination: { campusPointId: plaza.id },
+        stops: [{ ...calle5, access: 'PICKUP' }],
+      }),
+      offeredSeats: 2,
+    })
+    .expect(201);
+  const trip = response.body;
+  tripIds.push(trip.id);
+  const [origin, midpoint, destination] = trip.itinerary.stops;
+  const segment = { pickupId: midpoint.id, dropoffId: destination.id };
+  const { body: first } = await call(
+    'post',
+    `/trips/${trip.id}/participations`,
+    'ana',
+  )
+    .send(segment)
+    .expect(201);
+  const { body: second } = await call(
+    'post',
+    `/trips/${trip.id}/participations`,
+    'sara',
+  )
+    .send(segment)
+    .expect(201);
+  const path = `/trips/${trip.id}`;
+  const reach = (stop, caller) =>
+    call('post', `${path}/stops/${stop.id}/reach`, caller);
+  const board = (row) => call('post', `/participations/${row.id}/board`);
+  const absent = (row) => call('post', `/participations/${row.id}/no-show`);
+  await reach(origin).expect(409);
+  const started = await call('post', `${path}/transition`)
+    .send({ action: 'START' })
+    .expect(200);
+  const savedOrigin = await db.tripStop.findUniqueOrThrow({
+    where: { id: origin.id },
+  });
+  expect(savedOrigin.reachedAt.toISOString()).toBe(started.body.startedAt);
+  await board(first).expect(409);
+  await absent(second).expect(409);
+  await reach(destination).expect(409);
+  await reach(midpoint, 'ana').expect(403);
+  const arrivals = await Promise.all([
+    reach(midpoint).expect(200),
+    reach(midpoint).expect(200),
+  ]);
+  expect(arrivals[0].body).toEqual(arrivals[1].body);
+  expect(
+    await db.tripEvent.count({
+      where: { tripId: trip.id, type: 'STOP_REACHED' },
+    }),
+  ).toBe(1);
+  const boarded = await board(first).expect(200);
+  expect(boarded.body.boardedAt).toEqual(expect.any(String));
+  await absent(first).expect(409);
+  const missing = await absent(second).expect(200);
+  expect(missing.body.noShowAt).toEqual(expect.any(String));
+  expect((await absent(second).expect(200)).body.noShowAt).toBe(
+    missing.body.noShowAt,
+  );
+  await board(second).expect(409);
+  await reach(destination).expect(200);
+  expect((await board(first).expect(200)).body.boardedAt).toBe(
+    boarded.body.boardedAt,
+  );
+  const finished = await call('post', `${path}/transition`)
+    .send({ action: 'FINISH' })
+    .expect(200);
+  expect(finished.body).toMatchObject({
+    startedAt: started.body.startedAt,
+    finishedAt: expect.any(String),
+    status: 'COMPLETADO',
+    occupiedSeats: 2,
+  });
+  expect(
+    await db.tripEvent.count({
+      where: { tripId: trip.id, type: 'PASSENGER_NO_SHOW' },
+    }),
+  ).toBe(1);
+});
+
+test('pérdida de matrícula permite cerrar sólo viajes propios, sin habilitar inicio ni lectura', async () => {
+  const createTrip = async (hours) => {
+    const response = await call('post', '/trips')
+      .send(
+        weekday(hours, {
+          origin: { campusPointId: plaza.id },
+          destination: floralia,
+        }),
+      )
+      .expect(201);
+    tripIds.push(response.body.id);
+    return response.body;
+  };
+  const running = await createTrip(170);
+  const planned = await createTrip(172);
+  const transition = (trip, action, caller) =>
+    call('post', `/trips/${trip.id}/transition`, caller).send({ action });
+  await transition(running, 'START').expect(200);
+  const original = await db.institutionalMembership.findUniqueOrThrow({
+    where: { userId: users.diego },
+    select: { status: true },
+  });
+  await db.institutionalMembership.update({
+    where: { userId: users.diego },
+    data: { status: 'INACTIVE' },
+  });
+  try {
+    await call('get', '/trips/my').expect(403);
+    await call('get', `/trips/${running.id}/participations`).expect(403);
+    await transition(planned, 'START').expect(403);
+    await transition(running, 'FINISH', 'ana').expect(403);
+    const done = await transition(running, 'FINISH').expect(200);
+    expect(done.body).toMatchObject({
+      status: 'COMPLETADO',
+      finishedAt: expect.any(String),
+    });
+    expect((await transition(running, 'FINISH').expect(200)).body).toEqual(
+      done.body,
+    );
+    await transition(planned, 'CANCEL').expect(200);
+  } finally {
+    await db.institutionalMembership.update({
+      where: { userId: users.diego },
+      data: original,
+    });
+  }
+});

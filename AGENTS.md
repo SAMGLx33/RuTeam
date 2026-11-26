@@ -4,8 +4,37 @@ Leer antes de cambiar reglas: [definición vigente](docs/requirements/PRODUCT_DE
 AGENTS del módulo, CONTRIBUTING, docs/architecture/REPOSITORY_STRUCTURE.md,
 coordinación CURRENT_STATUS/WORKSTREAMS/MODULE_OWNERSHIP, PROGRESS, trazabilidad,
 UML derivado y handoff reciente. Inspeccionar rama, commit y árbol de trabajo.
-La definición funcional del 25 de noviembre de 2026 prevalece sobre interpretaciones
+La definición funcional del 25 de noviembre de 2026, ampliada por la transformación
+integral A–G, prevalece sobre interpretaciones
 anteriores incompatibles; los RF/RNF y HU originales conservan sus identificadores.
+
+## Transformación integral: cuenta, capacidades y experiencia
+
+RuTeam es un producto integrado. Leer [permisos](docs/architecture/AUTHORIZATION_MATRIX.md),
+[navegación](docs/architecture/FRONTEND_NAVIGATION.md),
+[flujos](docs/requirements/USER_FLOWS.md), [reglas](docs/requirements/BUSINESS_RULES.md)
+y [recomendaciones](docs/architecture/RECOMMENDATION_FLOW.md) antes de cada incremento.
+Estos documentos distinguen diseño y evidencia; no suponen que lo nuevo ya funciona.
+
+Login/registro normales con correo y contraseña PROPIA de RuTeam, hash scrypt salado y
+parámetros justificados/versionados, verificación de correo y recuperación seguras.
+Jamás contraseñas USC ni selector de identidades/botón desarrollo como acceso normal.
+Cuentas de prueba atraviesan ese mismo formulario y sesión; proveedores de correo/eligibilidad
+sintéticos sólo en entornos aislados y nunca activables en producción.
+
+Distinguir sesión de cuenta, control del correo, estamento/matrícula, preferencia de uso y
+capacidad efectiva. Cuenta pendiente puede gestionar sólo cuenta/verificación/onboarding
+básico expresamente permitidos, sin viajes. Elegir conductor no habilita publicación.
+Onboarding persistido/retomable; pasajero puede iniciar habilitación desde Perfil.
+Conducción documental vencida conserva pasajero si matrícula vigente, no publicar/START.
+
+Navegación según capacidades actuales del servidor, con inicio útil, feed y perfil separado;
+API protege también URL directa/IDs ajenos/capacidad desactualizada. Movilidad privada no
+es solicitud de transporte. Matching recomienda automáticamente viajes publicados;
+feed general existe aun sin preferencias. Recomendaciones/avisos internos persistentes
+y deduplicados no ocupan plazas ni implican push/tiempo real. Sin datos o integración,
+mostrar estado honesto; nunca controles de éxito falso. Modelo/HTTP/UX/persistencia y
+recorrido E2E/visual son parte del DoD, no basta endpoint o prueba aislada.
 
 ## Producto y autoridad
 
@@ -75,3 +104,27 @@ Leer sólo por canal local autorizado; no versionar originales ni conversiones c
 Los cotejos históricos 50 RF/RNF y 36 pestañas permanecen en ERS_CATALOG/UML_CROSSWALK.
 RF-001 sigue sin prioridad unívoca. Guías previas conservadas como
 [historia](docs/history/2026-11-24-guides.md), junto con reviews/handoffs fechados.
+
+## Continuidad operativa
+
+Mantener sede institucional y campus en IDs verificables del catálogo. No atribuir
+coordenadas a una sede sólo porque exista su dirección publicada. Geocodificar
+consultas explícitas con el proveedor autorizado. Las alternativas viales firmadas
+vinculan geometría y tiempos de tramos. La coincidencia intermedia usa la hora de
+recogida acreditada por esa ruta, incluso al cambiar de día.
+
+Registrar llegadas en orden y abordajes en la parada vigente. Mantener la operación
+segura de cierre bajo propiedad y sesión válida. Chat de coordinación limitado a
+participantes autorizados, histórico de 24 h para quienes viajaron, idempotencia
+y avisos internos sobre la misma infraestructura. Consultar la documentación de
+continuidad para límites y comprobaciones.
+
+## Consolidación funcional
+
+RF-010 usa enteros de 1 a 5 y media aritmética independiente por capacidad.
+Califica sólo el par conductor ↔ pasajero que abordó en un viaje completado.
+El comentario queda con su autor. Grupos invitan con código opaco vencible
+y sólo el lote completo ocupa plazas. QR RuTeam complementa el registro manual.
+La ubicación voluntaria se limita al conductor activo y su última muestra.
+Costos privados en COP son una estimación. Para reglas de reparto, incidencias,
+fuente USC y promoción consulta las decisiones y el handoff.

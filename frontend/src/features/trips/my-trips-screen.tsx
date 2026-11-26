@@ -1,3 +1,5 @@
+import { ReputationLabel } from '../ratings/reputation-label';
+import { TripSafetyLink } from '../safety/trip-safety-link';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Link } from 'expo-router';
@@ -16,20 +18,30 @@ import {
 import { useSession } from '../../providers/session-provider';
 import { ReservationSummary } from './reservations-screen';
 import { RoutePreview, travelTime, tripStatusLabel } from './route-preview';
+import { DriverBoardingScanner } from '../boarding/boarding-pass';
 import { DriverPickupProposals } from './pickup-proposals';
 
-function DriverParticipants({ tripId }: { tripId: string }) {
+function DriverParticipants({ trip }: { trip: TripSummary }) {
   const client = useQueryClient();
   const { user } = useSession();
-  const queryKey = ['driver-participations', tripId, user?.id];
+  const [confirmAbsence, setConfirmAbsence] = useState<string | null>(null);
+  const queryKey = ['driver-participations', trip.id, user?.id];
+  const stops = trip.itinerary?.stops ?? [];
+  const pickup =
+    trip.status === 'PROGRAMADO'
+      ? stops[0]
+      : [...stops].reverse().find((stop) => stop.reachedAt);
   const requests = useQuery({
     queryKey,
-    queryFn: () => api<ReservationView[]>(`/trips/${tripId}/participations`),
+    queryFn: () => api<ReservationView[]>(`/trips/${trip.id}/participations`),
   });
-  const board = useMutation({
-    mutationFn: (id: string) =>
-      api<ReservationView>(`/participations/${id}/board`, { method: 'POST' }),
+  const recordPresence = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'board' | 'no-show' }) =>
+      api<ReservationView>(`/participations/${id}/${action}`, {
+        method: 'POST',
+      }),
     onSuccess: () => {
+      setConfirmAbsence(null);
       void client.invalidateQueries({ queryKey });
       void client.invalidateQueries({ queryKey: ['my-reservations'] });
     },
@@ -38,32 +50,78 @@ function DriverParticipants({ tripId }: { tripId: string }) {
     <View style={s.section}>
       <Text style={s.title}>Participantes del viaje</Text>
       <Text style={s.text}>
-        El abordaje registra presencia desde 30 minutos antes de la salida y
-        hasta el final declarado, sin ocupar otra plaza.
+        Antes de salir puedes registrar el abordaje en el origen desde 30
+        minutos antes de la salida. En marcha, registra la llegada a la recogida
+        para habilitar el abordaje.
       </Text>
       {requests.isPending && <Text>Cargando participantes…</Text>}
       {requests.data?.length === 0 && <Text>Aún no hay participaciones.</Text>}
-      {(requests.error || board.error) && (
+      {(requests.error || recordPresence.error) && (
         <Text accessibilityRole="alert" style={s.error}>
-          {requests.error?.message ?? board.error?.message}
+          {requests.error?.message ?? recordPresence.error?.message}
         </Text>
       )}
+      {requests.data?.some(
+        (item) =>
+          item.status === 'CONFIRMED' &&
+          item.quantity === 1 &&
+          !item.boardedAt &&
+          !item.noShowAt &&
+          item.pickup.id === pickup?.id &&
+          (item.tripStatus === 'PROGRAMADO' || item.tripStatus === 'EN_CURSO'),
+      ) && <DriverBoardingScanner tripId={trip.id} />}
       {requests.data?.map((item) => (
         <View key={item.id} style={s.section}>
           <Text style={s.text}>
             {item.requesterName ?? 'Estudiante RuTeam'}
           </Text>
           <ReservationSummary item={item} />
+          {item.passengerReputation && (
+            <ReputationLabel summary={item.passengerReputation} />
+          )}
           {item.status === 'CONFIRMED' &&
             !item.boardedAt &&
+            !item.noShowAt &&
             item.quantity === 1 &&
+            item.pickup.id === pickup?.id &&
             (item.tripStatus === 'PROGRAMADO' ||
               item.tripStatus === 'EN_CURSO') && (
-              <Button
-                title="Confirmar abordaje"
-                disabled={board.isPending}
-                onPress={() => board.mutate(item.id)}
-              />
+              <>
+                <Button
+                  title="Confirmar abordaje"
+                  disabled={recordPresence.isPending}
+                  onPress={() =>
+                    recordPresence.mutate({ id: item.id, action: 'board' })
+                  }
+                />
+                {item.tripStatus === 'EN_CURSO' &&
+                  (confirmAbsence === item.id ? (
+                    <>
+                      <Button
+                        title="Confirmar ausencia"
+                        disabled={recordPresence.isPending}
+                        onPress={() =>
+                          recordPresence.mutate({
+                            id: item.id,
+                            action: 'no-show',
+                          })
+                        }
+                      />
+                      <Button
+                        title="Volver"
+                        secondary
+                        onPress={() => setConfirmAbsence(null)}
+                      />
+                    </>
+                  ) : (
+                    <Button
+                      title="Registrar ausencia"
+                      secondary
+                      disabled={recordPresence.isPending}
+                      onPress={() => setConfirmAbsence(item.id)}
+                    />
+                  ))}
+              </>
             )}
         </View>
       ))}
@@ -75,6 +133,17 @@ function TripCard({ trip }: { trip: TripSummary }) {
   const client = useQueryClient();
   const [expanded, setExpanded] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const stops = trip.itinerary?.stops ?? [];
+  const currentStop = [...stops].reverse().find((stop) => stop.reachedAt);
+  const nextStop = stops.find((stop) => !stop.reachedAt);
+  const markArrival = useMutation({
+    mutationFn: (stopId: string) =>
+      api(`/trips/${trip.id}/stops/${stopId}/reach`, { method: 'POST' }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['my-trips'] });
+      void client.invalidateQueries({ queryKey: ['trip-detail', trip.id] });
+    },
+  });
   const change = useMutation({
     mutationFn: (action: TripAction) =>
       api(`/trips/${trip.id}/transition`, { method: 'POST', body: { action } }),
@@ -93,6 +162,16 @@ function TripCard({ trip }: { trip: TripSummary }) {
         {trip.origin.label} → {trip.destination.name}
       </Text>
       <Text style={s.text}>{travelTime(trip.departureAt)}</Text>
+      {trip.startedAt && (
+        <Text style={s.text}>
+          Inicio registrado · {travelTime(trip.startedAt)}
+        </Text>
+      )}
+      {trip.finishedAt && (
+        <Text style={s.text}>
+          Finalización registrada · {travelTime(trip.finishedAt)}
+        </Text>
+      )}
       <Text style={s.text}>
         Viaje {tripStatusLabel[trip.status]} ·{' '}
         {trip.occupancy === 'LLENO' ? 'Completo' : 'Con plazas'} ·{' '}
@@ -105,7 +184,7 @@ function TripCard({ trip }: { trip: TripSummary }) {
       {trip.vehicle.type === 'MOTORCYCLE' && (
         <Text style={s.text}>
           {trip.providesHelmet
-            ? 'Casco incluido DEMO'
+            ? 'Casco incluido'
             : 'Cada pasajero debe traer casco'}
         </Text>
       )}
@@ -137,7 +216,7 @@ function TripCard({ trip }: { trip: TripSummary }) {
       {expanded && trip.itinerary && (
         <>
           <RoutePreview {...trip.itinerary} />
-          <DriverParticipants tripId={trip.id} />
+          <DriverParticipants trip={trip} />
           <DriverPickupProposals trip={trip} />
         </>
       )}
@@ -145,6 +224,14 @@ function TripCard({ trip }: { trip: TripSummary }) {
         <Text accessibilityRole="alert" style={s.error}>
           {change.error.message}
         </Text>
+      )}
+      {trip.status !== 'CANCELADO' && (
+        <Link
+          href={{ pathname: '/expenses/[tripId]', params: { tripId: trip.id } }}
+          style={s.link}
+        >
+          Costos estimados
+        </Link>
       )}
       {trip.status === 'PROGRAMADO' && !confirmCancel && (
         <>
@@ -181,13 +268,41 @@ function TripCard({ trip }: { trip: TripSummary }) {
           />
         </>
       )}
+      {trip.status === 'COMPLETADO' && (
+        <Link
+          href={{ pathname: '/ratings/[tripId]', params: { tripId: trip.id } }}
+          style={s.link}
+        >
+          Calificar participantes
+        </Link>
+      )}
+      {trip.status === 'EN_CURSO' && <TripSafetyLink tripId={trip.id} />}
       {trip.status === 'EN_CURSO' && (
-        <Button
-          title="Finalizar viaje"
-          secondary
-          disabled={change.isPending}
-          onPress={() => change.mutate('FINISH')}
-        />
+        <>
+          {currentStop && (
+            <Text style={s.text}>
+              Última parada alcanzada · {currentStop.label}
+            </Text>
+          )}
+          {nextStop && (
+            <Button
+              title={`Registrar llegada · ${nextStop.label}`}
+              disabled={markArrival.isPending || change.isPending}
+              onPress={() => markArrival.mutate(nextStop.id)}
+            />
+          )}
+          {markArrival.error && (
+            <Text accessibilityRole="alert" style={s.error}>
+              {markArrival.error.message}
+            </Text>
+          )}
+          <Button
+            title="Finalizar viaje"
+            secondary
+            disabled={change.isPending || markArrival.isPending}
+            onPress={() => change.mutate('FINISH')}
+          />
+        </>
       )}
     </View>
   );
@@ -198,13 +313,15 @@ export function MyTripsScreen() {
   const trips = useQuery({
     queryKey: ['my-trips', user?.id],
     queryFn: () => api<TripSummary[]>('/trips/my'),
-    enabled: !!user,
+    enabled: !!user?.capabilities.driverAccess,
   });
   return (
-    <ProtectedPage title="Mis viajes publicados">
-      <Link href="/publish" style={s.link}>
-        Publicar otro viaje
-      </Link>
+    <ProtectedPage title="Mis viajes publicados" requires="driverAccess">
+      {user?.capabilities.driver && (
+        <Link href="/publish" style={s.link}>
+          Publicar otro viaje
+        </Link>
+      )}
       {trips.isPending && <Text>Cargando viajes…</Text>}
       {trips.error && (
         <Text accessibilityRole="alert" style={s.error}>

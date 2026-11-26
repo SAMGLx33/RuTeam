@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
 import { ViajeController } from './controllers/trips.controller.js';
 import { ViajeService } from './application/trips.service.js';
+import { RoutingSelections } from './application/routing-selections.js';
 import { ViajeRepository } from './infrastructure/repositories/trips.repository.js';
 import { OsrmRoutingProvider } from './infrastructure/routing/osrm-routing.provider.js';
 import { PickupProposalsController } from './controllers/pickup-proposals.controller.js';
@@ -12,10 +13,12 @@ import { PickupProposalsRepository } from './infrastructure/repositories/pickup-
   controllers: [ViajeController, PickupProposalsController],
   providers: [
     ViajeService,
+    RoutingSelections,
     ViajeRepository,
     OsrmRoutingProvider,
     PickupProposalsService,
     PickupProposalsRepository,
   ],
+  exports: [ViajeRepository],
 })
 export class TripsModule {}

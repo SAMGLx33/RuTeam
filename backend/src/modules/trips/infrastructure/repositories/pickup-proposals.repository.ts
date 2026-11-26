@@ -5,6 +5,7 @@ import type {
 } from '@ruteam/contracts';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 import type { Prisma } from '../../../../generated/prisma/client.js';
+import { requeueRecommendation } from '../../../mobility/infrastructure/repositories/requeue-recommendation.js';
 
 const withRequester = {
   requester: { select: { profile: { select: { displayName: true } } } },
@@ -92,6 +93,7 @@ function proposalUnit(tx: Prisma.TransactionClient, tripId: string) {
           events: { create: { actorId, type: 'PICKUP_PROPOSAL_ACCEPTED' } },
         },
       });
+      await requeueRecommendation(tx, tripId);
       return tx.pickupProposal.update({
         where: { id: row.id },
         data: { status: 'ACCEPTED', decidedAt, acceptedStopId: stop.id },

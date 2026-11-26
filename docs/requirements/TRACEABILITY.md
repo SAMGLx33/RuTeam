@@ -1,10 +1,10 @@
-# Trazabilidad vigente del 25/11/2026
+# Trazabilidad vigente de RuTeam
 
 Fuente funcional: [PRODUCT_DEFINITION](PRODUCT_DEFINITION.md). Se mantienen IDs
 RF/RNF/HU/RQ originales; las RN nuevas sólo identifican reglas y no sustituyen requisitos.
 Este bloque registra impacto, implementación a inspeccionar y pruebas requeridas.
-**No acredita ejecución ni cumplimiento del nuevo corte.** El integrador incorpora la
-evidencia actual en API/PROGRESS/EVIDENCE/review; el historial13–24 sigue al final.
+La [consolidación del 26/11](#consolidación-funcional-26112026) registra el estado
+actual de esos módulos. Las tablas previas conservan los estados de sus cortes.
 
 | Regla                                 | Requisitos / historias existentes        | Implementación afectada                                                         | Verificación requerida del corte                                                                                                                                 |
 | ------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@ evidencia actual en API/PROGRESS/EVIDENCE/review; el historial13–24 sigue al f
 | RN-VIAJE-01..04                       | RF-003/004/029, RQ-RUTA-01, HU-V         | trips/campus, modalidad/campus/encuentro, DTO/Prisma/contracts, PublishScreen   | Ambas modalidades válidas; externo→externo denegado aunque USC intermedia; texto interior sin GPS, resumen/persistencia y permisos                               |
 | RN-BUSQUEDA-01                        | RF-005/018, RQ-RUTA-01                   | matching en trips, filtros, RoutePreview/mapas/servicios Expo                   | Sentido/texto/horario/proximidad/paradas/capacidad; no solicitud ni cambio de ruta; no UI técnica; proveedor fallido visible                                     |
 | RN-PARTICIPACION-01 / RN-CAPACIDAD-01 | RF-006/007/012/015                       | reservations, locks/ocupación/idempotencia, mis viajes/participaciones          | Confirmación sin aprobación; último cupo real y carreras; no propio/duplicado/ajeno; retiro una vez, estados e historia preservados                              |
-| RN-GRUPO-01                           | RQ-GRUPO-01, RF-006                      | miembros históricos, contrato y futuro consentimiento/invitación                | Cada estudiante consiente; sin UUID invitación ni lote parcial. Si pendiente, individual seguro y limitación explícita                                           |
+| RN-GRUPO-01                           | RQ-GRUPO-01, RF-006                      | miembros históricos, invitaciones temporales y participaciones individuales     | Cada estudiante consiente. Invitación opaca, confirmación atómica, cupo común e historial conservado                                                             |
 | RN-PARADA-01                          | RQ-RUTA-01, RN nueva sin RF/HU inventado | propuestas de trips, DTO/contratos/UI y persistencia                            | Sólo HACIA_USC, propietario decide compatibilidad y estado; no geometría/cupos/confirmación automática                                                           |
 | RN-ABORDAJE-01 / RN-ESTADO-01         | RF-027/012/015                           | transiciones/participación/abordaje/eventos                                     | Confirmada antes de abordar, sin segunda plaza; inicio/final/cancelación autorizados y estados distintos                                                         |
 | Módulos compatibles                   | RF-008/009/010/011/014/028/030           | costs/compensations/chat/ratings/safety según existencia efectiva               | Participantes autorizados, historial, precisión económica y privacidad; pendientes no se presentan implementados                                                 |
@@ -26,6 +26,18 @@ caso RF-006 histórico y la carrera ahora se produce al confirmar, no al aceptar
 [TEST_PLAN](../development/TEST_PLAN.md) define escenarios;
 [ACCEPTANCE](ACCEPTANCE.md) criterios del producto y
 [ediciones académicas](ACADEMIC_REDEFINITION_CHANGES.md) cambios revisables.
+
+## Transformación de experiencia, 25/11/2026
+
+| Alcance actual                             | Trazabilidad                                                  | Código y evidencia                                                                                                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cuenta, correo y onboarding                | RF-001/002/016, RN-CUENTA-01, RN-AUTH-01/02, RN-ONBOARDING-01 | Auth modular y rutas Expo, `account-policy.test.mjs`, `account.e2e.test.mjs` y `auth.spec.ts`. Matrícula real bloqueada por fuente.                                  |
+| Capacidades, navegación y conducción       | RF-001/002/003/004/013/024, RN-CAPACIDAD-CONDUCTOR-01         | Backend Auth/Vehicles/Trips y frontend layout compartido. Acceso directo verificado en web y caducidad de documentos comprobada por Jest/HTTP.                       |
+| Preferencias, coincidencias, feed y avisos | RF-005/006/018, RNF-031                                       | Mobility, repositorios Prisma, cola y avisos. `mobility-policy.test.mjs`, `mobility.e2e.test.mjs` y `publication.spec.ts`. Métrica de carga institucional pendiente. |
+| Participación, viaje propio e historial    | RF-006/007/012/015/029                                        | Trips/Reservations, suites de concurrencia y Playwright. Grupo, comunicación y reputación se conservan en backlog.                                                   |
+
+El [informe de revisión](../reviews/PRODUCT_TRANSFORMATION_DELIVERY.md) conserva
+la matriz de recorridos y los resultados por entorno.
 
 ## Cotejos y evidencias históricas 13–24/11
 
@@ -48,7 +60,7 @@ Reemplaza RF-P01..30 y RNF-P01..20; historial provisional conservado en commit e
 
 | ID/título exacto                                                                     | Prioridad de matriz         | Estado local | Código, prueba y límite de evidencia                                                                                                                                                       |
 | ------------------------------------------------------------------------------------ | --------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [RF-001 — Autenticación por correo institucional](ERS_CATALOG.md#rf-001)             | No unívoca: falta en matriz | parcial      | Auth/provider/session guard y pruebas auth.e2e; credenciales/JWT y verificación oficial no implementados, sólo DEMO.                                                                       |
+| [RF-001 — Autenticación por correo institucional](ERS_CATALOG.md#rf-001)             | No unívoca: falta en matriz | parcial      | Registro/login/credencial scrypt, confirmación y recuperación propia, guard de cuenta y guard de producto. Integración oficial USC pendiente.                                              |
 | [RF-002 — Gestión de perfiles de usuario](ERS_CATALOG.md#rf-002)                     | Alta/Esencial               | parcial      | Perfil nombre propio y estamento; sin foto/gestión completa de perfil.                                                                                                                     |
 | [RF-003 — Publicación de trayectos](ERS_CATALOG.md#rf-003)                           | Alta/Esencial               | parcial      | ViajeService.publicarViaje, Viaje.validarPublicacion, POST trips, E2E; origen/paradas DEMO sin mapa/routing real.                                                                          |
 | [RF-004 — Configuracion de reglas de viaje](ERS_CATALOG.md#rf-004)                   | Media/Deseado               | implementado | TripRuleDefinition/Selection, trip-rules, DEFAULT cuando vacío; prueba HTTP y UI compartida.                                                                                               |
@@ -166,3 +178,29 @@ sintética con API y PostgreSQL real.
 | RNF-039/040/045/046/048/050                                             | Sesión/privacidad y arquitectura revisadas. Verificación web y comprobaciones de build documentadas. Accesibilidad completa, rendimiento y dispositivo físico pendientes.                        |
 
 [Informe del corte](../reviews/PRODUCT_REDEFINITION_DELIVERY.md).
+
+## Continuidad operativa, 26/11/2026
+
+| RF / RN            | Corte local                                                                                       | Límites                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| RF-001/016         | SMTP probado en Mailpit local con tokens, revocación y aislamiento institucional                  | SMTP remoto y matrícula real pendientes                                             |
+| RF-003/005/018/029 | Sedes por FK, búsqueda explícita, selección de geometría y horarios verificados de recogida       | Coordenadas institucionales de embarque, señal GPS y teselas autorizadas pendientes |
+| RF-006/012/015/027 | Conservación de plazas, llegada en orden, abordaje manual, ausencia explícita, cierre e historial | QR interno y seguimiento GPS pendientes                                             |
+| RF-014             | Chat del viaje, avisos internos, lectura, paginación, retiro y retención                          | WSS y push quedan pendientes                                                        |
+| RF-010             | Diseño de permisos derivado de conductor ↔ pasajero abordado                                      | Rango y promedio esperan decisión PO                                                |
+
+## Consolidación funcional 26/11/2026
+
+| Requisito y alcance                     | Estado del corte y referencia directa                                                                                                                                                                                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-010, RN-CALIFICACION-01              | Implementado. `TripRating` guarda una nota única por viaje y escalas separadas por capacidad. `ratings-policy.test.mjs`, `ratings.e2e.test.mjs` y `ratings.spec.ts` cubren el acceso, los extremos de la escala, la exclusión por estado/abordaje, la carrera por duplicado y el promedio persistido tras recargar. |
+| RF-006, RQ-GRUPO-01, RN-GRUPO-01        | El corte local incorpora grupos, consentimiento revocable antes de confirmar y confirmación atómica. `groups.e2e.test.mjs` cubre reintentos, cupo compartido con confirmación individual, dos grupos en disputa, caducidad y vigencia. `groups.spec.ts` recorre invitación y confirmación desde dos sesiones.       |
+| RF-012, RF-015, RF-027, RN-ABORDAJE-01  | Flujo manual preservado y QR opaco de uso único ligado a la parada. `boarding-qr.e2e.test.mjs` comprueba caducidad, concurrencia, titularidad y alternativa manual. El escaneo de cámara queda pendiente de medición física.                                                                                        |
+| RF-015, RN-SEGUIMIENTO-01               | Implementación parcial del seguimiento. El propietario publica voluntariamente el último punto y puede retirarlo. `trip-tracking.e2e.test.mjs` y `safety.spec.ts` comprueban vigencia y acceso. La prueba web utiliza geolocalización controlada.                                                                   |
+| RF-011, RF-028, RF-030, RN-SEGURIDAD-01 | Seguridad parcial. `trip-safety.e2e.test.mjs` comprueba autorización y datos mínimos. `safety.spec.ts` ensaya vista previa, transferencia al selector de compartir y enlace al marcador mediante adaptadores de prueba. Canales de despacho, soporte y PQRS pendientes.                                             |
+| RF-008/009, RN-COSTO-01                 | Estimación privada parcial. `TripExpenseEstimate` guarda pesos enteros por concepto antes del inicio. `expenses-policy.test.mjs` y `expenses.e2e.test.mjs` cubren suma, visibilidad, edición y rechazo de importes inválidos. Reparto, métodos, cargos y liquidación permanecen pendientes de política.             |
+| RF-014, RN-NOTIFICACION-01              | Las participaciones confirmadas del grupo habilitan chat según la regla de acceso existente. `GROUP_CONFIRMED` y `RATING_AVAILABLE` son avisos internos persistentes. Los resultados de la entrega e integración se registran en los informes y handoffs.                                                           |
+
+El cálculo de costos acordados, el envío SOS delegado y la verificación
+institucional no se infieren de pruebas locales. Consultar el [plan de Expo
+Go](../development/MOBILE_TESTING.md) y las [decisiones](../decisions/OPEN_DECISIONS.md).

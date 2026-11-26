@@ -3,10 +3,12 @@ import { AuthModule } from '../auth/auth.module.js';
 import { ReservationsController } from './controllers/reservations.controller.js';
 import { ReservationsService } from './application/reservations.service.js';
 import { ReservationsRepository } from './infrastructure/repositories/reservations.repository.js';
+import { TripTransitionGuard } from './controllers/trip-transition.guard.js';
 
 @Module({
   imports: [AuthModule],
   controllers: [ReservationsController],
-  providers: [ReservationsService, ReservationsRepository],
+  providers: [ReservationsService, ReservationsRepository, TripTransitionGuard],
+  exports: [ReservationsRepository],
 })
 export class ReservationsModule {}

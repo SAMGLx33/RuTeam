@@ -34,7 +34,6 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
     if (
       !point?.active ||
       point.campus !== 'USC' ||
-      point.kind === 'CAMPUS' ||
       point.latitude === null ||
       point.longitude === null
     )
@@ -42,9 +41,22 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
         'Elige un punto institucional activo y con coordenadas',
       );
     const label = input.label?.trim();
-    if (input.label !== undefined && (!label || label.length < 2))
+    if (
+      (point.kind === 'CAMPUS' || input.label !== undefined) &&
+      (!label || label.length < 2)
+    )
       throw new DomainPolicyError(
         'Describe el punto de encuentro dentro de la USC',
+      );
+    const site =
+      point.kind === 'CAMPUS'
+        ? point
+        : point.campusSiteId
+          ? await unit.destination(point.campusSiteId)
+          : null;
+    if (!site?.active || site.kind !== 'CAMPUS' || site.campus !== 'USC')
+      throw new DomainPolicyError(
+        'Este punto necesita estar asociado a una sede USC activa',
       );
     const access = label
       ? 'Ubicación interna descrita; el mapa usa una referencia del campus'
@@ -60,6 +72,7 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
       longitude: Number(point.longitude),
       campus: point.campus,
       campusPointId: point.id,
+      campusSiteId: site.id,
       instructions: notes || null,
     };
   }
@@ -83,6 +96,7 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
     longitude: input.longitude,
     campus: null,
     campusPointId: null,
+    campusSiteId: null,
     instructions,
   };
 }

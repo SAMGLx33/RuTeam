@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { TripSafetyLink } from '../safety/trip-safety-link';
 import { Link } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReservationStatus, ReservationView } from '@ruteam/contracts';
@@ -9,6 +10,7 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
+import { PassengerBoardingPass } from '../boarding/boarding-pass';
 import { travelTime, tripStatusLabel } from './route-preview';
 
 const statusLabel: Record<ReservationStatus, string> = {
@@ -17,6 +19,14 @@ const statusLabel: Record<ReservationStatus, string> = {
   REJECTED: 'Solicitud histórica rechazada',
   CANCELLED: 'Cancelada',
 };
+function participationLabel(item: ReservationView): string {
+  if (item.status !== 'CONFIRMED') return statusLabel[item.status];
+  if (item.noShowAt) return 'Ausencia registrada';
+  if (item.tripStatus === 'COMPLETADO')
+    return item.boardedAt ? 'Completada' : 'Sin abordaje registrado';
+  return item.boardedAt ? 'Abordada' : statusLabel[item.status];
+}
+
 export function ReservationSummary({ item }: { item: ReservationView }) {
   return (
     <>
@@ -24,24 +34,24 @@ export function ReservationSummary({ item }: { item: ReservationView }) {
         {item.pickup.label} → {item.dropoff.label}
       </Text>
       <Text style={s.text}>
-        {travelTime(item.departureAt)} · {item.quantity} plazas
+        {travelTime(item.departureAt)} · {item.quantity}{' '}
+        {item.quantity === 1 ? 'plaza' : 'plazas'}
+      </Text>
+      {item.isRequester && (
+        <Text style={s.text}>
+          Conduce {item.driverName ?? 'un estudiante'} · {item.vehicle.brand}{' '}
+          {item.vehicle.color.toLowerCase()}
+        </Text>
+      )}
+      <Text style={s.text}>
+        {participationLabel(item)} · Viaje {tripStatusLabel[item.tripStatus]}
       </Text>
       <Text style={s.text}>
-        {item.status === 'CONFIRMED' && item.tripStatus === 'COMPLETADO'
-          ? 'Completada'
-          : item.boardedAt && item.status === 'CONFIRMED'
-            ? 'Abordada'
-            : statusLabel[item.status]}{' '}
-        · Viaje {tripStatusLabel[item.tripStatus]}
-      </Text>
-      <Text style={s.text}>
-        Encuentro · {item.pickup.label} · {item.pickup.latitude},{' '}
-        {item.pickup.longitude}
+        Encuentro · {item.pickup.label}
         {item.pickup.instructions ? ` · ${item.pickup.instructions}` : ''}
       </Text>
       <Text style={s.text}>
-        Descenso · {item.dropoff.label} · {item.dropoff.latitude},{' '}
-        {item.dropoff.longitude}
+        Descenso · {item.dropoff.label}
         {item.dropoff.instructions ? ` · ${item.dropoff.instructions}` : ''}
       </Text>
     </>
@@ -54,16 +64,18 @@ export function ReservationsScreen() {
   const list = useQuery({
     queryKey: ['my-reservations', user?.id],
     queryFn: () => api<ReservationView[]>('/reservations/my'),
-    enabled: !!user,
+    enabled: !!user?.capabilities.passenger,
   });
   const cancel = useMutation({
     mutationFn: (id: string) =>
       api<ReservationView>(`/participations/${id}/cancel`, {
         method: 'POST',
       }),
-    onSuccess: () => {
+    onSuccess: (item) => {
       void client.invalidateQueries({ queryKey: ['my-reservations'] });
       void client.invalidateQueries({ queryKey: ['available-trips'] });
+      void client.invalidateQueries({ queryKey: ['trip-feed'] });
+      void client.invalidateQueries({ queryKey: ['trip-detail', item.tripId] });
     },
   });
   return (
@@ -71,9 +83,13 @@ export function ReservationsScreen() {
       <Link href="/search-trips" style={s.link}>
         Buscar viajes
       </Link>
+      <Link href="/groups" style={s.link}>
+        Mis grupos
+      </Link>
       <Text style={s.text}>
-        Cada estudiante confirma su propia plaza. Retirarte de un viaje futuro
-        antes de abordar libera la plaza y conserva tu historial.
+        Aquí puedes consultar tu plaza individual o confirmada en grupo.
+        Retirarte de un viaje futuro antes de abordar libera la plaza y conserva
+        tu historial.
       </Text>
       {list.isPending && <Text>Consultando tus participaciones…</Text>}
       {list.error && (
@@ -90,6 +106,32 @@ export function ReservationsScreen() {
       {list.data?.map((item) => (
         <View key={item.id} style={s.section}>
           <ReservationSummary item={item} />
+          {item.tripStatus === 'EN_CURSO' &&
+            item.status === 'CONFIRMED' &&
+            !item.noShowAt && <TripSafetyLink tripId={item.tripId} />}
+          {item.tripStatus === 'COMPLETADO' &&
+            item.status === 'CONFIRMED' &&
+            item.boardedAt &&
+            !item.noShowAt && (
+              <Link
+                href={{
+                  pathname: '/ratings/[tripId]',
+                  params: { tripId: item.tripId },
+                }}
+                style={s.link}
+              >
+                Calificar al conductor
+              </Link>
+            )}
+          {item.isRequester &&
+            item.status === 'CONFIRMED' &&
+            item.quantity === 1 &&
+            !item.boardedAt &&
+            !item.noShowAt &&
+            (item.tripStatus === 'PROGRAMADO' ||
+              item.tripStatus === 'EN_CURSO') && (
+              <PassengerBoardingPass reservationId={item.id} />
+            )}
           {item.canCancel && (
             <Button
               title={

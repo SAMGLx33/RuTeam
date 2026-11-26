@@ -44,3 +44,33 @@ como backlog posterior sin atribuirlo a la entrega ni planificar actividades obl
 después de esa fecha. Dispositivo ausente e integraciones bloqueadas son limitaciones
 explícitas, no aceptaciones implícitas. Los antecedentes están
 [archivados](../history/2026-11-24-guides.md).
+
+## Ventanas propuestas al 28 de noviembre
+
+| Ventana  | Entregable revisable                                                                    | Dependencia                                                                            |
+| -------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 25–26/11 | Cuentas, onboarding y navegación; movilidad, feed y recorridos integrados               | Revisión de migración y reproducción de pruebas locales                                |
+| 27–28/11 | Evidencias académicas, revisión cruzada y prueba física si se dispone de teléfono y red | Integración autorizada, responsables POR_ASIGNAR y servicios efectivamente disponibles |
+
+La propuesta no registra reuniones, aprobaciones ni responsables asignados. Los módulos
+complementarios siguen priorizados según capacidad del equipo y aceptación del PO.
+
+## Continuidad 26–28 de noviembre
+
+| Ventana  | Trabajo revisable                                                                            |
+| -------- | -------------------------------------------------------------------------------------------- |
+| 26–27/11 | Correo, cartografía y cimientos de recorrido; regresión de chat y permisos.                  |
+| 28/11    | Evidencias congeladas, revisión cruzada y entrega académica. Dispositivo si está disponible. |
+
+La planificación no registra ceremonias realizadas ni decisiones de aceptación del PO.
+
+## Consolidación hacia la entrega, 26–28/11
+
+| Ventana propuesta | Entregable comprobable                                                                | Dependencia                                                        |
+| ----------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 26–27/11          | Reputación, grupo y seguridad revisados, migraciones y restauración comprobadas       | Contratos únicos y pruebas PostgreSQL/Expo                         |
+| 28/11             | Reproducir el corte académico y registrar validación física si hay teléfono accesible | QA e integración POR_ASIGNAR; revisión y autorización de promoción |
+
+La distribución económica, la acreditación institucional, el catálogo de embarque
+certificado y el canal externo de incidentes siguen en el backlog. Ninguna ventana
+registra una ceremonia o una aceptación ya realizada.

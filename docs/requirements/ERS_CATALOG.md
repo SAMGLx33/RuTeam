@@ -1,6 +1,6 @@
 # Catálogo ERS: interpretación vigente y fuente histórica
 
-Actualización25/11/2026. [PRODUCT_DEFINITION](PRODUCT_DEFINITION.md) prevalece sobre
+Actualización 26/11/2026. [PRODUCT_DEFINITION](PRODUCT_DEFINITION.md) prevalece sobre
 criterios literales incompatibles. Se conservan RF-001..030/RNF-031..050, títulos,
 prioridades e información histórica de la fuente abajo. No se reescribe el original
 ni se acredita aprobación académica por esta anotación. RF-001 sin prioridad unívoca.
@@ -20,8 +20,9 @@ ni se acredita aprobación académica por esta anotación. RF-001 sin prioridad 
 | RF-014/010/008/009/011/028/030          | Conservar objetivos compatibles de chat, ratings, economía y seguridad con participantes reales y privacidad. Retirar destinatario ADMIN; soporte legítimo pendiente. Sin pagos/multas/SOS ficticios                                   |
 | RNF-038/039/040/041/045/046/048/049/050 | Sesión/PII/consentimiento, rate limiting, historial, MVC/contratos y UX compartida siguen aplicando. Sin cuenta administrativa, sin secretos públicos, sin cobertura RNF inferida de tests                                             |
 
-Las propuestas de corrección1..5 en RF-010, género/moto/exclusividad, fórmula económica,
-penalidades y excepciones de plataforma siguen en OPEN_DECISIONS cuando no resueltas.
+La consolidación del 26/11/2026 resolvió que RF-010 admite enteros de 1 a 5
+y calcula la media aritmética por capacidad. Género/moto/exclusividad, fórmula
+económica, penalidades y excepciones de plataforma siguen en OPEN_DECISIONS.
 La rúbrica no se modifica unilateralmente. Ver
 [edición académica precisa](ACADEMIC_REDEFINITION_CHANGES.md),
 [trazabilidad actual](TRACEABILITY.md) y [UML](UML_CROSSWALK.md).
@@ -697,3 +698,31 @@ Los criterios anteriores conservan el cotejo de la ERS. La enmienda aplica sólo
 | RF-018, RF-027, RF-029        | Distinguir catálogo DEMO, puntos internos por nivel/acceso, catálogo oficial, ruta consultable y posición del dispositivo. El QR futuro debe vincular al participante con su parada seleccionada y reserva confirmada.                                                                          |
 | RNF-031, RNF-035, RNF-039–041 | Filtrar antes de devolver datos, paginar búsqueda y limitar operaciones y geometrías. Datos de búsqueda mínimos. Conservar eventos y estados; las mediciones y garantías completas de la ERS siguen pendientes de evidencia.                                                                    |
 | RNF-046–048, RNF-050          | Una app Expo Web/Native. Experiencia usable con mapa base opcional, permisos y errores explícitos cuando una integración se habilite. Validación física y conformidad de accesibilidad requieren pruebas propias.                                                                               |
+
+## Nota de evolución 25/11/2026
+
+Para RF-001/002 y recuperación, la implementación local incorpora contraseña propia,
+enlaces de buzón y recuperación y elegibilidad separada. Para RF-005, añadir preferencias
+privadas, listado general y conciliación de compatibilidad directa/potencial. Para RF-006,
+la participación ordinaria sigue siendo directa y atómica. Los avisos internos se vinculan
+a nuevas coincidencias y no adjudican plazas. Los textos/identificadores archivados de
+la ERS y la prioridad pendiente de RF-001 se conservan. Consultar
+[trazabilidad vigente](TRACEABILITY.md) y [cambios académicos](ACADEMIC_REDEFINITION_CHANGES.md).
+
+## Nota de continuidad
+
+RF-014 tiene una implementación REST compartida con avisos persistentes.
+Actualización en tiempo real y push requieren una evolución separada. Las políticas
+de lectura tras finalizar y retención se mantienen en la definición y el informe de
+continuidad. En ese corte se mantenía pendiente la decisión RF-010 sobre rango
+y fórmula. La consolidación posterior la resuelve.
+
+## Consolidación funcional del 26 de noviembre
+
+La transcripción histórica de RF-010 conserva el criterio excluyente y la
+fórmula originales. El encargo vigente aprueba el intervalo entero 1–5
+inclusive y la media aritmética por capacidad evaluada en viajes completados.
+La evaluación exige la pareja conductor y pasajero con abordaje, y una clave
+única de viaje, evaluador y evaluado. Los estados de implementación de grupos,
+QR, estimaciones privadas, seguimiento, seguridad y RF-010 se registran en
+[trazabilidad](TRACEABILITY.md#consolidación-funcional-26112026).

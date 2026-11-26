@@ -27,6 +27,8 @@ export const accessLabel: Record<StopAccess, string> = {
 type PreviewStop = TripPoint & {
   access: StopAccess;
   instructions?: string | null;
+  estimatedOffsetSeconds?: number | null;
+  reachedAt?: string | null;
 };
 const height = 200;
 const padding = 22;
@@ -41,12 +43,16 @@ export function worldPoint(longitude: number, latitude: number) {
   };
 }
 
-function RouteGeometryPreview({
+type MapPoint = Pick<TripPoint, 'latitude' | 'longitude'>;
+
+export function RouteGeometryPreview({
   geometry,
   stops,
+  observedPosition,
 }: {
-  geometry: RouteGeometry;
-  stops: PreviewStop[];
+  geometry: RouteGeometry | null;
+  stops: MapPoint[];
+  observedPosition?: MapPoint;
 }) {
   const [width, setWidth] = useState(0);
   const [showTiles, setShowTiles] = useState(false);
@@ -55,16 +61,22 @@ function RouteGeometryPreview({
   const attribution: unknown =
     Constants.expoConfig?.extra?.routeTileAttribution;
   const tilesConfigured =
+    !observedPosition &&
     typeof tileUrl === 'string' &&
     /^https?:\/\//.test(tileUrl) &&
     ['{z}', '{x}', '{y}'].every((part) => tileUrl.includes(part)) &&
     typeof attribution === 'string' &&
     attribution.trim().length > 0;
+  const coordinates = geometry?.coordinates ?? [];
+  const observed =
+    observedPosition &&
+    worldPoint(observedPosition.longitude, observedPosition.latitude);
   const points = [
-    ...geometry.coordinates.map(([longitude, latitude]) =>
+    ...coordinates.map(([longitude, latitude]) =>
       worldPoint(longitude, latitude),
     ),
     ...stops.map(({ longitude, latitude }) => worldPoint(longitude, latitude)),
+    ...(observed ? [observed] : []),
   ];
   const horizontal = points.map(({ x }) => x);
   const vertical = points.map(({ y }) => y);
@@ -113,14 +125,18 @@ function RouteGeometryPreview({
       }
     }
   }
-  const path = geometry.coordinates.map(([longitude, latitude]) =>
+  const path = coordinates.map(([longitude, latitude]) =>
     project(longitude, latitude),
   );
   return (
     <>
       <View
         accessible
-        accessibilityLabel="Vista geográfica de la geometría publicada. Los números corresponden al orden de paradas."
+        accessibilityLabel={
+          observed
+            ? 'Vista esquemática de la última ubicación compartida y las paradas publicadas.'
+            : 'Vista geográfica de la geometría publicada. Los números corresponden al orden de paradas.'
+        }
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
         style={styles.map}
       >
@@ -165,6 +181,17 @@ function RouteGeometryPreview({
               </View>
             );
           })}
+        {width > 0 && observed && (
+          <View
+            style={[
+              styles.observedPin,
+              {
+                left: observed.x * scale - left - 8,
+                top: observed.y * scale - top - 8,
+              },
+            ]}
+          />
+        )}
       </View>
       {tilesConfigured && (
         <Button
@@ -193,11 +220,13 @@ export function RoutePreview({
   stops,
   description,
   distanceMeters,
+  departureAt,
 }: {
   geometry: RouteGeometry | null;
   stops: PreviewStop[];
   description: string;
   distanceMeters?: number | null;
+  departureAt?: string;
 }) {
   return (
     <View style={s.section}>
@@ -225,6 +254,20 @@ export function RoutePreview({
             {index + 1}. {stop.label} · {accessLabel[stop.access]}
           </Text>
           {stop.instructions && <Text style={s.text}>{stop.instructions}</Text>}
+          {stop.reachedAt ? (
+            <Text style={s.text}>
+              Llegada registrada · {travelTime(stop.reachedAt)}
+            </Text>
+          ) : departureAt && stop.estimatedOffsetSeconds != null ? (
+            <Text style={s.text}>
+              Hora estimada ·{' '}
+              {travelTime(
+                new Date(
+                  Date.parse(departureAt) + stop.estimatedOffsetSeconds * 1000,
+                ).toISOString(),
+              )}
+            </Text>
+          ) : null}
         </View>
       ))}
     </View>
@@ -239,6 +282,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.selected,
     borderRadius: 10,
     overflow: 'hidden',
+  },
+  observedPin: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: '#9a4108',
   },
   tile: { position: 'absolute', width: tileSize, height: tileSize },
   line: {

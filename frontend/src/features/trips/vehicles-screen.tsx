@@ -1,3 +1,4 @@
+import { useSession } from '../../providers/session-provider';
 import { Pressable, Text, View } from 'react-native';
 import { useForm, useWatch } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,6 +33,11 @@ const documentLabels = {
   EXPIRED: 'Vencido',
   UNVERIFIED: 'Sin verificación habilitante',
 };
+const licenseLabels = {
+  CAR: 'Automóvil',
+  MOTORCYCLE: 'Motocicleta',
+  BOTH: 'Auto y moto',
+} as const;
 function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
   const client = useQueryClient();
   const form = useForm<{ soatExpiresAt: string }>({
@@ -84,18 +90,22 @@ function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
   );
 }
 export function VehiclesScreen() {
+  const { user } = useSession();
   const client = useQueryClient();
   const vehicles = useQuery({
     queryKey: ['vehicles'],
     queryFn: () => api<VehicleSummary[]>('/vehicles'),
+    enabled: !!user?.capabilities.driverAccess,
   });
   const catalog = useQuery({
     queryKey: ['vehicle-catalog'],
     queryFn: () => api<{ colors: string[] }>('/vehicles/catalog'),
+    enabled: !!user?.capabilities.driverAccess,
   });
   const license = useQuery({
     queryKey: ['license'],
     queryFn: () => api<DemoLicense | null>('/driver-eligibility'),
+    enabled: !!user?.capabilities.driverAccess,
   });
   const form = useForm<VehicleFormValues>({
     defaultValues: {
@@ -142,7 +152,11 @@ export function VehiclesScreen() {
     },
   });
   return (
-    <ProtectedPage title="Vehículos y licencia">
+    <ProtectedPage
+      title="Vehículos y licencia"
+      requires="driverAccess"
+      allowOnboarding
+    >
       <Text style={s.text}>
         Declara únicamente vehículos propios o con autorización de uso. La
         vigencia declarada no acredita verificación oficial de licencia o SOAT.
@@ -244,14 +258,14 @@ export function VehiclesScreen() {
         )}
         <Text style={s.text}>
           {license.data
-            ? `${license.data.category} · ${documentLabels[license.data.verificationStatus]} · vence ${new Date(license.data.expiresAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`
+            ? `${licenseLabels[license.data.category]} · ${documentLabels[license.data.verificationStatus]} · vence ${new Date(license.data.expiresAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`
             : 'Sin licencia registrada.'}
         </Text>
-        {['CAR', 'MOTORCYCLE', 'BOTH'].map((value) => (
+        {(['CAR', 'MOTORCYCLE', 'BOTH'] as const).map((value) => (
           <Pressable
             key={value}
             accessibilityRole="radio"
-            accessibilityLabel={`Licencia ${value}`}
+            accessibilityLabel={`Licencia ${licenseLabels[value]}`}
             accessibilityState={{ checked: category === value }}
             onPress={() => licenseForm.setValue('category', value)}
             style={[s.choice, category === value && s.selected]}

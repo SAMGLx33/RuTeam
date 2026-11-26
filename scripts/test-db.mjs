@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { spawnSync } from 'node:child_process';
+import fixtures from './test-fixtures.json' with { type: 'json' };
 const { DATABASE_URL, TEST_DATABASE_URL } = process.env;
 if (!TEST_DATABASE_URL || TEST_DATABASE_URL === DATABASE_URL)
   throw new Error('TEST_DATABASE_URL debe ser distinta a desarrollo');
@@ -30,7 +31,13 @@ for (const task of ['db:migrate', 'db:seed']) {
   const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const result = spawnSync(command, ['run', task], {
     stdio: 'inherit',
-    env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
+    env: {
+      ...process.env,
+      DATABASE_URL: TEST_DATABASE_URL,
+      AUTH_FIXTURE_PASSWORD:
+        process.env.AUTH_FIXTURE_PASSWORD ??
+        fixtures.defaultAuthFixturePassword,
+    },
     shell: process.platform === 'win32',
   });
   if (result.status !== 0) process.exit(result.status ?? 1);

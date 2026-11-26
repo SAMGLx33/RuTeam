@@ -34,13 +34,15 @@ export function MeetingMapPicker({
   reference,
   value,
   onSelect,
+  initiallyOpen = false,
 }: {
   title: string;
   reference: Coordinates;
   value?: Coordinates;
   onSelect: (coordinates: Coordinates) => void;
+  initiallyOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [zoom, setZoom] = useState(13);
   const [width, setWidth] = useState(0);
   const [failed, setFailed] = useState(false);
@@ -61,9 +63,7 @@ export function MeetingMapPicker({
     !attribution.trim()
   )
     return (
-      <Text style={s.text}>
-        El mapa de selección requiere un proveedor de teselas configurado.
-      </Text>
+      <Text style={s.text}>El mapa no está disponible en este momento.</Text>
     );
 
   const count = 2 ** zoom;

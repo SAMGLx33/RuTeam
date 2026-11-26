@@ -28,3 +28,8 @@ MODULE_OWNERSHIP. Test de solapamiento no sustituye test de última plaza.
 
 [Historial de módulos anteriores](../history/2026-11-24-guides.md) y ADR0002 describen
 la base del24, incluidas solicitud/aceptación y revisión sintética ahora retiradas.
+
+En consolidación, `ratings`, `groups`, `expenses` y `safety` encapsulan sus
+casos de uso y persistencia. El pase QR extiende `reservations`, donde permanece
+la política única de abordaje. El productor de avisos comparte `TripNotification`
+y la bandeja continúa en `mobility`.

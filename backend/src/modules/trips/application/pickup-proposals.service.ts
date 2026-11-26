@@ -91,6 +91,10 @@ export class PickupProposalsService {
       const now = new Date();
       if (decision === 'REJECT')
         return proposalView(await unit.reject(proposalId, now));
+      if (trip.occupiedSeats >= trip.offeredSeats)
+        throw new ConflictException(
+          'No hay plazas disponibles para esta recogida',
+        );
       if (!geometry)
         throw new ConflictException(
           'Hace falta geometría publicada para incorporar la propuesta',

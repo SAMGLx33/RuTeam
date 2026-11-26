@@ -209,3 +209,39 @@ sequenceDiagram
     BD-->>API: Confirmación o conflicto de capacidad
     API-->>Conductor: Estado actualizado
 ```
+
+## Ajuste de trazabilidad 25/11/2026 | transformación
+
+En identidad y acceso, modelar `User` → `AccountToken` → `AuthSession` y una barrera de
+matrícula aparte del control de buzón. Mostrar onboarding con avance persistido y capacidad
+efectiva calculada. En búsqueda y notificación, asociar `MobilityPreference` a cuenta y
+campus, `RecommendationJob` a viaje y `TripNotification` a destinatario/viaje. A partir de
+una coincidencia potencial, la propuesta de recogida antecede a una confirmación distinta.
+Los diagramas privados originales permanecen íntegros. La
+[especificación académica revisable](ACADEMIC_REDEFINITION_CHANGES.md) registra las divergencias.
+
+## Continuidad, 26/11/2026
+
+Relacionar sede con sus puntos y conservar su snapshot en cada parada de viaje.
+Separar offset previsto por el motor de inicio, llegada, abordaje, ausencia y cierre
+registrados. Añadir secuencia de chat con validación de participante, mensaje único,
+marca monotónica y aviso en PostgreSQL. El DER usa las tablas TripChatMessage,
+TripChatRead y TripNotification. Conservar el UML privado original para su revisión.
+
+## Correspondencia de consolidación, 26/11/2026
+
+La revisión deriva de las vistas numeradas abajo. Los identificadores de la
+fuente histórica se conservan y el archivo original de 36 pestañas permanece
+intacto.
+
+| Pestañas históricas | Firmas, entidades y divergencia del corte                                                                                                                                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 20, 29, 34          | `TripRating` y `RatingsService` modelan conductor ↔ pasajero abordado para `COMPLETADO`. El promedio es aritmético, agrupa por capacidad y se calcula sobre notas enteras 1–5. El comentario queda en la vista del evaluador.                                  |
+| 16, 31, 35          | `TripGroup` y `TripGroupMember` separan consentimiento de confirmación. `GroupsService.confirm` revalida a todos y crea una `Reservation` individual por integrante bajo el bloqueo conductor → viaje.                                                         |
+| 09, 17, 28          | `ReservationBoardingPass` guarda el hash del código que se valida para participación, viaje y parada. El QR y la presencia manual comparten la regla de abordaje. `TripDriverPosition` representa la última posición voluntaria visible sólo durante el viaje. |
+| 10, 19, 30          | `TripSafetyContext` sólo expone contexto mínimo a quien tiene acceso al viaje activo. El usuario elige si comparte o abre el marcador. Los avisos `GROUP_CONFIRMED` y `RATING_AVAILABLE` se vinculan al viaje.                                                 |
+| 02, 06, 18          | `TripExpenseEstimate` solamente suma costos privados del conductor. La liquidación y la fórmula de aporte siguen sujetas a decisión.                                                                                                                           |
+
+El derivado privado de esta revisión identifica cada relación con esos
+modelos y los flujos correspondientes. Su alcance se enumera en
+[ediciones académicas](ACADEMIC_REDEFINITION_CHANGES.md#diagramas-derivados-de-consolidación).

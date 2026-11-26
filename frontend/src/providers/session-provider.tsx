@@ -7,101 +7,110 @@ import {
 } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
-  CurrentUser,
-  DemoLoginInput,
-  DemoLoginResponse,
+  Account,
+  AccountSessionResponse,
+  LoginInput,
+  OnboardingInput,
 } from '@ruteam/contracts';
 import { api, ApiError, setSessionToken } from '../services/api/client';
 import { readToken, writeToken } from '../services/api/session-storage';
+
 interface SessionContextValue {
-  user: CurrentUser | null;
-  accessDenied: boolean;
+  user: Account | null;
   loading: boolean;
   error: string | null;
-  signIn: (identity: DemoLoginInput['identity']) => Promise<void>;
+  signIn: (input: LoginInput) => Promise<void>;
   signOut: () => Promise<void>;
-  retry: () => void;
+  saveOnboarding: (input: OnboardingInput) => Promise<void>;
+  refresh: () => Promise<void>;
 }
+
 const SessionContext = createContext<SessionContextValue | null>(null);
+const accountKey = ['me'];
+
 export function SessionProvider({ children }: { children: ReactNode }) {
   const client = useQueryClient();
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
   useEffect(() => {
     let mounted = true;
-    readToken()
+    void readToken()
       .then((token) => {
-        if (mounted) {
-          setSessionToken(token);
-          setReady(true);
-        }
+        if (mounted) setSessionToken(token);
       })
       .catch(() => {
-        if (mounted) {
-          setStorageError(
-            'No pudimos recuperar la sesión segura. Puedes iniciar una nueva.',
-          );
-          setReady(true);
-        }
+        if (mounted)
+          setStorageError('No pudimos recuperar la sesión guardada.');
+      })
+      .finally(() => {
+        if (mounted) setReady(true);
       });
     return () => {
       mounted = false;
     };
   }, []);
-  const me = useQuery({
-    queryKey: ['me'],
+
+  const account = useQuery({
+    queryKey: accountKey,
     enabled: ready,
     queryFn: async () => {
       try {
-        return await api<CurrentUser>('/auth/me');
+        return await api<Account>('/auth/account');
       } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
+        if (error instanceof ApiError && [401, 403].includes(error.status))
           return null;
-        }
         throw error;
       }
     },
-    retry: false,
-    staleTime: 0,
     refetchInterval: 60000,
   });
-  async function signIn(identity: DemoLoginInput['identity']): Promise<void> {
-    await client.cancelQueries({ queryKey: ['me'] });
-    const session = await api<DemoLoginResponse>('/auth/demo/login', {
+
+  async function signIn(input: LoginInput) {
+    const session = await api<AccountSessionResponse>('/auth/login', {
       method: 'POST',
-      body: { identity },
+      body: input,
     });
+    await client.cancelQueries();
+    client.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' });
     await writeToken(session.token ?? null);
     setSessionToken(session.token ?? null);
-    // Leer /auth/me de la API es obligatorio; no presentar sólo el resultado de login.
-    const user = await api<CurrentUser>('/auth/me');
-    client.setQueryData(['me'], user);
+    client.setQueryData(accountKey, await api<Account>('/auth/account'));
     setStorageError(null);
   }
-  async function signOut(): Promise<void> {
+
+  async function signOut() {
     try {
       await api<void>('/auth/logout', { method: 'POST' });
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === 401)) throw error;
+      if (!(error instanceof ApiError && [401, 403].includes(error.status)))
+        throw error;
     }
     await client.cancelQueries();
     await writeToken(null);
     setSessionToken(null);
-    // Mantener el query observado para que el logout publique null inmediatamente.
-    client.setQueryData(['me'], null);
+    client.setQueryData(accountKey, null);
     client.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' });
   }
+
+  async function saveOnboarding(input: OnboardingInput) {
+    const updated = await api<Account>('/auth/onboarding', {
+      method: 'PATCH',
+      body: input,
+    });
+    client.setQueryData(accountKey, updated);
+  }
+
   return (
     <SessionContext.Provider
       value={{
-        accessDenied: me.error instanceof ApiError && me.error.status === 403,
-        user: me.isError ? null : (me.data ?? null),
-        loading: !ready || me.isPending,
-        error: me.error?.message ?? storageError,
+        user: account.isError ? null : (account.data ?? null),
+        loading: !ready || account.isPending,
+        error: account.error?.message ?? storageError,
         signIn,
         signOut,
-        retry: () => {
-          void me.refetch();
+        saveOnboarding,
+        refresh: async () => {
+          await account.refetch();
         },
       }}
     >
@@ -109,6 +118,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     </SessionContext.Provider>
   );
 }
+
 export function useSession(): SessionContextValue {
   const session = useContext(SessionContext);
   if (!session) throw new Error('Falta SessionProvider');

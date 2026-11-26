@@ -83,19 +83,34 @@ Si requiere descargas, diagnosticar el paquete/host oficial y permisos de red; n
 | ROUTING_BASE_URL                                                | Motor vial HTTP(S) de confianza opcional; no servicio público ilimitado              |
 | EXPO_PUBLIC_ROUTE_TILE_URL / EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION | Teselas XYZ autorizadas y atribución visible; ambas públicas                         |
 
-La plantilla mantiene DEMO_MODE=false y VERIFICATION_PROVIDER=official por defecto.
-Sin fuente institucional, ese arranque informa el bloqueo; no habilita una sesión real.
-Para trabajar con fixtures, editar el .env LOCAL con NODE_ENV=development, DEMO_MODE=true
-y VERIFICATION_PROVIDER=demo antes de seed y db:test:setup, y reiniciar API/Expo. La UI
-expone el acceso sintético sólo como opción explícita de desarrollo cuando el backend
-lo permite. No trasladar ese opt-in a producción ni eliminar la guarda del seed.
+La plantilla mantiene `DEMO_MODE=false` y `VERIFICATION_PROVIDER=official`. El registro
+local persiste cuentas pendientes aunque SMTP no esté configurado. La autenticación
+de cuenta permite consultar el estado; los viajes permanecen restringidos a elegibles.
+
+Para pruebas locales autorizadas, usa `NODE_ENV=development`, `DEMO_MODE=true` y
+`VERIFICATION_PROVIDER=demo` en el entorno de los comandos. Define
+`AUTH_FIXTURE_PASSWORD` con 12–128 caracteres antes del seed para habilitar el login
+normal de fixtures existentes. La misma variable alimenta Playwright y smoke al correr
+sobre la base aislada si se elige una contraseña diferente a la de la suite. En el
+formulario usa el correo `ana@student-fixtures.ruteam.invalid` para pasajera,
+`diego@student-fixtures.ruteam.invalid` para conductor y
+`laura@student-fixtures.ruteam.invalid` para cuenta sin permiso de viajes.
+La ruta legacy `/auth/demo/login` sólo existe operativamente con `NODE_ENV=test`.
+
+Para enviar confirmación y recuperación, configurar en backend `AUTH_TOKEN_SECRET`
+(aleatorio, mínimo 32 caracteres), `AUTH_PUBLIC_URL` (HTTPS o HTTP loopback fuera de
+producción), `SMTP_HOST`, `MAIL_FROM` y, cuando corresponda, `SMTP_USER` con
+`SMTP_PASSWORD`. `SMTP_SECURE=true` por defecto, puerto implícito 465.
+SMTP sin TLS sólo se admite en loopback y fuera de producción, puerto 25 por defecto.
+En desarrollo, un capturador SMTP local permite verificar la entrega sin contactar
+direcciones reales. Mantén estos valores fuera de Expo y del historial de Git.
 
 El seed es sintético e idempotente para desarrollo/test. No cuentas ADMIN ni docentes o
 trabajadores como estudiantes válidos. Conservar registros antiguos de auditoría y
 reservas sin elevar permisos ni confirmar pendientes durante la migración. Comprobar
 las migraciones nuevas del incremento en API/PROGRESS antes de usarlas en otra base.
 
-Producción necesita autenticación legítima, fuente autorizada de estamento/vigencia,
+Producción necesita un transporte de correo operativo, fuente autorizada de estamento/vigencia,
 verificación documental exigida por la política, TLS/cookies seguras y protección de PII.
 No basta desactivar DEMO_MODE para declarar un despliegue seguro y funcional.
 Sin evidencia institucional, operaciones protegidas reales permanecen bloqueadas.
@@ -147,3 +162,54 @@ inicio limpian caché Metro; inspeccionar procesos propios antes de reiniciar.
 Comandos y escenarios en [TEST_PLAN](TEST_PLAN.md); resultados actuales en
 [EVIDENCE](../demo/EVIDENCE.md) y PROGRESS. Revisar docs de cada incremento para rutas
 retiradas; los endpoints administrativos y aprobaciones ordinarias no son API vigente.
+
+## Proveedores para continuidad operativa
+
+- **Correo local**. [Correo local con Mailpit](MAILPIT.md) documenta las variables,
+  los puertos de loopback y el smoke que registra, verifica y recupera una cuenta.
+  Un relay real requiere autorización, remitente y TLS. La verificación estudiantil
+  requiere su propia fuente institucional.
+- **Geocodificación**. `GEOCODING_BASE_URL` apunta a una instancia compatible
+  con Photon. Si se omite, buscar lugares informa indisponibilidad y conserva texto
+  o selección de mapa. La búsqueda se ejecuta al enviar el formulario. Las zonas
+  textuales sin marcador quedan guardadas sin coincidencia geográfica.
+- **Rutas**. `ROUTING_BASE_URL` apunta a OSRM con perfil de automóvil y datos del
+  área. `ROUTING_SELECTION_SECRET` es opcional, de 32 caracteres o más y sólo para
+  Nest. Si se omite, una clave de proceso protege las alternativas hasta reinicio.
+  En varias instancias configura la misma clave en todas. Las selecciones caducan
+  a los 30 minutos.
+- **Teselas**. `EXPO_PUBLIC_ROUTE_TILE_URL` y `EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION`
+  son públicas y sirven a la misma aplicación Expo. El hosting y la política de
+  caché, atribución e identificación dependen del proveedor acordado.
+
+Las consultas académicas puntuales usaron datos públicos de Cali. No configurar
+un servicio comunitario como dependencia de producción sin acuerdo vigente.
+[Nominatim público](https://operations.osmfoundation.org/policies/nominatim/),
+[Photon](https://github.com/komoot/photon),
+[política de teselas OSM](https://operations.osmfoundation.org/policies/tiles/) y
+[OSRM FOSSGIS](https://routing.openstreetmap.de/about.html).
+
+El catálogo tiene identidad de institución USC y referencia UUID de sede.
+Las direcciones de Pampalinda, Centro y Palmira proceden de la USC. Antes de habilitar
+una sede para publicar, el responsable de catálogo debe registrar una referencia
+geográfica pública revisada y relacionar sus puntos habilitados. La ubicación
+personalizada dentro de la sede sigue siendo un texto. Las filas institucionales
+sin coordenadas se muestran como pendientes de configuración. No cargar coordenadas
+de domicilios en el catálogo.
+
+## Verificación local del corte de consolidación
+
+Usa `npm run db:generate` después de instalar el lockfile. Desde raíz,
+`npm run db:migrate` usa la base de desarrollo autorizada y
+`npm run db:test:setup` prepara la base separada de pruebas. Conserva un respaldo
+privado de desarrollo y el historial de migraciones. La preparación aislada y las suites comparten una contraseña sintética por
+defecto. Para cambiarla, usa la misma variable de proceso en el seed aislado
+y las suites. Ejecuta `npm test` y después
+`npm run test:e2e` para evitar escrituras simultáneas en la misma base.
+
+Cámara y ubicación sólo solicitan permiso al usarlas. `expo-camera` corresponde
+al SDK 54 y el escáner está en la compilación nativa. La web conserva abordaje
+manual. `expo-location` comparte una lectura voluntaria del conductor en
+primer plano. En navegador, el permiso de ubicación requiere contexto seguro
+como localhost en pruebas o HTTPS. La precisión final depende del dispositivo.
+Para Android/iOS y NAT de VirtualBox, sigue la [prueba física](MOBILE_TESTING.md).

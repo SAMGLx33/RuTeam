@@ -15,6 +15,8 @@ export class CampusService {
       id: point.id,
       name: point.name,
       campus: point.campus,
+      campusSiteId: point.kind === 'CAMPUS' ? point.id : point.campusSiteId,
+      sourceUrl: point.sourceUrl,
       kind: point.kind,
       description: point.description,
       accessReference: point.accessReference,

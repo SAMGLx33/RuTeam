@@ -257,3 +257,26 @@ Prevalecen las pruebas del informe nuevo para las reglas redefinidas.
   del seed. Los viajes y reservas anteriores tenían cero filas en desarrollo.
 
 [Informe y resultados](../reviews/PRODUCT_REDEFINITION_DELIVERY.md).
+
+## 25/11/2026 | Evidencia de transformación de producto
+
+Recorridos de cuenta, verificación, onboarding, navegación, publicación a recomendación
+y participación sobre Nest + `ruteam_test`, en Chromium de escritorio y tamaño móvil.
+Se guardaron capturas con datos de prueba fuera de Git. La
+[revisión de entrega](../reviews/PRODUCT_TRANSFORMATION_DELIVERY.md) enumera
+las pruebas, los estados y los límites de la validación. Los registros anteriores se conservan.
+
+## 26/11/2026 · Continuidad operativa local
+
+La [revisión del corte](../reviews/PRODUCT_CONTINUITY.md) registra la línea base
+repetida, las migraciones y la ejecución final con PostgreSQL. Capturas de prueba
+de mapa web, recomendación y chat en escritorio y viewport móvil, además de logs
+duraderos, en la carpeta local de continuidad. Prueba física Expo Go pendiente.
+
+## 26/11/2026 · Consolidación del producto
+
+La [revisión consolidada](../reviews/PRODUCT_CONSOLIDATION.md) vincula los
+recorridos de calificación, grupos, geolocalización web controlada y las
+comprobaciones PostgreSQL. La [restauración](../reviews/POSTGRESQL_RESTORE_DRILL.md)
+se verificó en una base aislada. La comprobación de cámara y GPS físicos
+permanece pendiente.

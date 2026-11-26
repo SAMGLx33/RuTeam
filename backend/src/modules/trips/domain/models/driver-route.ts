@@ -17,6 +17,7 @@ type RouteAnchor = Pick<
   | 'campusPointId'
   | 'label'
   | 'instructions'
+  | 'estimatedOffsetSeconds'
 > &
   Coordinates;
 export type StopPreference = 'USC' | { campusPointId: string } | Coordinates;
@@ -38,6 +39,7 @@ export interface StopPreferences {
   radiusKm: number;
   fromText?: string;
   toText?: string;
+  pickupAllowed?: (pickup: RouteAnchor) => boolean;
 }
 
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
@@ -87,7 +89,8 @@ export function matchStops(
     if (direction === 'DESDE_USC' && pickup !== stops[0]) continue;
     if (
       (pickup.access !== 'PICKUP' && pickup.access !== 'BOTH') ||
-      !matchesText(pickup, preferences.fromText)
+      !matchesText(pickup, preferences.fromText) ||
+      preferences.pickupAllowed?.(pickup) === false
     )
       continue;
     const from = preferenceDistance(pickup, preferences.from);

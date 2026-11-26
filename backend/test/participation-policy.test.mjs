@@ -29,12 +29,15 @@ beforeEach(() => {
     expectedEndAt: hours(2),
     offeredSeats: 1,
     occupiedSeats: 0,
+    startedAt: null,
+    finishedAt: null,
     driver: { membership, driverEligibility: { ...document, category: 'CAR' } },
     vehicle: { type: 'CAR', document },
     stops: [
       {
         id: 'pickup',
         position: 0,
+        reachedAt: null,
         campus: 'USC',
         campusPointId: 'campus',
         access: 'PICKUP',
@@ -45,6 +48,7 @@ beforeEach(() => {
       {
         id: 'dropoff',
         position: 1,
+        reachedAt: null,
         access: 'DROPOFF',
         label: 'Fin',
         latitude: 3.5,
@@ -63,10 +67,16 @@ beforeEach(() => {
     pickup: trip.stops[0],
     dropoff: trip.stops[1],
     requester: { profile: { displayName: 'Estudiante' } },
-    trip: { status: trip.status, departureAt: trip.departureAt },
+    trip: {
+      status: trip.status,
+      departureAt: trip.departureAt,
+      driver: { profile: { displayName: 'Conductor' } },
+      vehicle: { type: 'CAR', brand: 'Marca', color: 'GRIS' },
+    },
     createdAt: now(),
     confirmedAt: now(),
     boardedAt: null,
+    noShowAt: null,
     members: [{ userId: actor }],
   });
   unit = {
@@ -88,6 +98,25 @@ beforeEach(() => {
       row.status = status;
       return row;
     },
+    transition: async (_actorId, status, at, originId) => {
+      trip.status = status;
+      if (status === 'EN_CURSO') {
+        trip.startedAt = at;
+        trip.stops.find(({ id }) => id === originId).reachedAt = at;
+      }
+      if (status === 'COMPLETADO') trip.finishedAt = at;
+      return trip;
+    },
+    reachStop: async (stopId, reachedAt) => {
+      const stop = trip.stops.find(({ id }) => id === stopId);
+      stop.reachedAt = reachedAt;
+      return stop;
+    },
+    noShow: async (_id, date) => {
+      calls.push(['no-show']);
+      row.noShowAt = date;
+      return row;
+    },
     board: async (_id, date) => {
       calls.push(['board']);
       row.boardedAt = date;
@@ -107,6 +136,8 @@ test('confirmación directa crea una plaza confirmada para el actor y replay no 
     status: 'CONFIRMED',
     quantity: 1,
     boardedAt: null,
+    driverName: 'Conductor',
+    vehicle: { type: 'CAR', brand: 'Marca', color: 'GRIS' },
   });
   expect(calls).toEqual([
     ['seats', 1],
@@ -210,7 +241,7 @@ test('abordaje sólo por conductor en ventana y sin ocupar una segunda plaza', a
   expect(calls).toEqual([['board']]);
   expect(trip.occupiedSeats).toBe(1);
 });
-test('abordaje rechaza pendiente, viaje cancelado, finalizado y ventana vencida', async () => {
+test('abordaje rechaza pendiente, viaje cancelado, finalizado o sin llegada registrada', async () => {
   row = unit.fixture('PENDING');
   trip.departureAt = new Date(Date.now() + 10 * 60000);
   await expect(service.board('driver', row.id)).rejects.toMatchObject({
@@ -229,4 +260,72 @@ test('abordaje rechaza pendiente, viaje cancelado, finalizado y ventana vencida'
     status: 409,
   });
   expect(calls).toEqual([]);
+});
+
+test('inicio conserva pendientes y registra llegada al origen', async () => {
+  row = unit.fixture();
+  await service.transition('driver', trip.id, 'START');
+  expect(trip.startedAt).toBeInstanceOf(Date);
+  expect(trip.stops[0].reachedAt).toEqual(trip.startedAt);
+  expect(row).toMatchObject({
+    status: 'CONFIRMED',
+    boardedAt: null,
+    noShowAt: null,
+  });
+});
+
+test('abordaje en curso exige que la recogida sea la parada alcanzada vigente', async () => {
+  trip.status = 'EN_CURSO';
+  trip.departureAt = hours(-2);
+  trip.stops[0].reachedAt = hours(-2);
+  row = unit.fixture();
+  row.pickupId = trip.stops[1].id;
+  await expect(service.board('driver', row.id)).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(calls).toEqual([]);
+  trip.stops[1].reachedAt = hours(-0.5);
+  trip.expectedEndAt = hours(-1);
+  const boarded = await service.board('driver', row.id);
+  expect(boarded.boardedAt).toEqual(expect.any(String));
+});
+
+test('avanzar conserva orden y repetir la llegada no cambia su instante', async () => {
+  trip.status = 'EN_CURSO';
+  trip.stops[0].reachedAt = hours(-1);
+  trip.stops.push({ id: 'tail', position: 2, reachedAt: null });
+  await expect(
+    service.reachStop(actor, trip.id, 'dropoff'),
+  ).rejects.toMatchObject({ status: 403 });
+  await expect(
+    service.reachStop('driver', trip.id, 'tail'),
+  ).rejects.toMatchObject({ status: 409 });
+  const first = await service.reachStop('driver', trip.id, 'dropoff');
+  await expect(
+    service.reachStop('driver', trip.id, 'dropoff'),
+  ).resolves.toEqual(first);
+  expect(typeof first.reachedAt).toBe('string');
+});
+
+test('ausencia explícita sólo en la recogida alcanzada y no ocupa otra plaza', async () => {
+  trip.status = 'EN_CURSO';
+  trip.stops[0].reachedAt = hours(-1);
+  trip.occupiedSeats = 1;
+  row = unit.fixture();
+  row.pickupId = trip.stops[1].id;
+  await expect(service.noShow('driver', row.id)).rejects.toMatchObject({
+    status: 409,
+  });
+  row.pickupId = trip.stops[0].id;
+  await expect(service.noShow('driver', row.id)).resolves.toMatchObject({
+    noShowAt: expect.any(String),
+  });
+  await expect(service.noShow('driver', row.id)).resolves.toMatchObject({
+    noShowAt: expect.any(String),
+  });
+  await expect(service.board('driver', row.id)).rejects.toMatchObject({
+    status: 409,
+  });
+  expect(calls).toEqual([['no-show']]);
+  expect(trip.occupiedSeats).toBe(1);
 });

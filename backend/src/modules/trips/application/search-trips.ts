@@ -107,7 +107,8 @@ export async function searchTrips(
   if (!Number.isInteger(seats) || seats < 1 || seats > 4)
     throw new BadRequestException('Cupos fuera de rango');
   let cursor = decodeCursor(data.cursor);
-  const items: TripSearchPage['items'] = [];
+  const items: { driverId: string; card: TripSearchPage['items'][number] }[] =
+    [];
   for (let page = 0; page < 4; page++) {
     const candidates = await repository.searchCandidates({
       now,
@@ -149,11 +150,22 @@ export async function searchTrips(
         fromText: data.fromText,
         toText: data.toText,
       });
-      if (match) items.push(presentAvailable(trip, match));
+      if (match)
+        items.push({
+          driverId: trip.driverId,
+          card: presentAvailable(trip, match),
+        });
       if (items.length === 20) break;
     }
     if (items.length === 20) break;
-    if (candidates.length < 50) return { items, nextCursor: null };
+    if (candidates.length < 50)
+      return {
+        items: await repository.attachDriverReputations(items),
+        nextCursor: null,
+      };
   }
-  return { items, nextCursor: cursor ? encodeCursor(cursor) : null };
+  return {
+    items: await repository.attachDriverReputations(items),
+    nextCursor: cursor ? encodeCursor(cursor) : null,
+  };
 }

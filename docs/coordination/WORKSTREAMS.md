@@ -42,3 +42,37 @@ aprobación interna, con integraciones autorizadas todavía bloqueadas. Migraci�
 y fixtures separados coordinados con viajes/participaciones. ESLint propio aprobado;
 ejecución PostgreSQL integrada serializada. Responsable/revisión humana POR_ASIGNAR.
 [Handoff](../handoffs/2026-11-25_identidad-autogestion-estudiantil.md). Sin promoción Git.
+
+## Transformación funcional 25/11/2026 | avance local en revisión
+
+| Frente                      | Alcance de este corte                                                                | Revisión humana |
+| --------------------------- | ------------------------------------------------------------------------------------ | --------------- |
+| Identidad y seguridad       | Cuentas propias, correo, recuperación, sesión y elegibilidad institucional separadas | POR_ASIGNAR     |
+| Arquitectura y datos        | Migración aditiva, restricciones, contratos y cola PostgreSQL                        | POR_ASIGNAR     |
+| Movilidad y recomendaciones | Preferencias privadas, feed, coincidencias y avisos persistentes                     | POR_ASIGNAR     |
+| Viajes y participaciones    | Publicar, actualizar disponibilidad, propuestas, abordaje e historial                | POR_ASIGNAR     |
+| Navegación y experiencia    | Expo compartido, registro, permisos y paneles por capacidad                          | POR_ASIGNAR     |
+| QA e integración            | HTTP/PostgreSQL, capturas, recorridos web y documentación académica                  | POR_ASIGNAR     |
+
+El integrador mantiene `CURRENT_STATUS.md`. Revisar pruebas y evidencia del [corte local](../reviews/PRODUCT_TRANSFORMATION_DELIVERY.md) para decidir promoción.
+
+## Continuidad operativa, 26/11/2026
+
+Cartografía y tiempo dependen de Datos y Viajes para sede, selección y migración.
+Comunicación comparte notificaciones y el lock de viaje con Participaciones.
+QA e Identidad revisan el buzón local, la vigencia y el acceso por recurso.
+Personas POR_ASIGNAR. La revisión técnica está en
+[continuidad operativa](../reviews/PRODUCT_CONTINUITY.md).
+
+## Consolidación funcional al 26/11
+
+| Frente              | Responsabilidad y revisión                                                | Persona     |
+| ------------------- | ------------------------------------------------------------------------- | ----------- |
+| Reputación          | Regla RF-010, evaluación, resúmenes y privacidad de comentarios           | POR_ASIGNAR |
+| Participaciones     | Grupos, expiración, concurrencia y abordaje manual/QR                     | POR_ASIGNAR |
+| Haberes del viaje   | Estimaciones privadas en COP y propuesta de reparto para Producto         | POR_ASIGNAR |
+| Seguridad           | Contexto activo, compartir voluntario, seguimiento y retención            | POR_ASIGNAR |
+| Cliente y QA        | Contratos Expo, Playwright y validación física de cámara/ubicación        | POR_ASIGNAR |
+| Datos e integración | Restauración, matriz de migraciones, revisión de dependencias y promoción | POR_ASIGNAR |
+
+El integrador actualiza el estado compartido sólo tras validar la integración.

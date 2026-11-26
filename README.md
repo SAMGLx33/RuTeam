@@ -50,12 +50,16 @@ En teléfono usar IP LAN alcanzable y versión Expo Go compatible, nunca localho
 
 ## Entornos e integraciones
 
-La plantilla .env.example trae DEMO_MODE=false y proveedor official: el acceso queda
-bloqueado hasta disponer de integración legítima. Para fixtures locales, optar
-explícitamente por development + DEMO_MODE=true + VERIFICATION_PROVIDER=demo antes
-de seed/test:setup y reiniciar los servicios. El acceso sintético queda limitado
-a desarrollo/tests por DEMO_MODE y proveedor demo,
-con datos controlados; no es identidad institucional ni acceso alternativo a producción.
+La pantalla de acceso usa correo y contraseña propios de RuTeam. Las cuentas pueden
+crearse y consultar su estado de verificación; ver y compartir viajes exige confirmar
+el correo y acreditar matrícula vigente. La plantilla usa proveedor oficial y el
+acceso a viajes reales seguirá bloqueado hasta que la USC autorice la integración.
+
+Para ensayar el mismo formulario en un entorno aislado, habilita el proveedor sintético
+local, define `AUTH_FIXTURE_PASSWORD` al ejecutar el seed e inicia sesión con
+`ana@student-fixtures.ruteam.invalid` (pasajera) o `diego@student-fixtures.ruteam.invalid`
+(conductor) y la contraseña que configuraste. Consulta [SETUP](docs/development/SETUP.md).
+Los fixtures representan pruebas y aparecen como tales en el perfil.
 No usar cuentas administrativas o estamentos no estudiantiles como usuarios válidos.
 La acreditación real de matrícula necesita una fuente USC autorizada. Verificar dominio
 o control del correo no la sustituye: producción debe fallar cerrada mientras falte.
@@ -92,3 +96,13 @@ Seis frentes sin asignaciones nominales inventadas; entrega 28/11/2026 y
 Los [antecedentes](docs/history/2026-11-24-guides.md) y handoffs conservan los cortes
 anteriores; sus administradores, solicitudes y fechas de estado no son instrucciones vigentes.
 Originales académicos privados nunca se versionan con PII.
+
+La [continuidad operativa](docs/reviews/PRODUCT_CONTINUITY.md) documenta la separación de verificación de correo y matrícula,
+Mailpit, cartografía, estimaciones, progreso y chat. Consulta [SETUP](docs/development/SETUP.md)
+para elegir y configurar los proveedores autorizados.
+
+El [corte de consolidación](docs/reviews/PRODUCT_CONSOLIDATION.md) incluye
+calificaciones por capacidad, grupos con consentimiento, QR de abordaje,
+ubicación voluntaria, contexto de seguridad y estimaciones privadas en COP.
+Consulta la [prueba física Expo Go](docs/development/MOBILE_TESTING.md) para
+verificar permisos y acceso a la LAN.

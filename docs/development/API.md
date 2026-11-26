@@ -6,24 +6,66 @@ Contrato operativo del corte local del 25 de noviembre de 2026. Consultar
 
 ## Identidad y vehículos
 
-| Operación                                         | Reglas                                                                                           |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| GET /health                                       | Readiness PostgreSQL.                                                                            |
-| GET /auth/access                                  | Informa disponibilidad institucional y de fixtures, sin datos privados.                          |
-| POST /auth/demo/login                             | Sólo fixtures opt-in de desarrollo/test, cuerpo `{identity}`. Es un mecanismo local y explícito. |
-| GET /auth/me, GET /me                             | Identidad de estudiante vigente y capacidades derivadas.                                         |
-| PATCH /me/profile                                 | Nombre de presentación de la cuenta autenticada.                                                 |
-| POST /auth/logout                                 | Revoca sesión, 204.                                                                              |
-| GET /vehicles, POST /vehicles                     | Vehículos propios. Registro controla datos, capacidad y placa única.                             |
-| GET /vehicles/catalog                             | Tipos y configuraciones de vehículo.                                                             |
-| PATCH /vehicles/:id/soat                          | Renovación declarada por el propietario, `{soatExpiresAt}`.                                      |
-| GET /driver-eligibility, POST /driver-eligibility | Licencia propia. Declaración mediante `{category, expiresAt}`.                                   |
+| Operación                                         | Reglas                                                                                    |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| GET /health                                       | Readiness PostgreSQL.                                                                     |
+| GET /auth/access                                  | Informa disponibilidad institucional y `accountEmailAvailable`, sin datos privados.       |
+| POST /auth/demo/login                             | Sólo `NODE_ENV=test` y proveedor sintético habilitado. Fuera de ese entorno devuelve 404. |
+| GET /auth/me, GET /me                             | Identidad de estudiante vigente y capacidades derivadas.                                  |
+| PATCH /me/profile                                 | Nombre de presentación de la cuenta autenticada.                                          |
+| POST /auth/logout                                 | Revoca sesión, 204.                                                                       |
+| GET /vehicles, POST /vehicles                     | Vehículos propios. Registro controla datos, capacidad y placa única.                      |
+| GET /vehicles/catalog                             | Tipos y configuraciones de vehículo.                                                      |
+| PATCH /vehicles/:id/soat                          | Renovación declarada por el propietario, `{soatExpiresAt}`.                               |
+| GET /driver-eligibility, POST /driver-eligibility | Licencia propia. Declaración mediante `{category, expiresAt}`.                            |
 
 La documentación pública temporal distingue `DECLARED`, `VERIFIED`,
 `EXPIRED` y `UNVERIFIED`. El fixture puede usar declaraciones de desarrollo.
 Producción requiere una verificación autorizada. Se retiraron `/admin/demo/*`,
 cuentas administrativas operativas y los permisos de aprobación. Los usuarios
 históricos incompatibles están deshabilitados y sus sesiones revocadas.
+
+## Cuentas y onboarding
+
+| Operación                   | Entrada y resultado                                                                                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST /auth/register         | `{name,email,password,usagePreference}`. Correo USC normalizado; 202 genérico con `emailDeliveryAvailable` según configuración de envío. Sin SMTP la cuenta queda pendiente. |
+| POST /auth/login            | `{email,password}`; 200 con `account,expiresAt`, cookie web o token sólo nativo. Credenciales inválidas devuelven 401 sin distinguir cuenta inexistente.                     |
+| GET /auth/account           | `Account` privado para una sesión de cuenta, incluso pendiente o no elegible.                                                                                                |
+| PATCH /auth/onboarding      | `{step,usagePreference?,complete?}`; permite avanzar de 0 a 4 y retomar. Completar requiere correo y matrícula vigentes. Devuelve `Account`.                                 |
+| POST /auth/email/request    | `{email}`; 202 genérico, 503 si el transporte no está configurado.                                                                                                           |
+| POST /auth/email/confirm    | `{token,password}`; el dueño del buzón elige su contraseña, confirma correo y revoca sesiones/enlaces anteriores. 200 o 400 por enlace inválido, vencido o consumido.        |
+| POST /auth/password/request | `{email}`; 202 genérico, 503 sin correo disponible.                                                                                                                          |
+| POST /auth/password/reset   | `{token,password}`; 200 revoca las sesiones anteriores, 400 por enlace inválido, vencido o consumido.                                                                        |
+
+`Account` expone correo propio, nombre, preferencia, avance, comprobación de correo, estado
+institucional y capacidades `passenger`, `driverAccess` y `driver`. Un guard de sesión de
+cuenta permite terminar el acceso o consultar ese estado. El guard de producto vuelve a
+validar correo, estamento, matrícula y proveedor. Viajes y vehículos aplican sus permisos
+por recurso. Login limita a 10/min por IP, registro y solicitudes de enlace a 6/min.
+Cada propósito de enlace por cuenta admite uno nuevo por minuto y hasta diez por hora.
+Enlaces con vencimientos 30 min (confirmación) y 15 min (recuperación), de uso único.
+CORS, cabecera de cliente y expiración de cookie siguen vigentes.
+
+## Movilidad, feed y notificaciones
+
+| Operación                        | Entrada y resultado                                                                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET /mobility/preferences        | Preferencias privadas del actor vigente.                                                                                                                    |
+| POST /mobility/preferences       | Crea una preferencia completa, 201.                                                                                                                         |
+| PATCH /mobility/preferences/:id  | Reemplaza la configuración propia, 200. 404 para ID ajeno.                                                                                                  |
+| DELETE /mobility/preferences/:id | Elimina la preferencia propia, 204.                                                                                                                         |
+| GET /trips/feed                  | `tab=FOR_YOU\|ALL\|DESDE_USC\|HACIA_USC` y cursor opaco opcional. Devuelve tarjetas resumidas, sin coordenadas del trayecto ni zona privada del estudiante. |
+| GET /trips/:id                   | Detalle del viaje futuro, del propietario, de una participación histórica o de una notificación propia. Estado y plazas vigentes.                           |
+| GET /notifications               | Avisos internos propios, paginados por `cursor`. Cada aviso refleja disponibilidad actual del viaje.                                                        |
+| POST /notifications/:id/read     | Marca aviso propio leído, 200 e idempotente; 404 para ID ajeno.                                                                                             |
+
+Los contratos `MobilityPreferenceInput`, `TripFeedPage`, `TripDetail` y
+`NotificationPage` describen las respuestas compartidas. Crear y editar requieren campus
+de catálogo, sentido, días ISO, franja de salida en Colombia, zona habitual, radio, tipos
+de vehículo y opciones de activación y avisos. Las coordenadas son opcionales por par
+y las obtiene el mapa. Sin marcador, la preferencia se guarda pero no produce coincidencia
+geográfica. Un detalle potencial no declara una parada autorizada.
 
 ## Publicación y búsqueda
 
@@ -183,3 +225,57 @@ Reservas por viaje completo. Un grupo de 1–4 afiliaciones activas, sin el cond
 La ocupación y los cambios de estado se confirman con PostgreSQL. Sólo se permite `PROGRAMADO → EN_CURSO → COMPLETADO` y `PROGRAMADO → CANCELADO`. Retiro de confirmadas por pasajeros, abordaje verificado, notificaciones, chat y compensaciones conservan sus decisiones pendientes.
 
 La lista de reservas conserva coordenadas e indicaciones de abordaje y descenso para cada participante, incluso cuando el viaje se llena o sale del buscador. El cursor del buscador no expone datos de candidatos excluidos. Tras reiniciar el proceso, se debe iniciar una búsqueda nueva. Los listados de reservas están limitados al corte DEMO de 50 filas por consulta.
+
+## Continuidad operativa del 26/11/2026
+
+| Operación                               | Contrato                                                                                                                                             |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST /geocoding/search                  | `{query}` explícita de estudiante vigente. Devuelve `{items,attribution}`. 503 sin proveedor configurado y 502 ante fallo de éste.                   |
+| GET /campus/meeting-points              | Puntos con `campusSiteId` y `sourceUrl` opcionales. Las sedes generales pueden carecer de coordenadas.                                               |
+| POST /trips/route-options               | OSRM devuelve geometría y, cuando entrega tramos fiables, `legDurationsSeconds` y una `routingSelection` firmada.                                    |
+| POST /trips                             | El `itinerary.routingSelection` opcional comprueba actor, puntos, geometría, duración y expiración. Persiste offsets por parada derivados del motor. |
+| GET /trips/feed                         | Recomienda por sede y horario de recogida cuando hay estimación. La recomendación directa devuelve `pickupEstimatedAt`.                              |
+| POST /trips/:tripId/stops/:stopId/reach | Conductor propietario, sólo en curso. Marca la siguiente parada en orden y repite sin duplicado.                                                     |
+| POST /participations/:id/no-show        | Propietario, ausencia de una participación confirmada y no abordada en la parada alcanzada. Devuelve 200.                                            |
+| POST /participations/:id/board          | El abordaje intermedio exige llegada registrada a la parada correspondiente. No ocupa otra plaza.                                                    |
+| GET /chat/conversations                 | Lista las conversaciones que puede consultar el estudiante, con cursor opaco.                                                                        |
+| GET /trips/:tripId/chat                 | Historial paginado y estado de acceso.                                                                                                               |
+| POST /trips/:tripId/chat/messages       | `{clientMessageId,body}`. Persiste transaccionalmente. Un UUID repetido con texto distinto devuelve 409.                                             |
+| POST /trips/:tripId/chat/read           | `{messageId}`. Avanza el cursor de lectura propio. 204.                                                                                              |
+| GET /notifications                      | `kind=TRIP_MATCH` o `CHAT_MESSAGE`. El aviso de chat abre la conversación si todavía hay acceso.                                                     |
+
+`START` conserva la verificación activa del conductor y registra el origen como alcanzado.
+`FINISH` y `CANCEL` admiten sesión válida del titular tras perder vigencia estudiantil,
+con validación de propiedad y estado. El chat de viaje programado o en curso requiere
+propiedad o participación confirmada. Después de finalizar, la lectura dura hasta 24 h
+y sólo corresponde al propietario o a quien abordó. El chat cancelado o vencido se
+purga por lotes. La actualización de la interfaz usa consultas periódicas.
+
+## Consolidación funcional, 26/11/2026
+
+Estas rutas `/api/v1` usan sesión de estudiante vigente. Los actores se obtienen
+de la sesión y los IDs de recursos se verifican en Nest. Las mutaciones de grupo,
+abordaje, posición y calificación coordinan el bloqueo conductor → viaje.
+
+| Operación                                                                     | Entrada y salida                                                                                                                   | Permisos y errores                                                                                                                   |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /ratings`                                                                | `cursor?` UUID, 20 viajes propios por página, destinos pendientes/enviados y reputación propia                                     | Conductores con pasajeros que abordaron y participantes efectivos. Incluye únicamente los comentarios enviados por el actor          |
+| `GET /ratings/reputation`                                                     | Dos `ReputationSummary`, promedio numérico o `null`, capacidad y recuento                                                          | Cuenta propia                                                                                                                        |
+| `GET /trips/:tripId/ratings`                                                  | Detalle propio del viaje, destinos autorizados y evaluaciones ya enviadas                                                          | 404 ajeno o ausente, 409 viaje sin finalizar para actor autorizado                                                                   |
+| `POST /trips/:tripId/ratings`                                                 | `{rateeId,stars,comment?}`; 1–5 entero, texto hasta 500; devuelve la evaluación 201                                                | Autoría de sesión, pares entre conductor y pasajero abordado. 400 autocalificación/rango, 403 par inválido, 404 ajeno, 409 duplicado |
+| `POST /trips/:tripId/groups`                                                  | `{pickupId,dropoffId,expectedMembers}`; 2–4 incluido el organizador, acotado por cupos ofertados. Devuelve grupo y código temporal | Estudiante ajeno a la conducción del viaje. Crear implica consentimiento del organizador                                             |
+| `POST /trip-groups/preview`, `POST /trip-groups/join`                         | `{code}`; vista previa de condiciones, el segundo registra consentimiento. Cupos intactos                                          | Sólo estudiantes elegibles, código válido. Expiración a las dos horas como máximo, acotada a salida                                  |
+| `GET /trip-groups`, `POST /trip-groups/:id/invitation`                        | Grupos propios y renovación del código por el organizador                                                                          | La renovación invalida el código anterior y conserva consentimientos y expiración original                                           |
+| `POST /trip-groups/:id/confirm`                                               | Vista del grupo confirmado con participación individual por cada integrante                                                        | Organizador, grupo completo y aún vigente. 403 elegibilidad, 409 conflicto de plazas/estados/duplicados                              |
+| `DELETE /trip-groups/:id/membership`                                          | Retiro de consentimiento abierto o cierre del grupo por el organizador                                                             | Las participaciones confirmadas se retiran por su operación individual existente                                                     |
+| `POST /participations/:id/boarding-pass`                                      | Devuelve `{code,expiresAt}` con cache deshabilitado                                                                                | Titular de participación individual confirmada en punto y ventana válidos. Código opaco de dos minutos                               |
+| `POST /trips/:tripId/boarding-pass/redeem`                                    | `{code}` devuelve la participación abordada                                                                                        | Conductor del viaje. 409 por código usado, vencido, de otro viaje o abordaje inválido; operación atómica                             |
+| `GET /trips/:tripId/safety`                                                   | Estado activo, salida, arranque y paradas actual/próxima con ETA cuando se conoce                                                  | Propietario o participante confirmado sin ausencia; respuesta reducida, sin cache                                                    |
+| `GET /trips/:tripId/location`                                                 | Última posición vigente y geometría separada. Puede devolver muestra nula                                                          | Mismo contexto activo autorizado. Respuesta privada sin cache                                                                        |
+| `POST /trips/:tripId/location`, `DELETE /trips/:tripId/location`              | `{latitude,longitude,capturedAt}` para compartir; DELETE retira la muestra. HTTP 204                                               | Conductor titular y viaje activo. Caducidad de dos minutos y al menos 15 s entre envíos                                              |
+| `GET /trips/:tripId/expense-estimate`, `POST /trips/:tripId/expense-estimate` | GET `{estimate,editable}`. POST escribe `{fuelCop,tollsCop,parkingCop}` y devuelve suma exacta en COP                              | Conductor titular. Enteros de 0 a 100.000.000 por concepto. Escritura antes de iniciar; 404 tercero, 409 estado                      |
+
+El feed, búsqueda y detalle muestran la reputación del conductor. El listado
+autorizado de participantes añade reputación de pasajero en participaciones
+individuales confirmadas sin ausencia. La bandeja conserva tipos persistentes
+`TRIP_MATCH`, `CHAT_MESSAGE`, `RATING_AVAILABLE` y `GROUP_CONFIRMED`.

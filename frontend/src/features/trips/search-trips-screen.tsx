@@ -1,3 +1,4 @@
+import { ReputationLabel } from '../ratings/reputation-label';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Link } from 'expo-router';
@@ -23,6 +24,7 @@ import {
 } from '../../components/ui/protected-page';
 import { api } from '../../services/api/client';
 import { useSession } from '../../providers/session-provider';
+import { GroupInvitationForm } from '../groups/group-invitations';
 import { Choice } from './itinerary-form';
 import { RoutePreview, travelTime } from './route-preview';
 import { MeetingMapPicker, type Coordinates } from './meeting-map-picker';
@@ -42,16 +44,18 @@ function localInstant(value: string): string {
   return `${value.replace(' ', 'T')}:00-05:00`;
 }
 
-function ReserveTrip({
+export function ReserveTrip({
   trip,
   onConfirmed,
+  groupCapacity = 0,
 }: {
-  trip: AvailableTrip;
+  trip: Omit<AvailableTrip, 'match'> & { match: AvailableTrip['match'] | null };
   onConfirmed: () => void;
+  groupCapacity?: number;
 }) {
   const client = useQueryClient();
-  const [pickupId, setPickup] = useState(trip.match.pickupId);
-  const [dropoffId, setDropoff] = useState(trip.match.dropoffId);
+  const [pickupId, setPickup] = useState(trip.match?.pickupId ?? '');
+  const [dropoffId, setDropoff] = useState(trip.match?.dropoffId ?? '');
   const stops = trip.itinerary.stops;
   const pickup = stops.find((stop) => stop.id === pickupId);
   const canDrop = (access: string) => access === 'DROPOFF' || access === 'BOTH';
@@ -73,6 +77,10 @@ function ReserveTrip({
         method: 'POST',
         body,
       }),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: ['trip-detail', trip.id] });
+      void client.invalidateQueries({ queryKey: ['trip-feed'] });
+    },
     onSuccess: () => {
       onConfirmed();
       void client.invalidateQueries({ queryKey: ['my-reservations'] });
@@ -80,7 +88,7 @@ function ReserveTrip({
     },
   });
   const submit = () => {
-    if (!selectedDropoffId) return;
+    if (!pickupId || !selectedDropoffId) return;
     send.mutate({ pickupId, dropoffId: selectedDropoffId });
   };
   if (send.isSuccess) return null;
@@ -105,8 +113,7 @@ function ReserveTrip({
         />
       ))}
       <Text style={s.text}>
-        Confirmas únicamente tu plaza. Cada integrante del grupo debe confirmar
-        por sí mismo; las invitaciones grupales todavía no están disponibles.
+        La confirmación individual registra únicamente tu plaza.
       </Text>
       {send.error && (
         <Text accessibilityRole="alert" style={s.error}>
@@ -120,6 +127,14 @@ function ReserveTrip({
           void submit();
         }}
       />
+      {groupCapacity >= 2 && (
+        <GroupInvitationForm
+          tripId={trip.id}
+          pickupId={pickupId}
+          dropoffId={selectedDropoffId}
+          offeredSeats={groupCapacity}
+        />
+      )}
     </View>
   );
 }
@@ -151,7 +166,7 @@ export function SearchTripsScreen() {
   const catalog = useQuery({
     queryKey: ['meeting-points'],
     queryFn: () => api<CampusMeetingPoint[]>('/campus/meeting-points'),
-    enabled: !!user && (!!catalogFor || showNearby),
+    enabled: !!user?.capabilities.passenger && (!!catalogFor || showNearby),
   });
   const results = useInfiniteQuery({
     queryKey: ['available-trips', user?.id, search],
@@ -162,7 +177,7 @@ export function SearchTripsScreen() {
       return api<TripSearchPage>(`/trips/available?${params.toString()}`);
     },
     getNextPageParam: (page) => page.nextCursor ?? undefined,
-    enabled: !!user,
+    enabled: !!user?.capabilities.passenger,
   });
   const submit = form.handleSubmit((values) => {
     try {
@@ -269,7 +284,7 @@ export function SearchTripsScreen() {
               title={
                 point.kind === 'CAMPUS'
                   ? 'Toda la USC'
-                  : `${point.name}${point.demo ? ' · DEMO' : ''}`
+                  : `${point.name}${point.demo ? ' · Punto de prueba' : ''}`
               }
               onPress={() => {
                 const label = point.kind === 'CAMPUS' ? 'USC' : point.name;
@@ -385,6 +400,7 @@ export function SearchTripsScreen() {
               {trip.vehicle.color}
               {trip.vehicle.type === 'MOTORCYCLE' ? ' · Moto' : ' · Auto'}
             </Text>
+            <ReputationLabel summary={trip.driverReputation} />
             <Button
               title={
                 expanded === trip.id

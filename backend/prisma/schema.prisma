@@ -9,6 +9,15 @@ datasource db {
 enum MembershipStatus {
   ACTIVE
   INACTIVE
+  REVOKED
+}
+enum UsagePreference {
+  PASSENGER
+  DRIVER_AND_PASSENGER
+}
+enum AccountTokenPurpose {
+  EMAIL_CONFIRMATION
+  PASSWORD_RESET
 }
 enum InstitutionalGroup {
   STUDENT
@@ -27,6 +36,16 @@ model User {
   demoIdentity String? @unique @db.VarChar(32)
   disabledAt DateTime? @db.Timestamptz(3)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
+  passwordHash String? @db.VarChar(255)
+  emailVerifiedAt DateTime? @db.Timestamptz(3)
+  usagePreference UsagePreference?
+  onboardingStep Int @default(0)
+  onboardingCompletedAt DateTime? @db.Timestamptz(3)
+  accountTokens AccountToken[]
+  mobilityPreferences MobilityPreference[]
+  tripNotifications TripNotification[]
+  chatMessages TripChatMessage[]
+  chatReads TripChatRead[]
   profile Profile?
   membership InstitutionalMembership?
   sessions AuthSession[]
@@ -37,9 +56,24 @@ model User {
   reviewedVehicleDocuments VehicleDocument[] @relation("VehicleDocumentReviewer")
   trips Trip[]
   tripEvents TripEvent[]
+  ratingsSent TripRating[] @relation("TripRatingRater")
+  ratingsReceived TripRating[] @relation("TripRatingRatee")
   reservationRequests Reservation[]
   reservationMemberships ReservationMember[]
+  organizedTripGroups TripGroup[]
+  tripGroupConsents TripGroupMember[]
   pickupProposals PickupProposal[]
+}
+model AccountToken {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  purpose AccountTokenPurpose
+  tokenHash String @unique @db.Char(64)
+  expiresAt DateTime @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, purpose, createdAt])
 }
 model Profile {
   id String @id @default(uuid()) @db.Uuid
@@ -79,11 +113,16 @@ model VerificationAttempt {
 }
 model CampusDestination {
   trips Trip[]
-  routeStops TripStop[]
+  routeStops TripStop[] @relation("RouteCampusPoint")
+  siteStops TripStop[] @relation("RouteCampusSite")
   id String @id @default(uuid()) @db.Uuid
   code String @unique @db.VarChar(40)
   name String @db.VarChar(100)
   campus String @default("USC") @db.VarChar(20)
+  campusSiteId String? @db.Uuid
+  campusSite CampusDestination? @relation("CampusSitePoints", fields: [campusSiteId], references: [id], onDelete: Restrict)
+  meetingPoints CampusDestination[] @relation("CampusSitePoints")
+  sourceUrl String? @db.VarChar(300)
   latitude Decimal? @db.Decimal(9, 6)
   longitude Decimal? @db.Decimal(9, 6)
   kind CampusPointKind @default(OTHER)
@@ -92,6 +131,8 @@ model CampusDestination {
   level String? @db.VarChar(24)
   demo Boolean @default(true)
   active Boolean @default(true)
+  mobilityPreferences MobilityPreference[]
+  @@index([campusSiteId])
 }
 
 enum CampusPointKind {
@@ -198,6 +239,8 @@ model Trip {
   occupiedSeats Int @default(0)
   version Int @default(0)
   status TripStatus @default(PROGRAMADO)
+  startedAt DateTime? @db.Timestamptz(3)
+  finishedAt DateTime? @db.Timestamptz(3)
   providesHelmet Boolean?
   locationMode String @default("DEMO") @db.VarChar(8)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
@@ -209,8 +252,100 @@ model Trip {
   events TripEvent[]
   reservations Reservation[]
   pickupProposals PickupProposal[]
+  recommendationJob RecommendationJob?
+  notifications TripNotification[]
+  chatMessages TripChatMessage[]
+  chatReads TripChatRead[]
+  ratings TripRating[]
+  participationGroups TripGroup[]
+  expenseEstimate TripExpenseEstimate?
+  driverPosition TripDriverPosition?
   @@index([driverId, departureAt, expectedEndAt])
   @@index([status, departureAt, id])
+}
+
+enum MobilityDirection {
+  DESDE_USC
+  HACIA_USC
+}
+enum RecommendationJobState {
+  PENDING
+  PROCESSING
+  COMPLETED
+}
+enum RecommendationMatchType {
+  DIRECT
+  POTENTIAL
+}
+model MobilityPreference {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  campusPointId String @db.Uuid
+  label String @db.VarChar(80)
+  direction MobilityDirection
+  days Int[]
+  startMinute Int
+  endMinute Int
+  placeLabel String @db.VarChar(160)
+  latitude Decimal? @db.Decimal(9, 6)
+  longitude Decimal? @db.Decimal(9, 6)
+  radiusKm Decimal @db.Decimal(5, 3)
+  vehicleTypes VehicleType[]
+  notificationsEnabled Boolean @default(true)
+  active Boolean @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campusPoint CampusDestination @relation(fields: [campusPointId], references: [id], onDelete: Restrict)
+  @@index([userId, active, id])
+  @@index([campusPointId, direction, active, notificationsEnabled, id])
+}
+model RecommendationJob {
+  tripId String @id @db.Uuid
+  state RecommendationJobState @default(PENDING)
+  availableAt DateTime @default(now()) @db.Timestamptz(3)
+  leaseUntil DateTime? @db.Timestamptz(3)
+  attempts Int @default(0)
+  cursor String? @db.Uuid
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  @@index([state, availableAt])
+}
+model TripNotification {
+  id String @id @default(uuid()) @db.Uuid
+  recipientId String @db.Uuid
+  tripId String @db.Uuid
+  kind String @default("TRIP_MATCH") @db.VarChar(32)
+  matchType RecommendationMatchType?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  readAt DateTime? @db.Timestamptz(3)
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  @@unique([recipientId, tripId, kind])
+  @@index([recipientId, createdAt, id])
+  @@index([tripId])
+}
+model TripChatMessage {
+  id String @id @default(uuid()) @db.Uuid
+  tripId String @db.Uuid
+  authorId String @db.Uuid
+  clientMessageId String @db.Uuid
+  body String @db.VarChar(1000)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  @@unique([tripId, authorId, clientMessageId])
+  @@index([tripId, createdAt, id])
+  @@index([authorId])
+}
+model TripChatRead {
+  tripId String @db.Uuid
+  userId String @db.Uuid
+  lastReadAt DateTime @db.Timestamptz(3)
+  lastReadMessageId String @db.Uuid
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([tripId, userId])
+  @@index([userId])
 }
 model TripStop {
   id String @id @default(uuid()) @db.Uuid
@@ -218,18 +353,25 @@ model TripStop {
   position Int
   access StopAccess @default(PICKUP)
   campusPointId String? @db.Uuid
+  campusSiteId String? @db.Uuid
+  estimatedOffsetSeconds Int?
+  reachedAt DateTime? @db.Timestamptz(3)
   campus String? @db.VarChar(20)
   instructions String? @db.VarChar(240)
   label String @db.VarChar(100)
   latitude Decimal @db.Decimal(9,6)
   longitude Decimal @db.Decimal(9,6)
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  campusPoint CampusDestination? @relation(fields: [campusPointId], references: [id], onDelete: Restrict)
+  campusPoint CampusDestination? @relation("RouteCampusPoint", fields: [campusPointId], references: [id], onDelete: Restrict)
+  campusSite CampusDestination? @relation("RouteCampusSite", fields: [campusSiteId], references: [id], onDelete: Restrict)
   acceptedProposal PickupProposal?
   pickups Reservation[] @relation("ReservationPickup")
   dropoffs Reservation[] @relation("ReservationDropoff")
+  groupPickups TripGroup[] @relation("GroupPickup")
+  groupDropoffs TripGroup[] @relation("GroupDropoff")
   @@unique([tripId, position])
   @@unique([tripId, id])
+  @@index([campusSiteId])
 }
 model TripRuleSelection {
   tripId String @db.Uuid
@@ -267,13 +409,24 @@ model Reservation {
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   confirmedAt DateTime? @db.Timestamptz(3)
   boardedAt DateTime? @db.Timestamptz(3)
+  noShowAt DateTime? @db.Timestamptz(3)
   trip Trip @relation(fields: [tripId], references: [id])
   requester User @relation(fields: [requesterId], references: [id])
   pickup TripStop @relation("ReservationPickup", fields: [tripId, pickupId], references: [tripId, id])
   dropoff TripStop @relation("ReservationDropoff", fields: [tripId, dropoffId], references: [tripId, id])
   members ReservationMember[]
+  tripGroupConsent TripGroupMember?
+  boardingPass ReservationBoardingPass?
   @@index([tripId, status, createdAt])
   @@index([requesterId, createdAt])
+}
+model ReservationBoardingPass {
+  reservationId String @id @db.Uuid
+  pickupId String @db.Uuid
+  tokenHash String @unique @db.Char(64)
+  expiresAt DateTime @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
 }
 model ReservationMember {
   reservationId String @db.Uuid
@@ -308,4 +461,79 @@ model PickupProposal {
   @@unique([tripId, acceptedStopId])
   @@index([tripId, status, createdAt])
   @@index([requesterId])
+}
+
+enum RatingCapacity {
+  DRIVER
+  PASSENGER
+}
+
+model TripRating {
+  id String @id @default(uuid()) @db.Uuid
+  tripId String @db.Uuid
+  raterId String @db.Uuid
+  rateeId String @db.Uuid
+  capacity RatingCapacity
+  stars Int @db.SmallInt
+  comment String? @db.VarChar(500)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  rater User @relation("TripRatingRater", fields: [raterId], references: [id], onDelete: Restrict)
+  ratee User @relation("TripRatingRatee", fields: [rateeId], references: [id], onDelete: Restrict)
+  @@unique([tripId, raterId, rateeId])
+  @@index([rateeId, capacity])
+  @@index([raterId])
+}
+
+model TripExpenseEstimate {
+  tripId String @id @db.Uuid
+  fuelCop Int
+  tollsCop Int
+  parkingCop Int
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model TripGroup {
+  id              String            @id @default(uuid()) @db.Uuid
+  tripId          String            @db.Uuid
+  organizerId     String            @db.Uuid
+  pickupId        String            @db.Uuid
+  dropoffId       String            @db.Uuid
+  expectedMembers Int
+  inviteHash      String            @unique @db.Char(64)
+  createdAt       DateTime          @default(now()) @db.Timestamptz(3)
+  expiresAt       DateTime          @db.Timestamptz(3)
+  confirmedAt     DateTime?         @db.Timestamptz(3)
+  revokedAt       DateTime?         @db.Timestamptz(3)
+  trip            Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  organizer       User              @relation(fields: [organizerId], references: [id], onDelete: Restrict)
+  pickup          TripStop          @relation("GroupPickup", fields: [tripId, pickupId], references: [tripId, id], onDelete: NoAction, map: "TripGroup_pickup_fkey")
+  dropoff         TripStop          @relation("GroupDropoff", fields: [tripId, dropoffId], references: [tripId, id], onDelete: NoAction, map: "TripGroup_dropoff_fkey")
+  members         TripGroupMember[]
+  @@index([tripId, expiresAt])
+  @@index([organizerId])
+}
+
+model TripGroupMember {
+  groupId       String       @db.Uuid
+  userId        String       @db.Uuid
+  consentedAt   DateTime     @db.Timestamptz(3)
+  withdrawnAt   DateTime?    @db.Timestamptz(3)
+  reservationId String?     @unique @db.Uuid
+  group         TripGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  @@id([groupId, userId])
+  @@index([userId, groupId])
+}
+
+model TripDriverPosition {
+  tripId String @id @db.Uuid
+  latitude Decimal @db.Decimal(8,6)
+  longitude Decimal @db.Decimal(9,6)
+  capturedAt DateTime @db.Timestamptz(3)
+  sharedAt DateTime @db.Timestamptz(3)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  @@index([sharedAt])
 }

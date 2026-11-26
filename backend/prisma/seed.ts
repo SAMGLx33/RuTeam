@@ -1,6 +1,10 @@
 import { config } from 'dotenv';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
+import {
+  hashPassword,
+  verifyPassword,
+} from '../src/modules/auth/domain/password.js';
 config({ path: '../.env', quiet: true });
 if (process.env.DEMO_MODE !== 'true' || process.env.NODE_ENV === 'production') {
   throw new Error(
@@ -8,6 +12,12 @@ if (process.env.DEMO_MODE !== 'true' || process.env.NODE_ENV === 'production') {
   );
 }
 if (!process.env.DATABASE_URL) throw new Error('Falta DATABASE_URL');
+const fixturePassword = process.env.AUTH_FIXTURE_PASSWORD;
+if (
+  fixturePassword &&
+  (fixturePassword.length < 12 || fixturePassword.length > 128)
+)
+  throw new Error('AUTH_FIXTURE_PASSWORD debe tener entre 12 y 128 caracteres');
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
@@ -35,14 +45,47 @@ try {
   ] as const;
   await db.$transaction(async (tx) => {
     for (const identity of identities) {
+      const email = `${identity.key}@student-fixtures.ruteam.invalid`;
       const user = await tx.user.upsert({
         where: { demoIdentity: identity.key },
         update: {},
         create: {
           demoIdentity: identity.key,
-          email: `${identity.key}@student-fixtures.ruteam.invalid`,
+          email,
         },
       });
+      if (user.email === `${identity.key}@demo.ruteam.invalid`) {
+        await tx.user.update({ where: { id: user.id }, data: { email } });
+      }
+      const account = {
+        emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
+        usagePreference:
+          user.usagePreference ??
+          (identity.key === 'diego' ? 'DRIVER_AND_PASSENGER' : 'PASSENGER'),
+        onboardingStep: 4,
+        onboardingCompletedAt: user.onboardingCompletedAt ?? new Date(),
+      } as const;
+      const passwordHash =
+        fixturePassword &&
+        !(await verifyPassword(fixturePassword, user.passwordHash))
+          ? await hashPassword(fixturePassword)
+          : undefined;
+      if (
+        !user.emailVerifiedAt ||
+        !user.onboardingCompletedAt ||
+        passwordHash
+      ) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { ...account, ...(passwordHash ? { passwordHash } : {}) },
+        });
+        if (passwordHash) {
+          await tx.authSession.updateMany({
+            where: { userId: user.id, revokedAt: null },
+            data: { revokedAt: new Date() },
+          });
+        }
+      }
       await tx.profile.upsert({
         where: { userId: user.id },
         update: {},
@@ -177,6 +220,25 @@ try {
         create: { ...point, demo: true },
       });
     }
+    const testSite = await tx.campusDestination.findUniqueOrThrow({
+      where: { code: 'USC-DEMO-CAMPUS' },
+    });
+    await tx.campusDestination.updateMany({
+      where: {
+        campusSiteId: null,
+        demo: true,
+        code: {
+          in: [
+            'USC-DEMO-PARQUEADERO',
+            'USC-DEMO-ENTRADA',
+            'USC-DEMO-SABIOS',
+            'USC-DEMO-SOTANO-1',
+            'USC-DEMO-SOTANO-2',
+          ],
+        },
+      },
+      data: { campusSiteId: testSite.id },
+    });
   });
   console.log(
     'Seed idempotente: cuatro estudiantes sintéticos, licencia/vehículo declarados de desarrollo y catálogo USC/reglas DEMO; conserva registros existentes.',

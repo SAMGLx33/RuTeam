@@ -63,7 +63,8 @@ salidas, modelo y criterios de aceptación de cada ficha afectada de forma coher
 RN-PARADA-01 y RN-GRUPO-01 identifican cambios transversales sin inventar RF/HU.
 Propuesta HACIA_USC y decisión separada no reservan; grupo requiere consentimiento,
 invitación temporal y atomicidad. RF-001 conserva prioridad no unívoca de la matriz.
-Rango/fórmula de RF-010, penalidades, costos y género siguen en OPEN_DECISIONS.
+El encargo de consolidación resuelve el rango y fórmula de RF-010. Penalidades,
+costos y género siguen en OPEN_DECISIONS.
 
 ## UML: ediciones con identidad de pestaña existente
 
@@ -113,3 +114,61 @@ El paquete privado contiene un borrador editable en
 revisión cubren publicación, confirmación, recogidas, identidad y estados.
 El XML se volvió a leer correctamente. Falta revisión visual en diagrams.net
 y consolidación con las 36 pestañas originales y el documento institucional.
+
+## Ampliación académica para la transformación integral A–G
+
+El nuevo encargo mantiene las decisiones de viaje/participación y amplía identidad/UX.
+Los originales siguen intactos. Se volvió a inspeccionar su inventario privado: ERS,
+rúbrica y UML de 36 pestañas conservan los hashes anteriores; también está el derivado editable de 5 pestañas.
+No se localizaron nuevos Product/Sprint Backlog o actas originales en las raíces revisadas.
+No se imprimieron nombres personales ni se copiaron los documentos a Git.
+
+| Artefacto / IDs ya cotejados                     | Modificación requerida en versión revisable                                                                                                                                                                                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RF-001/016 y RNF-038/039/040                     | Registro/login convencional de cuenta propia, scrypt salado/versionado, tokens de correo/recuperación de uso único/expiración, sesión revocable y entrega SMTP separada. Contraseña elegida por decisión técnica, nunca clave USC ni selector de fixture     |
+| RF-002, RQ-ACC-01                                | Identidad, correo, estamento/matrícula, preferencia de uso y capacidad separados. Estado de cuenta autenticada pendiente≠permiso de viajes. Onboarding persistido/retomable y habilitación voluntaria; no tipo «estudiante» alternativo a pasajero/conductor |
+| RF-013/024/022                                   | Habilitación/renovación propia con capacidad efectiva; conducción vencida conserva pasajero si matrícula vigente. Sin ADMIN ni verificación oficial por declaración                                                                                          |
+| RF-005/018 y RNF-031/035/040/048/050             | Preferencias privadas, matching automático, feed Para ti/Todos y detalle; compatible/potencial/no compatible. Sin solicitudes ni cambio de ruta/cupos; datos/calidad actuales y UI sin coordenadas manuales                                                  |
+| Avisos relacionados con RF-006/014/015 y RNF-032 | Notificación interna persistente, destinatario/lectura/deep link/deduplicación; trabajo recuperable y estados actuales. Separar correo/push/tiempo real y no atribuir nuevo RF oficial                                                                       |
+| UML00/01/13/14/27/32                             | Cuenta/credencial/verificación de correo/eligibilidad/capacidad y flujo registro→sesión limitada→acreditación→onboarding; ninguna capacidad por preferencia                                                                                                  |
+| UML03/23/24/25/26                                | MVC Nest/Prisma y Expo único, servicios separados de cuentas/preferencias/matching/avisos; proveedor de correo y acreditación independientes; no infraestructura de colas obligatoria                                                                        |
+| UML07/12/15/22/33                                | Preferencia privada y recomendaciones automáticas sobre viajes del conductor; feed/listado general sin búsqueda obligatoria; potencial HACIA_USC no autoriza recogida                                                                                        |
+| UML19/30/34 y vistas pertinentes                 | Aviso persistente por destinatario/tipo/viaje, leído, unicidad, recuperación/reintentos y acceso a detalle actual. No presentarlo como chat/push o reserva ya implementados                                                                                  |
+| Casos de uso/actividades/secuencias/estados      | Incorporar recorridos A–G de USER_FLOWS y permisos de AUTHORIZATION_MATRIX. Estados de onboarding/cuenta/eligibilidad separados de viaje/participación; URL/API/menú coherentes                                                                              |
+| Backlog/HU/aceptación/Sprint Planning            | Conservar HU existentes al recibir fuente; añadir criterios de registro/verificación/onboarding, capacidades y movilidad→publicación→feed→aviso→participación. No inventar identificadores oficiales ni recuperar sprints descartados                        |
+
+Las pestañas citadas existen en el índice de 36 pestañas original; no atribuir número a vistas nuevas
+sin autoría/edición del documento. La especificación anterior sigue aplicando a las reglas
+compatibles de viaje/participación. Consolidar el derivado de 5 pestañas con estos cambios sólo mediante
+revisión del equipo; este incremento no editó originales ni afirmó revisión visual nueva.
+
+Criterios académicos adicionales: login sin selector, pasajero sin publicar/propios y
+negativas HTTP, conductor con experiencia pasajero, cuenta pendiente bloqueada de viajes,
+onboarding retomado, feed sin preferencias, publicación compatible notificada sin búsqueda,
+no coincidente en Todos, reinicio/reintento sin duplicados, privacidad de movilidad y
+capturas inspeccionadas de escritorio/móvil. Usar BUSINESS_RULES/USER_FLOWS y las pruebas
+nuevas efectivas, nunca los 117 casos anteriores como cobertura automática de la ampliación.
+
+## Diagramas derivados de consolidación
+
+El paquete privado contiene una revisión editable en
+`revisions-2026-11-26/RuTeam_consolidacion_review.drawio`. Conserva las cinco
+pestañas del borrador del 25 de noviembre y agrega cuatro vistas sobre
+calificaciones, consentimiento grupal, abordaje y seguimiento, y costos y
+seguridad. Cada vista nombra los modelos y casos de uso del corte para
+compararlos con las pestañas históricas del [UML](UML_CROSSWALK.md#correspondencia-de-consolidación-26112026).
+Las nuevas pestañas son derivadas y no añaden números al índice oficial.
+
+Para una revisión institucional editable de RF-010, cambiar el rango a
+1–5 inclusive, la fórmula a suma de notas dividida por cantidad y la
+participación efectiva a conductor y pasajeros que abordaron. Reflejar
+la capacidad evaluada, la unicidad, el comentario privado y sus pruebas.
+Separar la estimación de gastos privada del reparto de aportes, que mantiene
+abierta la decisión D06. Actualizar RF-027 con código opaco por viaje,
+parada y participación, vigencia de dos minutos, consumo único y alternativa
+manual. En RF-011 y RF-015 distinguir acciones del dispositivo, ubicación
+voluntaria de corta visibilidad y despacho o soporte institucional pendiente.
+
+Los originales conservan sus hashes. El derivado se validó como XML con
+referencias íntegras. Su revisión visual y su aprobación académica quedan
+pendientes.

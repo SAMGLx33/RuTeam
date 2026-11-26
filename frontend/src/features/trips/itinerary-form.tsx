@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useController, type Control } from 'react-hook-form';
 import type {
@@ -7,6 +8,7 @@ import type {
   StopAccess,
 } from '@ruteam/contracts';
 import { Field } from '../../components/forms/field';
+import { PlaceSearch } from '../../components/forms/place-search';
 import { formStyles as s } from '../../components/ui/protected-page';
 import { accessLabel } from './route-preview';
 import { MeetingMapPicker, type Coordinates } from './meeting-map-picker';
@@ -78,7 +80,26 @@ export function PointEditor({
     control,
     name: `${name}.coordinates`,
   });
+  const { field: label } = useController({
+    control,
+    name: `${name}.label`,
+  });
+  const [searchFocus, setSearchFocus] = useState<Coordinates>();
   const selected = catalog.find(({ id }) => id === point.value);
+  const external =
+    institutional === false || (institutional === undefined && !selected);
+  const groups = new Map<string | null, CampusMeetingPoint[]>();
+  for (const item of catalog) {
+    const site = item.campusSiteId ?? null;
+    const group = groups.get(site) ?? [];
+    group.push(item);
+    groups.set(site, group);
+  }
+  const reference =
+    searchFocus ??
+    catalog.find(
+      ({ latitude, longitude }) => latitude !== null && longitude !== null,
+    );
   return (
     <View style={s.section}>
       <Text style={s.title}>{title}</Text>
@@ -91,19 +112,30 @@ export function PointEditor({
               onPress={() => point.onChange('')}
             />
           )}
-          {catalog
-            .filter(
-              ({ kind, latitude, longitude }) =>
-                kind !== 'CAMPUS' && latitude !== null && longitude !== null,
-            )
-            .map((item) => (
-              <Choice
-                key={item.id}
-                label={`${title} · ${item.name}`}
-                checked={point.value === item.id}
-                onPress={() => point.onChange(item.id)}
-              />
-            ))}
+          {[...groups].map(([site, items]) => (
+            <View key={site ?? 'legacy'} style={{ gap: 8 }}>
+              {site && (
+                <Text style={s.text}>
+                  {items.find(({ kind }) => kind === 'CAMPUS')?.name ??
+                    'Sede USC'}
+                </Text>
+              )}
+              {items.map((item) =>
+                item.latitude !== null && item.longitude !== null ? (
+                  <Choice
+                    key={item.id}
+                    label={`${title} · ${item.name}`}
+                    checked={point.value === item.id}
+                    onPress={() => point.onChange(item.id)}
+                  />
+                ) : item.kind === 'CAMPUS' && site ? (
+                  <Text key={item.id} style={s.text}>
+                    {item.name} · ubicación aún por configurar
+                  </Text>
+                ) : null,
+              )}
+            </View>
+          ))}
           {selected && (
             <Text style={s.text}>
               {[
@@ -126,29 +158,40 @@ export function PointEditor({
             : `Nombre público · ${title}`
         }
       />
-      {(institutional === false ||
-        (institutional === undefined && !selected)) &&
-        (() => {
-          const reference = catalog.find(
-            ({ latitude, longitude }) =>
-              latitude !== null && longitude !== null,
-          );
-          return reference?.latitude != null && reference.longitude != null ? (
+      {external && (
+        <>
+          <PlaceSearch
+            title={title}
+            onSelect={({ latitude, longitude, label: name }) => {
+              const position = { latitude, longitude };
+              coordinates.onChange(position);
+              label.onChange(name);
+              setSearchFocus(position);
+            }}
+          />
+          {reference?.latitude != null && reference.longitude != null ? (
             <MeetingMapPicker
               title={title}
+              key={
+                searchFocus
+                  ? `${searchFocus.latitude}:${searchFocus.longitude}`
+                  : 'default'
+              }
               reference={{
                 latitude: reference.latitude,
                 longitude: reference.longitude,
               }}
               value={coordinates.value}
+              initiallyOpen={!!searchFocus}
               onSelect={coordinates.onChange}
             />
           ) : (
             <Text style={s.text}>
-              No hay referencia del campus para inicializar el mapa.
+              El mapa se puede centrar al elegir un resultado.
             </Text>
-          );
-        })()}
+          )}
+        </>
+      )}
       <Field
         control={control}
         name={`${name}.instructions`}
@@ -205,7 +248,7 @@ export function pointInput(
     throw new Error('Elige una referencia USC para el punto de encuentro.');
   if (!value.coordinates)
     throw new Error(
-      'Selecciona una ubicación en el mapa para cada punto externo.',
+      'Busca o marca en el mapa una ubicación para cada punto externo.',
     );
   if (label.length < 2 || !instructions)
     throw new Error(
