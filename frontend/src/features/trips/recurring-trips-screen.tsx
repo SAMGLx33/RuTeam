@@ -1,6 +1,7 @@
+import { Link, Text, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Link, useLocalSearchParams } from 'expo-router';
-import { Text, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RecurringTripView } from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';

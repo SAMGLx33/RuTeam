@@ -1,7 +1,8 @@
+import { Link, Text, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Linking, Platform, Share, Text, View } from 'react-native';
+import { Linking, Platform, Share } from 'react-native';
 import type { TripSafetyContext } from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';
 import {

@@ -1,6 +1,7 @@
+import { Text } from '../../theme/primitives';
 import { useState } from 'react';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Button } from '../../components/ui/button';
 import { formStyles as s } from '../../components/ui/protected-page';
 import type { BoardingCameraProps } from './boarding-camera';

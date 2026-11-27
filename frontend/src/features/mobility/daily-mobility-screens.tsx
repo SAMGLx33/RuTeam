@@ -1,6 +1,7 @@
+import type { Href } from 'expo-router';
 import { Link, useLocalSearchParams, type Href } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type {
   AgendaEntry,
@@ -14,8 +15,9 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
-import { Choice } from '../trips/itinerary-form';
-import { travelTime, tripStatusLabel } from '../trips/route-preview';
+import { Link, Pressable, Text, View } from '../../theme/primitives';
+import { colors } from '../../theme/tokens';
+import { tripStatusLabel } from '../trips/route-preview';
 
 const agendaLabel: Record<AgendaEntry['kind'], string> = {
   PUBLISHED: 'Viaje publicado',
@@ -25,12 +27,47 @@ const agendaLabel: Record<AgendaEntry['kind'], string> = {
   FAILED: 'Generación fallida',
   PAUSED: 'Recurrencia pausada',
 };
+const activityCategory: Record<PendingActivity['category'], string> = {
+  TRIP: 'Viaje',
+  PICKUP: 'Recogida',
+  PICKUP_RESOLVED: 'Recogida',
+  CHAT: 'Mensajes',
+  GROUP: 'Grupo',
+  RATING: 'Calificación',
+  COMPENSATION: 'Compensación',
+  DISPUTE: 'Compensación',
+  SCHEDULE: 'Recurrencia',
+  DOCUMENT: 'Documentación',
+  ACCOUNT: 'Cuenta',
+};
+const activityFilters = [
+  { id: 'all', label: 'Todas' },
+  { id: 'required', label: 'Por revisar' },
+  { id: 'optional', label: 'Opcionales' },
+] as const;
+const activitySections = [
+  { id: 'required', title: 'Requieren atención', optional: false },
+  { id: 'optional', title: 'Acciones opcionales', optional: true },
+] as const;
+const agendaDay = new Intl.DateTimeFormat('es-CO', {
+  timeZone: 'UTC',
+  dateStyle: 'full',
+});
+const rangeDay = new Intl.DateTimeFormat('es-CO', {
+  timeZone: 'UTC',
+  dateStyle: 'medium',
+});
+const agendaTime = new Intl.DateTimeFormat('es-CO', {
+  timeZone: 'America/Bogota',
+  timeStyle: 'short',
+});
+const dayDate = (day: string) => new Date(`${day}T00:00:00Z`);
 const isoDay = (offset: number) =>
   new Date(Date.now() - 5 * 3600_000 + offset * 86400_000)
     .toISOString()
     .slice(0, 10);
 const shift = (start: string, offset: number) =>
-  new Date(Date.parse(start + 'T00:00:00Z') + offset * 86400_000)
+  new Date(dayDate(start).getTime() + offset * 86400_000)
     .toISOString()
     .slice(0, 10);
 
@@ -73,6 +110,8 @@ function destination(item: PendingActivity): Href {
 
 export function ActivityScreen() {
   const { user } = useSession();
+  const [filter, setFilter] =
+    useState<(typeof activityFilters)[number]['id']>('all');
   const { activity: focus } = useLocalSearchParams<{ activity?: string }>();
   const activity = useQuery({
     queryKey: ['activity', user?.id],
@@ -80,44 +119,81 @@ export function ActivityScreen() {
     queryFn: () => api<PendingActivity[]>('/mobility/activity'),
     refetchInterval: 30000,
   });
-  const items = focus
-    ? activity.data?.filter(({ id }) => id === focus)
-    : activity.data;
+  const sections = activitySections
+    .filter(({ id }) => filter === 'all' || id === filter)
+    .map((section) => ({
+      ...section,
+      items:
+        activity.data?.filter((item) => item.optional === section.optional) ??
+        [],
+    }))
+    .filter(({ items }) => items.length > 0);
   return (
     <ProtectedPage title="Mis actividades">
-      <Link href="/agenda" style={s.link}>
-        Ver agenda
-      </Link>
-      <Link href="/saved-trips" style={s.link}>
-        Viajes guardados
-      </Link>
-      {activity.isPending && <Text>Cargando actividades…</Text>}
+      <View style={styles.toolbar}>
+        <View
+          role="group"
+          accessibilityLabel="Filtrar actividades"
+          style={styles.filterRow}
+        >
+          {activityFilters.map(({ id, label }) => (
+            <Pressable
+              key={id}
+              accessibilityRole="button"
+              accessibilityState={{ selected: filter === id }}
+              aria-pressed={filter === id}
+              onPress={() => setFilter(id)}
+              style={[styles.filter, filter === id && styles.selectedFilter]}
+            >
+              <Text style={styles.filterLabel}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Link href="/agenda" style={styles.actionLink}>
+          Ver agenda
+        </Link>
+      </View>
+      {activity.isPending && <Text style={s.text}>Cargando actividades…</Text>}
       {activity.error && (
         <Text accessibilityRole="alert" style={s.error}>
           {activity.error.message}
         </Text>
       )}
-      {items?.length === 0 && (
-        <Text style={s.text}>
-          {focus
-            ? 'Esta actividad ya no está pendiente para tu cuenta.'
-            : 'No tienes actividades para revisar.'}
-        </Text>
+      {activity.data?.length === 0 && (
+        <View style={s.section}>
+          <Text style={s.text}>No tienes actividades para revisar.</Text>
+        </View>
       )}
-      {focus && (
-        <Link href="/activity" style={s.link}>
-          Ver todas mis actividades
-        </Link>
-      )}
-      {items?.map((item) => (
-        <View key={item.id} style={s.section}>
-          <Link href={destination(item)} style={s.link}>
-            {item.title}
-          </Link>
-          <Text style={s.text}>
-            {item.detail}
-            {item.optional ? ' · Acción opcional' : ''}
+      {!!activity.data?.length && sections.length === 0 && (
+        <View style={s.section}>
+          <Text style={s.text} accessibilityLiveRegion="polite">
+            {filter === 'required'
+              ? 'No tienes actividades que requieran atención.'
+              : 'No tienes acciones opcionales.'}
           </Text>
+        </View>
+      )}
+      {sections.map(({ id, title, items }) => (
+        <View key={id} style={styles.listSection}>
+          <Text role="heading" aria-level={2} style={styles.listHeading}>
+            {title} · {items.length}
+          </Text>
+          <View style={styles.list}>
+            {items.map((item, index) => (
+              <View
+                key={item.id}
+                style={[styles.row, index > 0 && styles.divider]}
+              >
+                <Text style={styles.meta}>
+                  {activityCategory[item.category]}
+                </Text>
+                <Link href={destination(item)} style={styles.itemLink}>
+                  {item.title}
+                </Link>
+                <Text style={styles.detail}>{item.detail}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       ))}
     </ProtectedPage>
@@ -135,116 +211,202 @@ export function AgendaScreen() {
       api<MobilityAgenda>('/mobility/agenda?start=' + start + '&days=' + days),
     refetchInterval: 30000,
   });
+  const entriesByDay = new Map<string, AgendaEntry[]>();
+  for (const entry of agenda.data?.entries ?? []) {
+    const entries = entriesByDay.get(entry.day);
+    if (entries) entries.push(entry);
+    else entriesByDay.set(entry.day, [entry]);
+  }
   return (
     <ProtectedPage title="Agenda de viajes">
       <View style={s.section}>
-        <Text style={s.title}>
-          {start} a {shift(start, days - 1)}
-        </Text>
-        <Choice
-          label="7 días"
-          checked={days === 7}
-          onPress={() => setDays(7)}
-        />
-        <Choice
-          label="28 días"
-          checked={days === 28}
-          onPress={() => setDays(28)}
-        />
-        <Button
-          secondary
-          title="Periodo anterior"
-          onPress={() => setStart(shift(start, -days))}
-        />
-        <Button secondary title="Hoy" onPress={() => setStart(isoDay(0))} />
-        <Button
-          secondary
-          title="Periodo siguiente"
-          onPress={() => setStart(shift(start, days))}
-        />
+        <View style={styles.toolbar}>
+          <View style={styles.range}>
+            <Text role="heading" aria-level={2} style={styles.rangeHeading}>
+              {rangeDay.format(dayDate(start))} –{' '}
+              {rangeDay.format(dayDate(shift(start, days - 1)))}
+            </Text>
+            <Text style={styles.meta}>Horario de Colombia</Text>
+          </View>
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Duración del periodo"
+            style={styles.filterRow}
+          >
+            {([7, 28] as const).map((windowDays) => (
+              <Pressable
+                key={windowDays}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: days === windowDays }}
+                aria-checked={days === windowDays}
+                onPress={() => setDays(windowDays)}
+                style={[
+                  styles.filter,
+                  days === windowDays && styles.selectedFilter,
+                ]}
+              >
+                <Text style={styles.filterLabel}>{windowDays} días</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+        <View style={styles.filterRow}>
+          <Button
+            secondary
+            title="Periodo anterior"
+            onPress={() => setStart(shift(start, -days))}
+          />
+          <Button secondary title="Hoy" onPress={() => setStart(isoDay(0))} />
+          <Button
+            secondary
+            title="Periodo siguiente"
+            onPress={() => setStart(shift(start, days))}
+          />
+        </View>
       </View>
-      {agenda.isPending && <Text>Cargando agenda…</Text>}
+      {agenda.isPending && <Text style={s.text}>Cargando agenda…</Text>}
       {agenda.error && (
         <Text accessibilityRole="alert" style={s.error}>
           {agenda.error.message}
         </Text>
       )}
       {agenda.data?.entries.length === 0 && (
-        <Text style={s.text}>No tienes fechas de viaje en este periodo.</Text>
+        <View style={s.section}>
+          <Text style={s.text}>No tienes fechas de viaje en este periodo.</Text>
+        </View>
       )}
-      {agenda.data?.entries.map((entry) => (
-        <View key={entry.id} style={s.section}>
-          <Text style={s.text}>
-            {travelTime(entry.at)} · {agendaLabel[entry.kind]}
-            {entry.scheduleId && entry.tripId ? ' · Ocurrencia recurrente' : ''}
+      {[...entriesByDay].map(([day, entries]) => (
+        <View key={day} style={styles.listSection}>
+          <Text role="heading" aria-level={2} style={styles.listHeading}>
+            {agendaDay.format(dayDate(day))}
           </Text>
-          <Text style={s.title}>{entry.label}</Text>
-          {entry.status && (
-            <Text style={s.text}>
-              {entry.status === 'WITHDRAWN'
-                ? 'Participación retirada'
-                : entry.status === 'EXPIRED'
-                  ? 'Viaje vencido'
-                  : tripStatusLabel[entry.status]}
-            </Text>
-          )}
-          {entry.estimatedDepartureAt && (
-            <Text style={s.text}>
-              Retraso · Salida estimada {travelTime(entry.estimatedDepartureAt)}
-            </Text>
-          )}
-          {entry.kind === 'PARTICIPATION' && (
-            <>
-              <Text style={s.text}>
-                {entry.pickupAt
-                  ? `Recogida prevista ${travelTime(entry.pickupAt)}`
-                  : 'Recogida sin hora estimada'}
-              </Text>
-              <Text style={s.text}>
-                {entry.dropoffAt
-                  ? `Descenso estimado ${travelTime(entry.dropoffAt)}`
-                  : 'Descenso sin hora estimada'}
-              </Text>
-            </>
-          )}
-          {entry.conflictWithTripIds?.map((tripId) => (
-            <Link
-              key={tripId}
-              href={{
-                pathname: '/trip-operation/[tripId]',
-                params: { tripId },
-              }}
-              style={s.link}
-            >
-              Ver viaje con posible conflicto de horario
-            </Link>
-          ))}
-          {entry.failure && <Text style={s.text}>{entry.failure}</Text>}
-          {entry.tripId ? (
-            <Link
-              href={{
-                pathname: '/trip-operation/[tripId]',
-                params: { tripId: entry.tripId },
-              }}
-              style={s.link}
-            >
-              Ver viaje
-            </Link>
-          ) : (
-            entry.scheduleId && (
-              <Link
-                href={{
-                  pathname: '/recurring-trips',
-                  params: { scheduleId: entry.scheduleId },
-                }}
-                style={s.link}
+          <View style={styles.list}>
+            {entries.map((entry, index) => (
+              <View
+                key={entry.id}
+                style={[styles.row, index > 0 && styles.divider]}
               >
-                Gestionar plantilla
-              </Link>
-            )
-          )}
+                <Text style={styles.meta}>
+                  {agendaTime.format(new Date(entry.at))} ·{' '}
+                  {agendaLabel[entry.kind]}
+                </Text>
+                <Text style={styles.entryTitle}>{entry.label}</Text>
+                {entry.status && (
+                  <Text style={styles.entryStatus}>
+                    {entry.status === 'WITHDRAWN'
+                      ? 'Participación retirada'
+                      : tripStatusLabel[entry.status]}
+                  </Text>
+                )}
+                {entry.failure && (
+                  <Text style={styles.detail}>{entry.failure}</Text>
+                )}
+                {entry.tripId ? (
+                  <Link
+                    href={{
+                      pathname: '/trip-operation/[tripId]',
+                      params: { tripId: entry.tripId },
+                    }}
+                    style={styles.actionLink}
+                  >
+                    Ver viaje
+                  </Link>
+                ) : (
+                  entry.scheduleId && (
+                    <Link
+                      href={{
+                        pathname: '/recurring-trips',
+                        params: { scheduleId: entry.scheduleId },
+                      }}
+                      style={styles.actionLink}
+                    >
+                      Gestionar plantilla
+                    </Link>
+                  )
+                )}
+              </View>
+            ))}
+          </View>
         </View>
       ))}
     </ProtectedPage>
   );
 }
+
+const styles = StyleSheet.create({
+  toolbar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  filter: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  selectedFilter: {
+    borderColor: colors.primary,
+    backgroundColor: colors.selected,
+  },
+  filterLabel: { color: colors.ink, fontSize: 14, fontWeight: '700' },
+  range: { gap: 3 },
+  rangeHeading: { color: colors.ink, fontSize: 18, fontWeight: '700' },
+  listSection: { gap: 8 },
+  listHeading: {
+    color: colors.ink,
+    fontSize: 14,
+    fontWeight: '700',
+    textTransform: 'capitalize',
+  },
+  list: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+  },
+  row: { paddingHorizontal: 16, paddingVertical: 13, gap: 2 },
+  divider: { borderTopWidth: 1, borderColor: colors.border },
+  meta: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '600',
+  },
+  detail: { color: colors.muted, fontSize: 14, lineHeight: 20 },
+  itemLink: {
+    alignSelf: 'flex-start',
+    color: colors.primary,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '700',
+    minHeight: 44,
+    paddingVertical: 11,
+  },
+  entryTitle: {
+    color: colors.ink,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+  entryStatus: {
+    color: colors.muted,
+    fontSize: 13,
+    textTransform: 'capitalize',
+  },
+  actionLink: {
+    color: colors.primary,
+    alignSelf: 'flex-start',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '700',
+    paddingVertical: 12,
+  },
+});

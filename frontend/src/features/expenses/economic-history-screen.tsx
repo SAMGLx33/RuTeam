@@ -1,7 +1,8 @@
+import { Link, Text, TextInput, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Text, TextInput, View } from 'react-native';
+
 import type {
   EconomicHistory,
   EconomicHistoryEntry,

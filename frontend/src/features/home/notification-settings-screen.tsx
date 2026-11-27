@@ -1,5 +1,5 @@
-import { Link } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Link, Text, View } from '../../theme/primitives';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   NotificationPreferences,

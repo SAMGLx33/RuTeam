@@ -1,4 +1,5 @@
-import { Link } from 'expo-router';
+import { Link } from '../../theme/primitives';
+
 import { formStyles } from '../../components/ui/protected-page';
 
 export function TripSafetyLink({ tripId }: { tripId: string }) {

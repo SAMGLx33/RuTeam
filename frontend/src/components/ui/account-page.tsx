@@ -1,114 +1,141 @@
 import type { ReactNode } from 'react';
 import {
-  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
-  Text,
-  View,
   useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../../theme/tokens';
+import { SafeAreaView, ScrollView, Text, View } from '../../theme/primitives';
+import { colors, radii, spacing } from '../../theme/tokens';
+import { Brand } from '../navigation/app-navigation';
 
 export function AccountPage({
   title,
+  intro,
   children,
 }: {
   title: string;
+  intro?: boolean;
   children: ReactNode;
 }) {
   const { width } = useWindowDimensions();
   const wide = width >= 820;
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboard}
       >
-        <View style={[styles.frame, wide && styles.wideFrame]}>
-          <View style={[styles.brand, wide && styles.wideBrand]}>
-            <Text style={styles.brandName}>RuTeam</Text>
-            <Text style={styles.brandDescription}>
-              Viajes compartidos para estudiantes USC
-            </Text>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.frame, wide && styles.wideFrame]}>
+            <View style={[styles.brand, wide && styles.wideBrand]}>
+              <Brand />
+              {intro && (
+                <>
+                  <Text style={styles.purpose}>Muévete con tu comunidad</Text>
+                  <Text style={styles.description}>
+                    Comparte y encuentra viajes programados con estudiantes de
+                    la Universidad Santiago de Cali.
+                  </Text>
+                </>
+              )}
+            </View>
+            <View style={[styles.form, wide && styles.wideForm]}>
+              <Text role="heading" aria-level={1} style={styles.title}>
+                {title}
+              </Text>
+              {children}
+            </View>
           </View>
-          <View style={[styles.form, wide && styles.wideForm]}>
-            <Text role="heading" aria-level={1} style={styles.title}>
-              {title}
-            </Text>
-            {children}
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 export const accountStyles = StyleSheet.create({
-  text: { color: colors.muted, fontSize: 16, lineHeight: 24 },
+  text: { color: colors.muted, fontSize: 14, lineHeight: 21 },
   error: { color: colors.danger, fontSize: 15, lineHeight: 22 },
   link: {
     color: colors.primary,
     fontWeight: '700',
-    fontSize: 16,
-    paddingVertical: 11,
+    fontSize: 14,
+    paddingVertical: 9,
   },
-  label: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  label: { fontSize: 14, fontWeight: '700', color: colors.ink },
   input: {
     minHeight: 49,
-    padding: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: radii.control,
     color: colors.ink,
     fontSize: 16,
     backgroundColor: colors.surface,
   },
-  field: { gap: 6 },
+  field: { gap: 7 },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 18,
+    columnGap: 16,
   },
 });
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: 16 },
+  keyboard: { flex: 1 },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
   frame: {
-    maxWidth: 920,
     width: '100%',
+    maxWidth: 450,
     alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 18,
-    overflow: 'hidden',
+    borderRadius: 22,
     backgroundColor: colors.surface,
   },
-  wideFrame: { flexDirection: 'row', minHeight: 530 },
+  wideFrame: {
+    maxWidth: 960,
+    flexDirection: 'row',
+    minHeight: 545,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   brand: {
-    backgroundColor: colors.dark,
-    padding: 26,
-    gap: 12,
+    padding: spacing.xl,
+    gap: 17,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  wideBrand: { width: '46%', padding: 42, backgroundColor: colors.selected },
+  purpose: {
+    color: colors.ink,
+    fontSize: 34,
+    lineHeight: 37,
+    letterSpacing: -1.15,
+    fontWeight: '900',
+    maxWidth: 350,
+  },
+  description: {
+    color: colors.muted,
+    fontSize: 15,
+    lineHeight: 23,
+    maxWidth: 290,
+  },
+  form: {
+    flex: 1,
+    padding: spacing.xl,
+    paddingTop: 4,
+    gap: 14,
     justifyContent: 'center',
   },
-  wideBrand: { width: '42%', padding: 36 },
-  brandName: {
-    color: colors.surface,
-    fontSize: 36,
-    fontWeight: '900',
-    letterSpacing: -1.4,
-  },
-  brandDescription: {
-    color: '#c9e6d7',
-    fontSize: 18,
-    lineHeight: 26,
-    maxWidth: 250,
-  },
-  form: { flex: 1, padding: 22, gap: 16, justifyContent: 'center' },
   wideForm: { padding: 44 },
   title: {
-    fontSize: 30,
-    fontWeight: '800',
-    letterSpacing: -0.7,
     color: colors.ink,
+    fontSize: 25,
+    letterSpacing: -0.5,
+    fontWeight: '800',
   },
 });

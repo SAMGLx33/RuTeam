@@ -1,7 +1,8 @@
+import { Link, Text, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Link, Redirect, useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Text, View } from 'react-native';
+
 import type {
   AccountLifecycleStatus,
   AccountSettings,

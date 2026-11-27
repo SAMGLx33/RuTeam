@@ -1,7 +1,8 @@
+import { ActivityIndicator, Link, Text, View } from '../../theme/primitives';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, Redirect, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Redirect, useLocalSearchParams } from 'expo-router';
+
 import type {
   AccessConfiguration,
   StudentEligibilityStatus,

@@ -1,16 +1,15 @@
 import { pesos } from '../expenses/economic-terms';
 import { ReputationLabel } from '../ratings/reputation-label';
 import { useState } from 'react';
-import { Link } from 'expo-router';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
-import type { FeedTab, TripFeedCard, TripFeedPage } from '@ruteam/contracts';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { StyleSheet, useWindowDimensions } from 'react-native';
+import type {
+  FeedTab,
+  TripDetail,
+  TripFeedCard,
+  TripFeedPage,
+  VehicleType,
+} from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';
 import {
   ProtectedPage,
@@ -18,7 +17,11 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
-import { colors } from '../../theme/tokens';
+import { Link, Pressable, Text, View } from '../../theme/primitives';
+import { Icon } from '../../components/ui/icon';
+import { initials } from '../../components/navigation/app-navigation';
+import { RouteGeometryPreview } from './route-preview';
+import { colors, radii } from '../../theme/tokens';
 
 const tabs: { key: FeedTab; label: string }[] = [
   { key: 'FOR_YOU', label: 'Para ti' },
@@ -63,24 +66,36 @@ function TripCard({ trip }: { trip: TripFeedCard }) {
       <View style={styles.meta}>
         <Text style={styles.kind}>{directionLabel[trip.direction]}</Text>
         <Text style={styles.seats}>
-          {trip.availableSeats} {trip.availableSeats === 1 ? 'plaza' : 'plazas'}
+          {trip.availableSeats === 1
+            ? 'Última plaza'
+            : `${trip.availableSeats} plazas`}
         </Text>
       </View>
       <Text style={styles.date}>{tripDate(trip.departureAt)}</Text>
       <View style={styles.route}>
-        <Text style={styles.place}>
-          <Text style={styles.field}>Origen · </Text>
-          {trip.originLabel}
-        </Text>
-        <Text style={styles.place}>
-          <Text style={styles.field}>Destino · </Text>
-          {trip.destinationLabel}
-        </Text>
+        <View style={styles.stop}>
+          <View style={[styles.dot, styles.originDot]} />
+          <Text style={styles.place}>{trip.originLabel}</Text>
+        </View>
+        <View style={styles.stop}>
+          <View style={styles.dot} />
+          <Text style={styles.place}>{trip.destinationLabel}</Text>
+        </View>
       </View>
-      <Text style={s.text}>
-        {trip.driverName ?? 'Conductor'} · {trip.vehicle.brand}{' '}
-        {trip.vehicle.color.toLowerCase()}
-      </Text>
+      <View style={styles.driver}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {initials(trip.driverName ?? 'Conductor')}
+          </Text>
+        </View>
+        <View style={styles.driverText}>
+          <Text style={styles.place}>{trip.driverName ?? 'Conductor'}</Text>
+          <Text style={s.text}>
+            {trip.vehicle.type === 'CAR' ? 'Auto' : 'Moto'} ·{' '}
+            {trip.vehicle.brand} · {trip.vehicle.color.toLowerCase()}
+          </Text>
+        </View>
+      </View>
       {trip.economics && (
         <Text style={s.text}>
           {trip.economics.suggestedContributionCop
@@ -140,11 +155,24 @@ export function TripCards({ trips }: { trips: TripFeedCard[] }) {
 export function TripFeedScreen() {
   const { user } = useSession();
   const [tab, setTab] = useState<FeedTab>('FOR_YOU');
+  const [mode, setMode] = useState<'list' | 'map'>('list');
+  const [vehicleType, setVehicleType] = useState<VehicleType | 'all'>('all');
+  const [selected, setSelected] = useState<string | null>(null);
   const query = useTripFeed(
     tab,
     user?.capabilities.passenger ? user.id : undefined,
   );
-  const trips = query.data?.pages.flatMap(({ items }) => items) ?? [];
+  const all = query.data?.pages.flatMap(({ items }) => items) ?? [];
+  const trips =
+    vehicleType === 'all'
+      ? all
+      : all.filter((trip) => trip.vehicle.type === vehicleType);
+  const active = trips.find(({ id }) => id === selected) ?? trips[0];
+  const details = useQuery({
+    queryKey: ['trip-detail', active?.id, user?.id],
+    enabled: !!user?.capabilities.passenger && mode === 'map' && !!active,
+    queryFn: () => api<TripDetail>(`/trips/${active.id}`),
+  });
   const empty = !query.isPending && !query.error && !trips.length;
 
   return (
@@ -166,6 +194,51 @@ export function TripFeedScreen() {
           </Pressable>
         ))}
       </View>
+      <View style={styles.filters}>
+        <View style={styles.tabs} accessibilityLabel="Vista de resultados">
+          {(['list', 'map'] as const).map((item) => (
+            <Pressable
+              key={item}
+              accessibilityRole="button"
+              accessibilityState={{ selected: mode === item }}
+              aria-pressed={mode === item}
+              onPress={() => setMode(item)}
+              style={[styles.filter, mode === item && styles.tabSelected]}
+            >
+              <Icon name={item === 'list' ? 'list' : 'map'} size={16} />
+              <Text style={styles.tabText}>
+                {item === 'list' ? 'Lista' : 'Mapa'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <View
+          style={styles.tabs}
+          accessibilityLabel="Vehículo en los resultados cargados"
+        >
+          {(['all', 'CAR', 'MOTORCYCLE'] as const).map((item) => (
+            <Pressable
+              key={item}
+              accessibilityRole="button"
+              accessibilityState={{ selected: vehicleType === item }}
+              aria-pressed={vehicleType === item}
+              onPress={() => setVehicleType(item)}
+              style={[
+                styles.filter,
+                vehicleType === item && styles.tabSelected,
+              ]}
+            >
+              <Text style={styles.tabText}>
+                {item === 'all'
+                  ? 'Cualquier vehículo'
+                  : item === 'CAR'
+                    ? 'Auto'
+                    : 'Moto'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
       {query.isPending && <Text style={s.text}>Cargando viajes…</Text>}
       {query.error && (
         <View style={s.section}>
@@ -181,7 +254,44 @@ export function TripFeedScreen() {
           />
         </View>
       )}
-      <TripCards trips={trips} />
+      {mode === 'list' && <TripCards trips={trips} />}
+      {mode === 'map' && active && (
+        <View style={styles.mapResults}>
+          {details.isPending && (
+            <Text style={s.text}>Consultando el recorrido…</Text>
+          )}
+          {details.error && (
+            <Text accessibilityRole="alert" style={s.error}>
+              {details.error.message}
+            </Text>
+          )}
+          {!details.error && details.data?.itinerary && (
+            <RouteGeometryPreview
+              geometry={details.data.itinerary.geometry}
+              stops={details.data.itinerary.stops}
+            />
+          )}
+          <View style={styles.tabs} accessibilityLabel="Elegir viaje del mapa">
+            {trips.map((trip) => (
+              <Pressable
+                key={trip.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active.id === trip.id }}
+                onPress={() => setSelected(trip.id)}
+                style={[
+                  styles.filter,
+                  active.id === trip.id && styles.tabSelected,
+                ]}
+              >
+                <Text style={styles.tabText}>
+                  {trip.destinationLabel} · {tripDate(trip.departureAt)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <TripCard trip={active} />
+        </View>
+      )}
       {empty && (
         <View style={s.section}>
           <Text style={s.title}>
@@ -227,6 +337,24 @@ export function TripFeedScreen() {
 
 const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  filters: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  filter: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderRadius: radii.control,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    flexDirection: 'row',
+    gap: 7,
+    alignItems: 'center',
+  },
+  mapResults: { gap: 12 },
   tab: {
     minHeight: 44,
     justifyContent: 'center',
@@ -247,7 +375,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 13,
+    borderRadius: radii.panel,
     padding: 16,
     gap: 9,
     backgroundColor: colors.surface,
@@ -281,9 +409,30 @@ const styles = StyleSheet.create({
     gap: 5,
     borderLeftWidth: 2,
     borderColor: colors.border,
-    paddingLeft: 9,
-    marginVertical: 3,
+    paddingLeft: 12,
+    marginVertical: 5,
+    marginLeft: 6,
   },
+  stop: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 28 },
+  dot: {
+    position: 'absolute',
+    left: -18,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+  },
+  originDot: { backgroundColor: colors.turquoise },
+  driver: { flexDirection: 'row', gap: 9, alignItems: 'center' },
+  driverText: { flex: 1 },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.selected,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: { color: colors.primary, fontWeight: '800' },
   place: { color: colors.ink, fontSize: 15, lineHeight: 21, fontWeight: '700' },
-  field: { color: colors.muted, fontWeight: '400' },
 });

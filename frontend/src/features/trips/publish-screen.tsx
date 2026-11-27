@@ -1,8 +1,20 @@
 import type { RecurringTripTemplate } from '@ruteam/contracts';
-import { useState } from 'react';
-import { Text, View } from 'react-native';
-import { Link, useLocalSearchParams } from 'expo-router';
-import { useForm, useFieldArray, useWatch } from 'react-hook-form';
+import { useEffect, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  findNodeHandle,
+  Platform,
+  useWindowDimensions,
+  type ScrollView,
+  type View as ViewInstance,
+} from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import {
+  useForm,
+  useFieldArray,
+  useWatch,
+  type Control,
+} from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CampusMeetingPoint,
@@ -25,6 +37,8 @@ import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
 import { Field } from '../../components/forms/field';
 import { Button } from '../../components/ui/button';
+import { Link, Text, View } from '../../theme/primitives';
+import { breakpoints } from '../../theme/tokens';
 import {
   ProtectedPage,
   formStyles as s,
@@ -44,6 +58,13 @@ import {
   methodLabel,
 } from '../expenses/economic-terms';
 import { RoutePreview } from './route-preview';
+import {
+  PublishProgress,
+  PublishSummary,
+  publishSteps,
+  publishStyles as w,
+  type PublishStep,
+} from './publish-wizard';
 
 type Draft = PublishTripInput;
 const emptyCatalog: CampusMeetingPoint[] = [];
@@ -65,16 +86,26 @@ function previewPoint(
   };
 }
 
-function routePoints(values: PublishFormValues): RouteOptionsInput {
+function routePoints(
+  values: Pick<
+    PublishFormValues,
+    'direction' | 'origin' | 'destination' | 'stops'
+  >,
+): RouteOptionsInput {
   return {
     direction: values.direction,
-    origin: pointInput(values.origin, values.direction === 'DESDE_USC'),
+    origin: pointInput(
+      'Origen',
+      values.origin,
+      values.direction === 'DESDE_USC',
+    ),
     destination: pointInput(
+      'Destino',
       values.destination,
       values.direction === 'HACIA_USC',
     ),
-    stops: values.stops.map((stop) => ({
-      ...pointInput(stop),
+    stops: values.stops.map((stop, index) => ({
+      ...pointInput(`Parada ${index + 1}`, stop),
       access:
         values.direction === 'DESDE_USC' && stop.access !== 'WAYPOINT'
           ? 'DROPOFF'
@@ -93,6 +124,45 @@ const weekdays = [
   'Sábado',
   'Domingo',
 ];
+
+const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+const routeFields = ['direction', 'origin', 'destination', 'stops'] as const;
+
+function isCalendarDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return (
+    Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
+}
+
+function RouteSelectionStatus({
+  control,
+  selectionKey,
+}: {
+  control: Control<PublishFormValues>;
+  selectionKey: string;
+}) {
+  const [direction, origin, destination, stops] = useWatch({
+    control,
+    name: routeFields,
+  });
+  let matches = false;
+  try {
+    matches =
+      selectionKey ===
+      JSON.stringify(routePoints({ direction, origin, destination, stops }));
+  } catch {
+    // The selected alternative no longer describes these points.
+  }
+  return (
+    <Text style={matches ? w.success : w.note} accessibilityLiveRegion="polite">
+      {matches
+        ? 'Alternativa vial seleccionada'
+        : 'Los puntos cambiaron. Consulta otra alternativa vial para este recorrido.'}
+    </Text>
+  );
+}
 
 function formPoint(point: MeetingPointInput): PublishFormValues['origin'] {
   if ('campusPointId' in point)
@@ -202,6 +272,25 @@ function PublishForm({
   const { user } = useSession();
   const client = useQueryClient();
   const template = schedule?.template ?? prior;
+  const { width } = useWindowDimensions();
+  const wide = width >= breakpoints.columns;
+  const [step, setStep] = useState<PublishStep>('schedule');
+  const previousStep = useRef(step);
+  const scroll = useRef<ScrollView>(null);
+  const heading = useRef<ViewInstance>(null);
+
+  useEffect(() => {
+    if (previousStep.current === step) return;
+    previousStep.current = step;
+    scroll.current?.scrollTo({ y: 0, animated: false });
+    if (Platform.OS === 'web') {
+      heading.current?.focus();
+    } else {
+      const target = findNodeHandle(heading.current);
+      if (target != null) AccessibilityInfo.setAccessibilityFocus(target);
+    }
+  }, [step]);
+
   const [draftVersion] = useState(edited?.version);
   const [tomorrow] = useState(() =>
     new Date(Date.now() + 86400000 - 5 * 3600000)
@@ -210,6 +299,7 @@ function PublishForm({
       .replace('T', ' '),
   );
   const form = useForm<PublishFormValues>({
+    shouldUnregister: false,
     defaultValues: {
       origin: template ? formPoint(template.itinerary.origin) : emptyPoint,
       destination: template
@@ -403,6 +493,90 @@ function PublishForm({
     }
   }
 
+  function visitStep(next: PublishStep) {
+    setInputError('');
+    if (step === 'review' && next !== step) {
+      save.reset();
+      setPreview(undefined);
+    }
+    setStep(next);
+  }
+
+  function continueSchedule() {
+    const values = form.getValues();
+    if (!selected?.eligibleNow) {
+      setInputError('Elige un vehículo habilitado para publicar.');
+      return;
+    }
+    if (isRecurring) {
+      const name = values.recurrenceName.trim();
+      const startsOn = values.startsOn.trim();
+      const endsOn = values.endsOn.trim();
+      if (name.length < 2 || name.length > 80) {
+        setInputError(
+          'Indica un nombre para la recurrencia de 2 a 80 caracteres.',
+        );
+        return;
+      }
+      if (
+        !isCalendarDate(startsOn) ||
+        !isCalendarDate(endsOn) ||
+        startsOn > endsOn
+      ) {
+        setInputError(
+          'Indica un rango de fechas válido en formato AAAA-MM-DD.',
+        );
+        return;
+      }
+      if (!timePattern.test(values.time.trim()) || !selectedDays.length) {
+        setInputError(
+          'Indica la hora en formato HH:mm y selecciona al menos un día.',
+        );
+        return;
+      }
+    } else {
+      const [day, hour, extra] = values.departureAt.split(' ');
+      if (
+        extra !== undefined ||
+        !isCalendarDate(day) ||
+        !hour ||
+        !timePattern.test(hour)
+      ) {
+        setInputError('Indica la salida como AAAA-MM-DD HH:mm.');
+        return;
+      }
+    }
+    visitStep('route');
+  }
+
+  function continueRoute() {
+    const values = form.getValues();
+    try {
+      const route = routePoints(values);
+      [route.origin, ...route.stops, route.destination].forEach((point) =>
+        previewPoint(point, catalog),
+      );
+      if (values.description.trim().length < 2)
+        throw new Error('Describe las vías o referencias del recorrido.');
+      const signed =
+        selectedRoute?.key === JSON.stringify(route) &&
+        selectedRoute.option.routingSelection;
+      const duration = Number(values.estimatedDurationMinutes);
+      if (
+        !signed &&
+        (!Number.isInteger(duration) || duration < 5 || duration > 360)
+      )
+        throw new Error('Indica una duración de 5 a 360 minutos enteros.');
+      visitStep('terms');
+    } catch (error) {
+      setInputError(
+        error instanceof Error
+          ? error.message
+          : 'Revisa los datos del recorrido.',
+      );
+    }
+  }
+
   const review = form.handleSubmit(async (values) => {
     if (!selected) return;
     setInputError('');
@@ -424,13 +598,6 @@ function PublishForm({
           access: 'DROPOFF' as const,
         },
       ];
-      if (
-        !isRecurring &&
-        !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(values.departureAt)
-      )
-        throw new Error('Indica la salida como AAAA-MM-DD HH:mm.');
-      if (values.description.trim().length < 2)
-        throw new Error('Describe las vías o referencias del recorrido.');
       const offeredSeats = Number(values.offeredSeats);
       if (
         !Number.isInteger(offeredSeats) ||
@@ -507,13 +674,29 @@ function PublishForm({
           },
         },
       });
+      visitStep('review');
     } catch (error) {
       setInputError(
         error instanceof Error ? error.message : 'Revisa los datos del viaje.',
       );
     }
   });
+  const activeIndex = publishSteps.findIndex(({ id }) => id === step);
+  const activeTitle =
+    step === 'review'
+      ? 'Resumen para publicar'
+      : publishSteps[activeIndex].label;
+  const busy = economicsPreview.isPending || save.isPending;
   const draft = preview?.draft;
+  const previewVehicle =
+    draft && vehicles.data?.find(({ id }) => id === draft.vehicleId);
+  const notice =
+    inputError ||
+    (step === 'route' && options.error?.message) ||
+    (step === 'review' && save.error?.message);
+  const catalogs = [vehicles, points, rules];
+  const failedCatalogs = catalogs.filter((query) => query.isError);
+
   return (
     <ProtectedPage
       title={
@@ -524,64 +707,57 @@ function PublishForm({
             : 'Publicar viaje'
       }
       requires="driver"
+      scrollRef={scroll}
     >
-      <Link href="/vehicles" style={s.link}>
-        Gestionar vehículos y licencia
-      </Link>
-      {[vehicles, points, rules].some((query) => query.isPending) && (
-        <Text>Cargando catálogos…</Text>
+      {catalogs.some((query) => query.isPending) && (
+        <Text accessibilityLiveRegion="polite" style={w.note}>
+          Cargando catálogos…
+        </Text>
       )}
-      {[vehicles, points, rules].map(
-        (query, index) =>
-          query.error && (
-            <Text key={index} accessibilityRole="alert" style={s.error}>
-              {query.error.message}
+      {failedCatalogs.length > 0 && (
+        <View style={w.group}>
+          {failedCatalogs.map((query, index) => (
+            <Text key={index} accessibilityRole="alert" style={w.alert}>
+              {query.error?.message}
             </Text>
-          ),
-      )}
-      {draft && preview ? (
-        <>
-          <Text style={s.title}>Resumen para publicar</Text>
-          <Text style={s.text}>
-            {selected?.plate} · {draft.offeredSeats} plazas · duración declarada{' '}
-            {draft.estimatedDurationMinutes} min ·{' '}
-            {preview.recurrence
-              ? preview.recurrence.startsOn +
-                ' a ' +
-                preview.recurrence.endsOn +
-                ' · ' +
-                preview.recurrence.time +
-                ' Colombia'
-              : draft.departureAt}
-          </Text>
-          {preview && !save.data && (
-            <EconomicsPreview preview={preview.economics} />
-          )}
-          {save.data?.trip && (
-            <EconomicTerms terms={save.data.trip.economics} />
-          )}
-          {selected?.type === 'MOTORCYCLE' && (
-            <Text style={s.text}>
-              {draft.providesHelmet
-                ? 'Casco incluido'
-                : 'Cada pasajero debe traer casco'}
-            </Text>
-          )}
-          <Text style={s.text}>
-            {rules.data
-              ?.filter((rule) =>
-                draft.ruleIds.length
-                  ? draft.ruleIds.includes(rule.id)
-                  : rule.code === 'DEFAULT',
-              )
-              .map((rule) => rule.description)
-              .join(' · ')}
-          </Text>
-          <RoutePreview
-            geometry={draft.itinerary.geometry ?? null}
-            description={draft.itinerary.description}
-            stops={preview.stops}
+          ))}
+          <Button
+            title="Reintentar catálogos"
+            secondary
+            onPress={() =>
+              failedCatalogs.forEach((query) => void query.refetch())
+            }
           />
+        </View>
+      )}
+      <View style={[w.layout, wide && w.horizontal]}>
+        <View style={[w.main, wide && w.mainWide]}>
+          <PublishProgress
+            step={step}
+            onStep={visitStep}
+            locked={busy || save.isSuccess}
+            compact={width < 620}
+          />
+          <View style={w.panel}>
+            <View style={w.heading}>
+              <Text nativeID="publish-step-count" style={w.stepCount}>
+                Paso {activeIndex + 1} de {publishSteps.length}
+              </Text>
+              <View
+                ref={heading}
+                tabIndex={-1}
+                accessible={Platform.OS === 'web' ? undefined : true}
+                accessibilityLabel={
+                  Platform.OS === 'web'
+                    ? undefined
+                    : `Paso ${activeIndex + 1} de ${publishSteps.length}. ${activeTitle}`
+                }
+                aria-describedby="publish-step-count"
+                role="heading"
+                aria-level={2}
+              >
+                <Text style={w.title}>{activeTitle}</Text>
+              </View>
           {save.isSuccess ? (
             <Text accessibilityLiveRegion="polite">
               {save.data?.schedule
@@ -701,254 +877,529 @@ function PublishForm({
                 onPress={() => setIsRecurring(true)}
               />
             </View>
-          )}
-          {isRecurring ? (
-            <View style={s.section}>
-              <Field
-                control={form.control}
-                name="recurrenceName"
-                label="Nombre de la recurrencia"
-              />
-              <Field
-                control={form.control}
-                name="startsOn"
-                label="Fecha inicial (AAAA-MM-DD)"
-              />
-              <Field
-                control={form.control}
-                name="endsOn"
-                label="Fecha final (AAAA-MM-DD)"
-              />
-              <Field
-                control={form.control}
-                name="time"
-                label="Hora Colombia (HH:mm)"
-              />
-              {weekdays.map((name, index) => {
-                const day = index + 1;
-                return (
-                  <Choice
-                    key={day}
-                    label={name}
-                    checkbox
-                    checked={selectedDays.includes(day)}
-                    onPress={() =>
-                      setSelectedDays((days) =>
-                        days.includes(day)
-                          ? days.filter((item) => item !== day)
-                          : [...days, day],
-                      )
-                    }
-                  />
-                );
-              })}
-            </View>
-          ) : (
-            <Field
-              control={form.control}
-              name="departureAt"
-              label="Salida Colombia (AAAA-MM-DD HH:mm)"
-            />
-          )}
-          <Field
-            control={form.control}
-            name="estimatedDurationMinutes"
-            label="Duración declarada (minutos)"
-          />
-          <Field
-            control={form.control}
-            name="offeredSeats"
-            label="Cupos ofrecidos"
-          />
-          <Field
-            control={form.control}
-            name="description"
-            label="Vías y referencias del recorrido"
-          />
-          <Text style={s.text}>
-            Puedes publicar el itinerario descrito o elegir una alternativa vial
-            si el proveedor está disponible.
-          </Text>
-          {stops.fields.map((stop, index) => (
-            <View key={stop.id} style={s.section}>
-              <PointEditor
-                title={`Parada ${index + 1}`}
-                name={`stops.${index}`}
-                control={form.control}
-                catalog={catalog}
-              />
-              <StopAccessEditor
-                control={form.control}
-                index={index}
-                direction={direction}
-              />
-              {index > 0 && (
-                <Button
-                  title={`Subir parada ${index + 1}`}
-                  secondary
-                  onPress={() => stops.move(index, index - 1)}
-                />
-              )}
-              {index < stops.fields.length - 1 && (
-                <Button
-                  title={`Bajar parada ${index + 1}`}
-                  secondary
-                  onPress={() => stops.move(index, index + 1)}
-                />
-              )}
-              <Button
-                title={`Quitar parada ${index + 1}`}
-                secondary
-                onPress={() => stops.remove(index)}
-              />
-            </View>
-          ))}
-          <Button
-            title="Añadir parada"
-            disabled={stops.fields.length >= 10}
-            secondary
-            onPress={() =>
-              stops.append({
-                ...emptyPoint,
-                access: direction === 'DESDE_USC' ? 'DROPOFF' : 'PICKUP',
-              })
-            }
-          />
-          <View style={s.section}>
-            <Text style={s.title}>Aporte del viaje</Text>
-            <Choice
-              label="Viaje gratuito"
-              checked={!withContribution}
-              onPress={() => setWithContribution(false)}
-            />
-            <Choice
-              label="Calcular aporte con gastos declarados"
-              checked={withContribution}
-              onPress={() => setWithContribution(true)}
-            />
-            {withContribution && (
+            {step === 'schedule' && (
               <>
-                {expenseConcepts.map(([name, label]) => (
-                  <Field
-                    key={name}
-                    control={form.control}
-                    name={name}
-                    label={`${label} en COP`}
-                  />
-                ))}
-                <Text style={s.text}>
-                  Selecciona hasta dos métodos si el cálculo produce un aporte.
-                </Text>
-                {(Object.keys(methodLabel) as CompensationMethod[]).map(
-                  (method) => (
+                <View style={w.group}>
+                  <Text role="heading" aria-level={3} style={w.groupTitle}>
+                    Vehículo propio
+                  </Text>
+                  {vehicles.data &&
+                    !vehicles.data.some(({ eligibleNow }) => eligibleNow) && (
+                      <Text>
+                        Registra un vehículo y consulta los requisitos vigentes
+                        para conducir.
+                      </Text>
+                    )}
+                  {vehicles.data?.map((item) => (
                     <Choice
-                      key={method}
-                      label={methodLabel[method]}
-                      checkbox
-                      checked={methods.includes(method)}
-                      onPress={() =>
-                        setMethods((before) =>
-                          before.includes(method)
-                            ? before.filter((item) => item !== method)
-                            : before.length < 2
-                              ? [...before, method]
-                              : before,
-                        )
-                      }
+                      key={item.id}
+                      label={`Vehículo ${item.plate} · ${item.passengerCapacity} plazas · ${item.verificationStatus === 'VERIFIED' ? 'verificado' : item.verificationStatus === 'DECLARED' ? 'declarado' : 'sin vigencia verificada'}`}
+                      checked={selected?.id === item.id}
+                      onPress={() => setVehicleId(item.id)}
                     />
-                  ),
+                  ))}
+                  {vehicles.data && selected && !selected.eligibleNow && (
+                    <Text style={w.note}>
+                      Este vehículo no está habilitado para publicar.
+                    </Text>
+                  )}
+                  <Link href="/vehicles" style={s.link}>
+                    Gestionar vehículos y licencia
+                  </Link>
+                </View>
+
+                <View style={[w.group, w.divider]}>
+                  <Text role="heading" aria-level={3} style={w.groupTitle}>
+                    Programación
+                  </Text>
+                  {!schedule && (
+                    <View style={w.group}>
+                      <Choice
+                        label="Viaje individual"
+                        checked={!isRecurring}
+                        onPress={() => setIsRecurring(false)}
+                      />
+                      <Choice
+                        label="Viaje recurrente"
+                        checked={isRecurring}
+                        onPress={() => setIsRecurring(true)}
+                      />
+                    </View>
+                  )}
+                  {isRecurring ? (
+                    <View style={w.group}>
+                      <Field
+                        control={form.control}
+                        name="recurrenceName"
+                        label="Nombre de la recurrencia"
+                      />
+                      <Field
+                        control={form.control}
+                        name="startsOn"
+                        label="Fecha inicial (AAAA-MM-DD)"
+                      />
+                      <Field
+                        control={form.control}
+                        name="endsOn"
+                        label="Fecha final (AAAA-MM-DD)"
+                      />
+                      <Field
+                        control={form.control}
+                        name="time"
+                        label="Hora Colombia (HH:mm)"
+                      />
+                      <View style={w.inline}>
+                        {weekdays.map((name, index) => {
+                          const day = index + 1;
+                          return (
+                            <Choice
+                              key={day}
+                              label={name}
+                              checkbox
+                              checked={selectedDays.includes(day)}
+                              onPress={() =>
+                                setSelectedDays((days) =>
+                                  days.includes(day)
+                                    ? days.filter((item) => item !== day)
+                                    : [...days, day],
+                                )
+                              }
+                            />
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ) : (
+                    <Field
+                      control={form.control}
+                      name="departureAt"
+                      label="Salida Colombia (AAAA-MM-DD HH:mm)"
+                    />
+                  )}
+
+                  {!isRecurring && (
+                    <Text style={w.note}>
+                      Programa la salida con más de 30 minutos de anticipación.
+                    </Text>
+                  )}
+                </View>
+              </>
+            )}
+            {step === 'route' && (
+              <>
+                <View style={w.group}>
+                  <Text role="heading" aria-level={3} style={w.groupTitle}>
+                    Sentido del viaje
+                  </Text>
+                  <Choice
+                    label="Desde la USC"
+                    checked={direction === 'DESDE_USC'}
+                    onPress={() => {
+                      form.setValue('direction', 'DESDE_USC');
+                      form.getValues('stops').forEach(({ access }, index) => {
+                        if (access === 'PICKUP' || access === 'BOTH')
+                          form.setValue(`stops.${index}.access`, 'DROPOFF');
+                      });
+                    }}
+                  />
+                  <Choice
+                    label="Hacia la USC"
+                    checked={direction === 'HACIA_USC'}
+                    onPress={() => form.setValue('direction', 'HACIA_USC')}
+                  />
+                </View>
+                <PointEditor
+                  title="Origen"
+                  institutional={direction === 'DESDE_USC'}
+                  name="origin"
+                  control={form.control}
+                  catalog={catalog}
+                />
+                <PointEditor
+                  title="Destino"
+                  institutional={direction === 'HACIA_USC'}
+                  name="destination"
+                  control={form.control}
+                  catalog={catalog}
+                />
+                <Field
+                  control={form.control}
+                  name="description"
+                  label="Vías y referencias del recorrido"
+                />
+                <Text style={s.text}>
+                  Puedes publicar el itinerario descrito o elegir una
+                  alternativa vial si el proveedor está disponible.
+                </Text>
+                <Text role="heading" aria-level={3} style={w.groupTitle}>
+                  Paradas intermedias
+                </Text>
+                {stops.fields.map((stop, index) => (
+                  <View key={stop.id} style={[w.group, w.divider]}>
+                    <PointEditor
+                      title={`Parada ${index + 1}`}
+                      name={`stops.${index}`}
+                      control={form.control}
+                      catalog={catalog}
+                    />
+                    <StopAccessEditor
+                      control={form.control}
+                      index={index}
+                      direction={direction}
+                    />
+                    {index > 0 && (
+                      <Button
+                        title={`Subir parada ${index + 1}`}
+                        secondary
+                        onPress={() => stops.move(index, index - 1)}
+                      />
+                    )}
+                    {index < stops.fields.length - 1 && (
+                      <Button
+                        title={`Bajar parada ${index + 1}`}
+                        secondary
+                        onPress={() => stops.move(index, index + 1)}
+                      />
+                    )}
+                    <Button
+                      title={`Quitar parada ${index + 1}`}
+                      secondary
+                      onPress={() => stops.remove(index)}
+                    />
+                  </View>
+                ))}
+                <Button
+                  title="Añadir parada"
+                  disabled={stops.fields.length >= 10}
+                  secondary
+                  onPress={() =>
+                    stops.append({
+                      ...emptyPoint,
+                      access: direction === 'DESDE_USC' ? 'DROPOFF' : 'PICKUP',
+                    })
+                  }
+                />
+                <Field
+                  control={form.control}
+                  name="estimatedDurationMinutes"
+                  label="Duración declarada (minutos)"
+                />
+
+                <View style={[w.group, w.divider]}>
+                  <Text role="heading" aria-level={3} style={w.groupTitle}>
+                    Alternativas viales
+                  </Text>
+                  <Choice
+                    checkbox
+                    label="Autorizo enviar las coordenadas de estos puntos públicos al motor vial configurado"
+                    checked={routingConsent}
+                    onPress={() => setRoutingConsent(!routingConsent)}
+                  />
+                  <Button
+                    title={
+                      options.isPending
+                        ? 'Consultando rutas…'
+                        : 'Consultar rutas viales'
+                    }
+                    secondary
+                    disabled={
+                      !selected?.eligibleNow ||
+                      !routingConsent ||
+                      options.isPending
+                    }
+                    onPress={() => {
+                      void suggest();
+                    }}
+                  />
+                  {selectedRoute && (
+                    <RouteSelectionStatus
+                      control={form.control}
+                      selectionKey={selectedRoute.key}
+                    />
+                  )}
+                  {options.data?.map((option, index) => (
+                    <View key={index} style={s.section}>
+                      <RoutePreview
+                        geometry={option.geometry}
+                        stops={[]}
+                        description={`Alternativa vial ${index + 1} · ${option.durationMinutes} minutos estimados`}
+                        distanceMeters={option.distanceMeters}
+                      />
+                      <Button
+                        title={`Elegir alternativa ${index + 1}`}
+                        secondary
+                        onPress={() => chooseOption(option)}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+            {step === 'terms' && (
+              <>
+                <View style={w.group}>
+                  <Field
+                    control={form.control}
+                    name="offeredSeats"
+                    label="Cupos ofrecidos"
+                  />
+
+                  {selected && (
+                    <Text style={w.note}>
+                      Máximo {selected.passengerCapacity}{' '}
+                      {selected.passengerCapacity === 1 ? 'plaza' : 'plazas'}{' '}
+                      para este vehículo.
+                    </Text>
+                  )}
+                  {selected?.type === 'MOTORCYCLE' && (
+                    <Choice
+                      checkbox
+                      label="Casco de pasajero incluido"
+                      checked={helmet}
+                      onPress={() => setHelmet(!helmet)}
+                    />
+                  )}
+                </View>
+                <View style={w.group}>
+                  <Text role="heading" aria-level={3} style={w.groupTitle}>
+                    Aporte del viaje
+                  </Text>
+                  <Choice
+                    label="Viaje gratuito"
+                    checked={!withContribution}
+                    onPress={() => setWithContribution(false)}
+                  />
+                  <Choice
+                    label="Calcular aporte con gastos declarados"
+                    checked={withContribution}
+                    onPress={() => setWithContribution(true)}
+                  />
+                  {withContribution && (
+                    <>
+                      {expenseConcepts.map(([name, label]) => (
+                        <Field
+                          key={name}
+                          control={form.control}
+                          name={name}
+                          label={`${label} en COP`}
+                        />
+                      ))}
+                      <Text style={s.text}>
+                        Selecciona hasta dos métodos si el cálculo produce un
+                        aporte.
+                      </Text>
+                      {(Object.keys(methodLabel) as CompensationMethod[]).map(
+                        (method) => (
+                          <Choice
+                            key={method}
+                            label={methodLabel[method]}
+                            checkbox
+                            checked={methods.includes(method)}
+                            onPress={() =>
+                              setMethods((before) =>
+                                before.includes(method)
+                                  ? before.filter((item) => item !== method)
+                                  : before.length < 2
+                                    ? [...before, method]
+                                    : before,
+                              )
+                            }
+                          />
+                        ),
+                      )}
+                    </>
+                  )}
+                </View>
+                <View style={w.group}>
+                  <Text role="heading" aria-level={3} style={w.groupTitle}>
+                    Reglas de convivencia
+                  </Text>
+                  {rules.data
+                    ?.filter(({ code }) => code !== 'DEFAULT')
+                    .map((rule) => (
+                      <Choice
+                        key={rule.id}
+                        label={rule.description}
+                        checkbox
+                        checked={ruleIds.includes(rule.id)}
+                        onPress={() =>
+                          setRuleIds((ids) =>
+                            ids.includes(rule.id)
+                              ? ids.filter((id) => id !== rule.id)
+                              : [...ids, rule.id],
+                          )
+                        }
+                      />
+                    ))}
+                  <Text style={s.text}>
+                    Sin selección se aplica el acuerdo general del catálogo.
+                  </Text>
+                </View>
+              </>
+            )}
+            {step === 'review' && draft && preview && (
+              <>
+                <View style={w.group}>
+                  {preview.recurrence && (
+                    <Text style={w.groupTitle}>{preview.recurrence.name}</Text>
+                  )}
+                  <Text style={s.text}>
+                    {previewVehicle?.plate} · {draft.offeredSeats}{' '}
+                    {draft.offeredSeats === 1 ? 'plaza' : 'plazas'} ·{' '}
+                    {draft.estimatedDurationMinutes} min
+                  </Text>
+                  {preview.recurrence ? (
+                    <Text style={s.text}>
+                      {preview.recurrence.startsOn} a{' '}
+                      {preview.recurrence.endsOn} · {preview.recurrence.time}{' '}
+                      Colombia
+                      {'\n'}
+                      {preview.recurrence.weekdays
+                        .map((day) => weekdays[day - 1])
+                        .join(', ')}
+                    </Text>
+                  ) : (
+                    <Text style={s.text}>
+                      {draft.departureAt.slice(0, 16).replace('T', ' ')}{' '}
+                      Colombia
+                    </Text>
+                  )}
+                  {previewVehicle?.type === 'MOTORCYCLE' && (
+                    <Text style={s.text}>
+                      {draft.providesHelmet
+                        ? 'Casco incluido'
+                        : 'Cada pasajero debe traer casco'}
+                    </Text>
+                  )}
+                </View>
+                <RoutePreview
+                  geometry={draft.itinerary.geometry ?? null}
+                  description={draft.itinerary.description}
+                  stops={preview.stops}
+                />
+                {!save.data && <EconomicsPreview preview={preview.economics} />}
+                {save.data?.trip && (
+                  <EconomicTerms terms={save.data.trip.economics} />
+                )}
+                <Text style={s.text}>
+                  {rules.data
+                    ?.filter((rule) =>
+                      draft.ruleIds.length
+                        ? draft.ruleIds.includes(rule.id)
+                        : rule.code === 'DEFAULT',
+                    )
+                    .map((rule) => rule.description)
+                    .join(' · ')}
+                </Text>
+                {save.isSuccess ? (
+                  <Text accessibilityLiveRegion="polite" style={w.success}>
+                    {save.data?.schedule
+                      ? 'Recurrencia guardada. Consulta las fechas generadas en Viajes recurrentes.'
+                      : 'Viaje publicado. Ya aparece en Mis viajes.'}
+                  </Text>
+                ) : (
+                  <Choice
+                    label="Confirmo que la ruta y los puntos son públicos y no incluyen domicilios ni datos privados"
+                    checkbox
+                    checked={confirmedPublic}
+                    onPress={() => setConfirmedPublic(!confirmedPublic)}
+                  />
                 )}
               </>
             )}
+            {notice && (
+              <Text accessibilityRole="alert" style={w.alert}>
+                {notice}
+              </Text>
+            )}
+            {!save.isSuccess && (
+              <View style={[w.actions, w.divider]}>
+                {step !== 'schedule' && (
+                  <View style={w.action}>
+                    <Button
+                      title={
+                        step === 'review' ? 'Editar antes de publicar' : 'Atrás'
+                      }
+                      secondary
+                      disabled={busy}
+                      onPress={() =>
+                        visitStep(publishSteps[activeIndex - 1].id)
+                      }
+                    />
+                  </View>
+                )}
+                {step === 'schedule' && (
+                  <View style={w.action}>
+                    <Button
+                      title="Continuar"
+                      disabled={!vehicles.data}
+                      onPress={continueSchedule}
+                    />
+                  </View>
+                )}
+                {step === 'route' && (
+                  <View style={w.action}>
+                    <Button
+                      title="Continuar"
+                      disabled={!points.data}
+                      onPress={continueRoute}
+                    />
+                  </View>
+                )}
+                {step === 'terms' && (
+                  <View style={w.action}>
+                    <Button
+                      title={
+                        economicsPreview.isPending
+                          ? 'Calculando…'
+                          : 'Revisar viaje'
+                      }
+                      disabled={
+                        !selected?.eligibleNow ||
+                        !rules.data ||
+                        !points.data ||
+                        busy
+                      }
+                      onPress={() => void review()}
+                    />
+                  </View>
+                )}
+                {step === 'review' && preview && (
+                  <View style={w.action}>
+                    <Button
+                      title={
+                        save.isPending
+                          ? 'Guardando…'
+                          : preview.recurrence
+                            ? 'Guardar recurrencia'
+                            : 'Confirmar publicación'
+                      }
+                      disabled={!confirmedPublic || busy}
+                      onPress={() => save.mutate(preview)}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
           </View>
-          <View style={s.section}>
-            <Text style={s.title}>Reglas de convivencia</Text>
-            {rules.data
-              ?.filter(({ code }) => code !== 'DEFAULT')
-              .map((rule) => (
-                <Choice
-                  key={rule.id}
-                  label={rule.description}
-                  checkbox
-                  checked={ruleIds.includes(rule.id)}
-                  onPress={() =>
-                    setRuleIds((ids) =>
-                      ids.includes(rule.id)
-                        ? ids.filter((id) => id !== rule.id)
-                        : [...ids, rule.id],
-                    )
-                  }
-                />
-              ))}
-            <Text style={s.text}>
-              Sin selección se aplica el acuerdo general del catálogo.
-            </Text>
+        </View>
+        <View style={[w.aside, wide && w.asideWide]}>
+          <PublishSummary
+            control={form.control}
+            catalog={catalog}
+            plate={selected?.plate}
+            isRecurring={isRecurring}
+          />
+          <View style={w.group}>
+            <Link href="/recurring-trips" style={s.link}>
+              Viajes recurrentes
+            </Link>
+            <Link href="/my-trips" style={s.link}>
+              Ver mis viajes publicados
+            </Link>
           </View>
-          <Choice
-            checkbox
-            label="Autorizo enviar las coordenadas de estos puntos públicos al motor vial configurado"
-            checked={routingConsent}
-            onPress={() => setRoutingConsent(!routingConsent)}
-          />
-          <Button
-            title={
-              options.isPending
-                ? 'Consultando rutas…'
-                : 'Consultar rutas viales'
-            }
-            secondary
-            disabled={
-              !selected?.eligibleNow || !routingConsent || options.isPending
-            }
-            onPress={() => {
-              void suggest();
-            }}
-          />
-          {options.error && (
-            <Text accessibilityRole="alert" style={s.error}>
-              {options.error.message}
-            </Text>
-          )}
-          {options.data?.map((option, index) => (
-            <View key={index} style={s.section}>
-              <RoutePreview
-                geometry={option.geometry}
-                stops={[]}
-                description={`Alternativa vial ${index + 1} · ${option.durationMinutes} minutos estimados`}
-                distanceMeters={option.distanceMeters}
-              />
-              <Button
-                title={`Elegir alternativa ${index + 1}`}
-                secondary
-                onPress={() => chooseOption(option)}
-              />
-            </View>
-          ))}
-          <Button
-            title={economicsPreview.isPending ? 'Calculando…' : 'Revisar viaje'}
-            disabled={
-              !selected?.eligibleNow ||
-              !rules.data ||
-              !points.data ||
-              economicsPreview.isPending
-            }
-            onPress={() => {
-              void review();
-            }}
-          />
-        </>
-      )}
-      {(inputError || save.error) && (
-        <Text accessibilityRole="alert" style={s.error}>
-          {inputError || save.error?.message}
-        </Text>
-      )}
-      <Link href="/recurring-trips" style={s.link}>
-        Viajes recurrentes
-      </Link>
-      <Link href="/my-trips" style={s.link}>
-        Ver mis viajes publicados
-      </Link>
+        </View>
+      </View>
     </ProtectedPage>
   );
 }

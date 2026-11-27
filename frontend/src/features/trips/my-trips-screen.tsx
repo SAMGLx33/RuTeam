@@ -1,9 +1,9 @@
+import { Link, Text, TextInput, View } from '../../theme/primitives';
 import { EconomicTerms } from '../expenses/economic-terms';
 import { ReputationLabel } from '../ratings/reputation-label';
 import { TripSafetyLink } from '../safety/trip-safety-link';
 import { useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
-import { Link } from 'expo-router';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ReservationView,
@@ -359,9 +359,11 @@ function ScheduledActions({ trip }: { trip: TripSummary }) {
 export function TripCard({
   trip,
   operation = false,
+  showRoutePreview = true,
 }: {
   trip: TripSummary;
   operation?: boolean;
+  showRoutePreview?: boolean;
 }) {
   const client = useQueryClient();
   const [expanded, setExpanded] = useState(operation);
@@ -483,9 +485,13 @@ export function TripCard({
       {trip.itinerary ? (
         <Button
           title={
-            expanded
-              ? 'Ocultar detalles del viaje'
-              : 'Ver recorrido y participantes'
+            showRoutePreview
+              ? expanded
+                ? 'Ocultar detalles del viaje'
+                : 'Ver recorrido y participantes'
+              : expanded
+                ? 'Ocultar participantes y propuestas'
+                : 'Ver participantes y propuestas'
           }
           secondary
           onPress={() => setExpanded(!expanded)}
@@ -504,7 +510,7 @@ export function TripCard({
       )}
       {expanded && trip.itinerary && (
         <>
-          <RoutePreview {...trip.itinerary} />
+          {showRoutePreview && <RoutePreview {...trip.itinerary} />}
           <DriverParticipants trip={trip} />
           <DriverPickupProposals trip={trip} />
         </>

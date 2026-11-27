@@ -1,5 +1,6 @@
+import { Text, View } from '../../theme/primitives';
 import type { CancellationReason } from '@ruteam/contracts';
-import { Text, View } from 'react-native';
+
 import { Choice } from './itinerary-form';
 import { formStyles as s } from '../../components/ui/protected-page';
 

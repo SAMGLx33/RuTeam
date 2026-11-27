@@ -1,7 +1,8 @@
+import { Link, Text, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Link } from 'expo-router';
+
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Text, View } from 'react-native';
+
 import type {
   IncidentTripContext,
   PersonalIncidentsPage,

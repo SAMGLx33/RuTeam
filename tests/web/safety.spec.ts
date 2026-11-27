@@ -35,7 +35,11 @@ test('seguridad del viaje activo comparte contexto, resuelve ubicación voluntar
   const tileRequests: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('request', (request) => {
-    if (request.url().startsWith('https://tiles.ruteam.invalid/'))
+    // Track the private safety view. The city overview on Home loads public tiles.
+    if (
+      request.url().startsWith('https://tiles.ruteam.invalid/') &&
+      new URL(request.frame().url()).pathname.startsWith('/safety/')
+    )
       tileRequests.push(request.url());
     if (request.url().endsWith('/location') && request.method() === 'POST')
       locationWrites.push(request.method());

@@ -1,70 +1,70 @@
-import { Link, Redirect, usePathname, type Href } from 'expo-router';
+import { Redirect, usePathname, useRouter } from 'expo-router';
 import {
-  ActivityIndicator,
-  ScrollView,
+  ScrollView as NativeScrollView,
   StyleSheet,
-  Text,
-  View,
   useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ReactNode, RefObject } from 'react';
-import type { Account } from '@ruteam/contracts';
+import type { NotificationPage } from '@ruteam/contracts';
+import { useQuery } from '@tanstack/react-query';
 import { useSession } from '../../providers/session-provider';
-import { colors } from '../../theme/tokens';
+import { api } from '../../services/api/client';
+import {
+  breakpoints,
+  colors,
+  radii,
+  spacing,
+  typography,
+} from '../../theme/tokens';
+import {
+  ActivityIndicator,
+  Link,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  View,
+} from '../../theme/primitives';
+import { AppNavigation, Brand, initials } from '../navigation/app-navigation';
+import { Icon } from './icon';
+import { IconButton } from './button';
 
-interface NavigationItem {
-  href: Href;
-  title: string;
-  compact?: string;
-}
-
-function navigation(user: Account): NavigationItem[] {
-  return [
-    { href: '/', title: 'Inicio' },
-    {
-      href: '/available-trips',
-      title: 'Viajes disponibles',
-      compact: 'Viajes',
-    },
-    {
-      href: '/my-reservations',
-      title: 'Mis participaciones',
-      compact: 'Participaciones',
-    },
-    ...(user.capabilities.driver
-      ? [{ href: '/publish', title: 'Publicar viaje' } as const]
-      : []),
-    ...(user.capabilities.driverAccess
-      ? [{ href: '/my-trips', title: 'Mis viajes publicados' } as const]
-      : []),
-    { href: '/notifications', title: 'Notificaciones', compact: 'Avisos' },
-    { href: '/chat', title: 'Mensajes' },
-    { href: '/profile', title: 'Perfil' },
-  ];
-}
+const mainRoutes = ['/', '/available-trips', '/activity', '/chat', '/profile'];
 
 export function ProtectedPage({
   title,
   children,
   requires,
   allowOnboarding = false,
+  compactTitle = false,
   scrollRef,
 }: {
   title: string;
   children: ReactNode;
   requires?: 'driver' | 'driverAccess';
   allowOnboarding?: boolean;
-  scrollRef?: RefObject<ScrollView | null>;
+  compactTitle?: boolean;
+  scrollRef?: RefObject<NativeScrollView | null>;
 }) {
   const session = useSession();
+  const router = useRouter();
   const path = usePathname();
   const { width } = useWindowDimensions();
-  const wide = width >= 900;
+  const wide = width >= breakpoints.sidebar;
   const user = session.user;
+  const unlocked = !!user?.capabilities.passenger && user.onboarding.completed;
+  const notices = useQuery({
+    queryKey: ['notifications', user?.id],
+    enabled: unlocked,
+    queryFn: () => api<NotificationPage>('/notifications'),
+    refetchInterval: 30000,
+  });
 
   if (session.loading)
-    return <ActivityIndicator accessibilityLabel="Consultando sesión" />;
+    return (
+      <SafeAreaView style={styles.loading}>
+        <ActivityIndicator accessibilityLabel="Consultando sesión" />
+      </SafeAreaView>
+    );
   if (!user) return <Redirect href="/" />;
   if (!user.capabilities.passenger) return <Redirect href="/verify-email" />;
   if (!user.onboarding.completed && !allowOnboarding)
@@ -72,70 +72,79 @@ export function ProtectedPage({
   if (requires && !user.capabilities[requires])
     return <Redirect href="/profile" />;
 
-  const inOnboarding = !user.onboarding.completed;
-  const items = navigation(user);
-  const navLinks = (compact: boolean) =>
-    items
-      .filter(
-        (item) =>
-          !compact ||
-          !['/publish', '/my-trips', '/chat'].includes(String(item.href)),
-      )
-      .map((item) => {
-        const current =
-          path === item.href ||
-          (item.href === '/chat' && path.startsWith('/chat/')) ||
-          (item.href === '/available-trips' &&
-            (path === '/search-trips' || path.startsWith('/trip/')));
-        return (
-          <Link
-            key={String(item.href)}
-            href={item.href}
-            aria-current={current ? 'page' : undefined}
-            style={[
-              styles.link,
-              compact && styles.compactLink,
-              current && styles.selected,
-            ]}
-          >
-            {compact ? (item.compact ?? item.title) : item.title}
-          </Link>
-        );
-      });
+  const unread =
+    notices.data?.items.filter(({ readAt }) => !readAt).length ?? 0;
+  const goBack = () =>
+    router.canGoBack() ? router.back() : router.replace('/');
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={[styles.frame, wide && styles.horizontal]}>
-        {wide && !inOnboarding && (
-          <View style={styles.sidebar}>
-            <Link href="/" style={styles.brand}>
-              RuTeam
-            </Link>
-            <View
-              role="navigation"
-              accessibilityLabel="Navegación principal"
-              style={styles.nav}
-            >
-              {navLinks(false)}
-            </View>
-          </View>
-        )}
+        {wide && unlocked && <AppNavigation wide />}
         <View style={styles.main}>
-          {(!wide || inOnboarding) && (
-            <View style={styles.top}>
-              <Text style={styles.brand}>RuTeam</Text>
+          <View style={[styles.header, wide && styles.headerWide]}>
+            <View style={styles.headerLeft}>
+              {unlocked && !mainRoutes.includes(path) && (
+                <IconButton label="Volver" icon="arrow-left" onPress={goBack} />
+              )}
+              {wide && unlocked ? (
+                <Text role="heading" aria-level={1} style={styles.headerTitle}>
+                  {title}
+                </Text>
+              ) : (
+                <>
+                  <Brand small />
+                  {compactTitle && (
+                    <Text
+                      role="heading"
+                      aria-level={1}
+                      style={styles.compactTitle}
+                    >
+                      {title}
+                    </Text>
+                  )}
+                </>
+              )}
             </View>
-          )}
+            {unlocked && (
+              <View style={styles.headerTools}>
+                <Link
+                  href="/notifications"
+                  accessibilityLabel={
+                    unread
+                      ? `Notificaciones, ${unread} sin leer`
+                      : 'Notificaciones'
+                  }
+                  style={styles.utility}
+                >
+                  <Icon name="bell" />
+                  {unread > 0 && <Text style={styles.unread}>{unread}</Text>}
+                </Link>
+                {wide && (
+                  <Link
+                    href="/profile"
+                    accessibilityLabel="Abrir mi perfil"
+                    style={styles.avatar}
+                  >
+                    {initials(user.profile.displayName)}
+                  </Link>
+                )}
+              </View>
+            )}
+          </View>
           <ScrollView
             ref={scrollRef}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.page}
+            contentContainerStyle={[styles.page, wide && styles.pageWide]}
           >
-            {inOnboarding && (
+            {!unlocked && (
               <Link href="/onboarding" style={formStyles.link}>
                 Volver a la incorporación
               </Link>
             )}
+            {(!wide || !unlocked) && !compactTitle && (
+              <Text role="heading" aria-level={1} style={styles.title}>
+                {title}
             <Text role="heading" aria-level={1} style={styles.title}>
               {title}
             </Text>
@@ -152,15 +161,7 @@ export function ProtectedPage({
             {children}
           </ScrollView>
         </View>
-        {!wide && !inOnboarding && (
-          <View
-            role="navigation"
-            accessibilityLabel="Navegación principal"
-            style={styles.bottom}
-          >
-            {navLinks(true)}
-          </View>
-        )}
+        {!wide && unlocked && <AppNavigation wide={false} />}
       </View>
     </SafeAreaView>
   );
@@ -168,97 +169,121 @@ export function ProtectedPage({
 
 export const formStyles = StyleSheet.create({
   section: {
-    gap: 14,
+    gap: 12,
     padding: 18,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: radii.panel,
     backgroundColor: colors.surface,
   },
-  title: { color: colors.ink, fontSize: 22, fontWeight: '700' },
-  text: { color: colors.muted, fontSize: 16, lineHeight: 24 },
-  error: { color: colors.danger, fontSize: 16, lineHeight: 23 },
+  title: {
+    color: colors.ink,
+    fontSize: typography.section,
+    letterSpacing: -0.35,
+    fontWeight: '700',
+  },
+  text: { color: colors.muted, fontSize: typography.body, lineHeight: 22 },
+  error: { color: colors.danger, fontSize: typography.body, lineHeight: 22 },
   choice: {
-    padding: 13,
+    padding: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 8,
+    borderRadius: radii.control,
     minHeight: 44,
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
   },
   selected: { backgroundColor: colors.selected, borderColor: colors.primary },
   link: {
     color: colors.primary,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     paddingVertical: 10,
+    minHeight: 42,
   },
 });
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
   frame: { flex: 1 },
   horizontal: { flexDirection: 'row' },
-  sidebar: {
-    width: 239,
-    borderRightWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 18,
-    paddingVertical: 28,
-    gap: 34,
-  },
-  brand: {
-    color: colors.dark,
-    fontSize: 26,
-    fontWeight: '900',
-    letterSpacing: -0.8,
-  },
-  top: {
-    minHeight: 52,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
+  main: { flex: 1, minWidth: 0 },
+  header: {
+    minHeight: 59,
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderColor: colors.border,
   },
-  nav: { gap: 6 },
-  link: {
-    color: colors.muted,
-    fontWeight: '700',
-    borderRadius: 8,
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  compactLink: {
-    fontSize: 12,
-    textAlign: 'center',
-    paddingHorizontal: 3,
-    flex: 1,
-  },
-  selected: { backgroundColor: colors.selected, color: colors.dark },
-  bottom: {
+  headerWide: { minHeight: 74, paddingHorizontal: spacing.xxl },
+  headerLeft: {
     flexDirection: 'row',
-    minHeight: 56,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 3,
     alignItems: 'center',
+    gap: 12,
+    flexShrink: 1,
   },
-  main: { flex: 1, minWidth: 0 },
+  compactTitle: {
+    color: colors.muted,
+    fontSize: 14,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  headerTitle: {
+    color: colors.ink,
+    fontSize: 25,
+    letterSpacing: -0.65,
+    fontWeight: '800',
+    flexShrink: 1,
+  },
+  headerTools: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  utility: {
+    minWidth: 44,
+    minHeight: 44,
+    padding: 10,
+    textAlign: 'center',
+    color: colors.ink,
+  },
+  unread: {
+    backgroundColor: colors.selected,
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  avatar: {
+    backgroundColor: colors.selected,
+    color: colors.primary,
+    fontWeight: '800',
+    borderRadius: 22,
+    minWidth: 44,
+    minHeight: 44,
+    textAlign: 'center',
+    padding: 12,
+  },
   page: {
     width: '100%',
-    maxWidth: 1100,
     alignSelf: 'center',
-    padding: 18,
-    gap: 18,
-    paddingBottom: 42,
+    padding: spacing.lg,
+    gap: spacing.lg,
+    paddingBottom: 34,
+    maxWidth: 1460,
+    flexGrow: 1,
   },
+  pageWide: { padding: spacing.xxl, gap: spacing.xl, paddingBottom: 48 },
   title: {
     color: colors.ink,
-    fontSize: 32,
+    fontSize: typography.title,
+    lineHeight: 37,
     fontWeight: '800',
-    letterSpacing: -0.7,
+    letterSpacing: -0.85,
   },
 });

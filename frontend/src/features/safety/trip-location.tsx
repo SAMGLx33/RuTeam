@@ -1,3 +1,17 @@
+import { Text, View } from '../../theme/primitives';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AppState, Platform, Share } from 'react-native';
+import {
+  Accuracy,
+  getCurrentPositionAsync,
+  requestForegroundPermissionsAsync,
+} from 'expo-location';
+import type {
+  TripDriverLocationInput,
+  TripTrackingView,
+} from '@ruteam/contracts';
 import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Platform, Share, Text, View } from 'react-native';

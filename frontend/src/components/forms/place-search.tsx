@@ -1,12 +1,6 @@
+import { Pressable, Text, TextInput, View } from '../../theme/primitives';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Linking,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 import type { GeocodedPlace, PlaceSearchResponse } from '@ruteam/contracts';
 import { Button } from '../ui/button';
 import { accountStyles } from '../ui/account-page';
