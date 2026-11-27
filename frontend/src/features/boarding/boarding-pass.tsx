@@ -1,7 +1,14 @@
+import { Text, View } from '../../theme/primitives';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
+import {
+  AppState,
+  Platform,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native';
+import { Icon } from '../../components/ui/icon';
 import qrcode from 'qrcode-generator';
 import type { BoardingPass, ReservationView } from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';
@@ -30,7 +37,8 @@ function BoardingQr({ code }: { code: string }) {
     }
     return { count, runs };
   }, [code]);
-  const cell = 5;
+  const { width } = useWindowDimensions();
+  const cell = Math.max(2, Math.min(5, Math.floor((width - 76) / (count + 8))));
   const size = (count + 8) * cell;
   return (
     <View
@@ -62,11 +70,15 @@ export function PassengerBoardingPass({
   reservationId: string;
 }) {
   const [pass, setPass] = useState<BoardingPass | null>(null);
+  const [expired, setExpired] = useState(false);
   const expiresAt = pass?.expiresAt;
   useEffect(() => {
     if (!expiresAt) return;
     const close = setTimeout(
-      () => setPass(null),
+      () => {
+        setPass(null);
+        setExpired(true);
+      },
       Math.max(0, Date.parse(expiresAt) - Date.now()),
     );
     return () => clearTimeout(close);
@@ -76,16 +88,34 @@ export function PassengerBoardingPass({
       api<BoardingPass>(`/participations/${reservationId}/boarding-pass`, {
         method: 'POST',
       }),
-    onSuccess: setPass,
+    onSuccess: (value) => {
+      setExpired(false);
+      setPass(value);
+    },
   });
   return (
     <View style={s.section}>
+      <View style={styles.passHeading}>
+        <Icon name="grid" size={19} />
+        <Text style={s.title}>Pase de abordaje</Text>
+      </View>
+      {expired && (
+        <Text accessibilityLiveRegion="polite" style={s.text}>
+          El pase venció. Genera uno nuevo al llegar.
+        </Text>
+      )}
       {pass ? (
         <>
           <BoardingQr code={pass.code} />
           <Text style={s.text}>
-            Muéstralo al conductor en tu recogida. Es personal y dura dos
-            minutos.
+            Muéstralo al conductor en tu recogida. Válido hasta{' '}
+            {new Date(pass.expiresAt).toLocaleTimeString('es-CO', {
+              timeZone: 'America/Bogota',
+              hour: 'numeric',
+              minute: '2-digit',
+              second: '2-digit',
+            })}{' '}
+            · Colombia.
           </Text>
           <Button
             title="Ocultar QR"
@@ -100,7 +130,7 @@ export function PassengerBoardingPass({
         <Button
           title="Mostrar QR de abordaje"
           secondary
-          disabled={issue.isPending}
+          loading={issue.isPending}
           onPress={() => issue.mutate()}
         />
       )}
@@ -205,6 +235,7 @@ export function DriverBoardingScanner({ tripId }: { tripId: string }) {
 }
 
 const styles = StyleSheet.create({
+  passHeading: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   qr: { backgroundColor: '#fff', alignSelf: 'center', position: 'relative' },
   pixelRun: { backgroundColor: '#000', position: 'absolute' },
 });

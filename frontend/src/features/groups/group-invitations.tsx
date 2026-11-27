@@ -1,7 +1,8 @@
+import { Link, Text, View } from '../../theme/primitives';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+
+import { StyleSheet } from 'react-native';
 import type { CreatedTripGroup, CreateTripGroupInput } from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';
 import { formStyles as s } from '../../components/ui/protected-page';

@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { cancellationLabel, CancellationReasons } from './cancellation-reasons';
-import { Text, View } from 'react-native';
 import { EconomicTerms } from '../expenses/economic-terms';
 import { TripSafetyLink } from '../safety/trip-safety-link';
-import { Link } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CancellationReason,
@@ -17,8 +15,10 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
+import { Link, Text, View } from '../../theme/primitives';
 import { PassengerBoardingPass } from '../boarding/boarding-pass';
 import { travelTime, tripStatusLabel } from './route-preview';
+import { TripSectionTitle, tripSurfaceStyles as ui } from './trip-surface';
 
 const statusLabel: Record<ReservationStatus, string> = {
   PENDING: 'Solicitud histórica pendiente (no confirmada)',
@@ -34,10 +34,20 @@ function participationLabel(item: ReservationView): string {
   return item.boardedAt ? 'Abordada' : statusLabel[item.status];
 }
 
-export function ReservationSummary({ item }: { item: ReservationView }) {
+export function ReservationSummary({
+  item,
+  emphasized = false,
+}: {
+  item: ReservationView;
+  emphasized?: boolean;
+}) {
   return (
     <>
-      <Text style={s.title}>
+      <Text
+        role={emphasized ? 'heading' : undefined}
+        aria-level={emphasized ? 3 : undefined}
+        style={emphasized ? ui.heading : s.title}
+      >
         {item.pickup.label} → {item.dropoff.label}
       </Text>
       <Text style={s.text}>
@@ -50,7 +60,7 @@ export function ReservationSummary({ item }: { item: ReservationView }) {
           {item.vehicle.color.toLowerCase()}
         </Text>
       )}
-      <Text style={s.text}>
+      <Text style={[s.text, emphasized && ui.emphasized]}>
         {participationLabel(item)} · Viaje {tripStatusLabel[item.tripStatus]}
       </Text>
       <Text style={s.text}>
@@ -92,23 +102,151 @@ export function ReservationsScreen() {
       void client.invalidateQueries({ queryKey: ['trip-detail', item.tripId] });
     },
   });
+  const upcoming: ReservationView[] = [];
+  const history: ReservationView[] = [];
+  for (const item of list.data ?? []) {
+    const upcomingTrip =
+      item.tripStatus === 'PROGRAMADO' || item.tripStatus === 'EN_CURSO';
+    const currentParticipation = item.status === 'CONFIRMED' && !item.noShowAt;
+    (upcomingTrip && currentParticipation ? upcoming : history).push(item);
+  }
+  const renderItem = (item: ReservationView) => (
+    <View key={item.id} style={ui.panel} testID={`reservation-${item.id}`}>
+      <ReservationSummary item={item} emphasized />
+      <Link
+        href={{
+          pathname: '/trip-operation/[tripId]',
+          params: { tripId: item.tripId },
+        }}
+        style={s.link}
+      >
+        Seguimiento y resumen
+      </Link>
+      {item.withdrawalReason && (
+        <Text style={s.text}>
+          Motivo · {cancellationLabel[item.withdrawalReason]}
+        </Text>
+      )}
+      <View style={ui.subdued}>
+        <EconomicTerms terms={item.economics} />
+      </View>
+      {(item.tripStatus === 'COMPLETADO' ||
+        item.tripStatus === 'INTERRUMPIDO') &&
+        item.boardedAt &&
+        !item.noShowAt && (
+          <>
+            <Link
+              href={{
+                pathname: '/incidents/[tripId]',
+                params: { tripId: item.tripId },
+              }}
+              style={s.link}
+            >
+              Incidencias privadas
+            </Link>
+            {!!item.economics?.suggestedContributionCop &&
+              item.isRequester &&
+              item.quantity === 1 && (
+                <Link
+                  href={{
+                    pathname: '/compensations/[id]',
+                    params: { id: item.id },
+                  }}
+                  style={s.link}
+                >
+                  Ver compensación
+                </Link>
+              )}
+          </>
+        )}
+      {item.tripStatus === 'EN_CURSO' &&
+        item.status === 'CONFIRMED' &&
+        !item.noShowAt && <TripSafetyLink tripId={item.tripId} />}
+      {item.tripStatus === 'COMPLETADO' &&
+        item.status === 'CONFIRMED' &&
+        item.boardedAt &&
+        !item.noShowAt && (
+          <Link
+            href={{
+              pathname: '/ratings/[tripId]',
+              params: { tripId: item.tripId },
+            }}
+            style={s.link}
+          >
+            Calificar al conductor
+          </Link>
+        )}
+      {item.isRequester &&
+        item.status === 'CONFIRMED' &&
+        item.quantity === 1 &&
+        !item.boardedAt &&
+        !item.noShowAt &&
+        (item.tripStatus === 'PROGRAMADO' ||
+          item.tripStatus === 'EN_CURSO') && (
+          <PassengerBoardingPass reservationId={item.id} />
+        )}
+      {item.canCancel && (
+        <View style={[ui.facts, ui.separated]}>
+          {withdrawing === item.id ? (
+            <>
+              <CancellationReasons reason={reason} choose={setReason} />
+              <Button
+                title="Confirmar retiro"
+                disabled={cancel.isPending}
+                onPress={() => cancel.mutate(item.id)}
+              />
+              <Button
+                title="Conservar mi plaza"
+                secondary
+                disabled={cancel.isPending}
+                onPress={() => {
+                  setWithdrawing(undefined);
+                  setReason(undefined);
+                }}
+              />
+            </>
+          ) : (
+            <Button
+              title={
+                item.status === 'PENDING'
+                  ? 'Retirar solicitud histórica'
+                  : 'Cancelar participación'
+              }
+              secondary
+              disabled={cancel.isPending}
+              onPress={() => {
+                setWithdrawing(item.id);
+                setReason(undefined);
+              }}
+            />
+          )}
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <ProtectedPage title="Mis participaciones">
-      <Link href="/economic-history" style={s.link}>
-        Historial económico de mis participaciones
-      </Link>
-      <Link href="/search-trips" style={s.link}>
-        Buscar viajes
-      </Link>
-      <Link href="/groups" style={s.link}>
-        Mis grupos
-      </Link>
-      <Text style={s.text}>
-        Aquí puedes consultar tu plaza individual o confirmada en grupo.
-        Retirarte de un viaje futuro antes de abordar libera la plaza y conserva
-        tu historial.
-      </Text>
-      {list.isPending && <Text>Consultando tus participaciones…</Text>}
+      <View style={ui.panel}>
+        <Text style={s.text}>
+          Consulta tus plazas individuales y en grupo. Retirarte de un viaje
+          futuro antes de abordar libera tu plaza y conserva tu historial.
+        </Text>
+        <View style={ui.row}>
+          <Link href="/search-trips" style={s.link}>
+            Buscar viajes
+          </Link>
+          <Link href="/groups" style={s.link}>
+            Mis grupos
+          </Link>
+          <Link href="/economic-history" style={s.link}>
+            Historial económico de mis participaciones
+          </Link>
+        </View>
+      </View>
+      {list.isPending && (
+        <Text style={s.text}>Consultando tus participaciones…</Text>
+      )}
       {list.error && (
         <Text accessibilityRole="alert" style={s.error}>
           {list.error.message}
@@ -119,116 +257,23 @@ export function ReservationsScreen() {
           {cancel.error.message}
         </Text>
       )}
-      {list.data?.length === 0 && <Text>Aún no tienes participaciones.</Text>}
-      {list.data?.map((item) => (
-        <View key={item.id} style={s.section}>
-          <ReservationSummary item={item} />
-          <Link
-            href={{
-              pathname: '/trip-operation/[tripId]',
-              params: { tripId: item.tripId },
-            }}
-            style={s.link}
-          >
-            Seguimiento y resumen
-          </Link>
-          {item.withdrawalReason && (
-            <Text style={s.text}>
-              Motivo · {cancellationLabel[item.withdrawalReason]}
-            </Text>
-          )}
-          <EconomicTerms terms={item.economics} />
-          {(item.tripStatus === 'COMPLETADO' ||
-            item.tripStatus === 'INTERRUMPIDO') &&
-            item.boardedAt &&
-            !item.noShowAt && (
-              <>
-                <Link
-                  href={{
-                    pathname: '/incidents/[tripId]',
-                    params: { tripId: item.tripId },
-                  }}
-                  style={s.link}
-                >
-                  Incidencias privadas
-                </Link>
-                {!!item.economics?.suggestedContributionCop &&
-                  item.isRequester &&
-                  item.quantity === 1 && (
-                    <Link
-                      href={{
-                        pathname: '/compensations/[id]',
-                        params: { id: item.id },
-                      }}
-                      style={s.link}
-                    >
-                      Ver compensación
-                    </Link>
-                  )}
-              </>
-            )}
-          {item.tripStatus === 'EN_CURSO' &&
-            item.status === 'CONFIRMED' &&
-            !item.noShowAt && <TripSafetyLink tripId={item.tripId} />}
-          {item.tripStatus === 'COMPLETADO' &&
-            item.status === 'CONFIRMED' &&
-            item.boardedAt &&
-            !item.noShowAt && (
-              <Link
-                href={{
-                  pathname: '/ratings/[tripId]',
-                  params: { tripId: item.tripId },
-                }}
-                style={s.link}
-              >
-                Calificar al conductor
-              </Link>
-            )}
-          {item.isRequester &&
-            item.status === 'CONFIRMED' &&
-            item.quantity === 1 &&
-            !item.boardedAt &&
-            !item.noShowAt &&
-            (item.tripStatus === 'PROGRAMADO' ||
-              item.tripStatus === 'EN_CURSO') && (
-              <PassengerBoardingPass reservationId={item.id} />
-            )}
-          {item.canCancel &&
-            (withdrawing === item.id ? (
-              <>
-                <CancellationReasons reason={reason} choose={setReason} />
-                <Button
-                  title="Confirmar retiro"
-                  disabled={cancel.isPending}
-                  onPress={() => cancel.mutate(item.id)}
-                />
-                <Button
-                  title="Conservar mi plaza"
-                  secondary
-                  disabled={cancel.isPending}
-                  onPress={() => {
-                    setWithdrawing(undefined);
-                    setReason(undefined);
-                  }}
-                />
-              </>
-            ) : (
-              <Button
-                title={
-                  item.status === 'PENDING'
-                    ? 'Retirar solicitud histórica'
-                    : 'Cancelar participación'
-                }
-                secondary
-                disabled={cancel.isPending}
-                onPress={() => {
-                  setWithdrawing(item.id);
-                  setReason(undefined);
-                }}
-              />
-            ))}
+      {list.data?.length === 0 && (
+        <View style={ui.panel}>
+          <Text style={s.text}>Aún no tienes participaciones.</Text>
         </View>
-      ))}
+      )}
+      {upcoming.length > 0 && (
+        <View style={ui.facts} testID="reservations-upcoming">
+          <TripSectionTitle>Próximas y en curso</TripSectionTitle>
+          {upcoming.map(renderItem)}
+        </View>
+      )}
+      {history.length > 0 && (
+        <View style={ui.facts} testID="reservations-history">
+          <TripSectionTitle>Historial de participaciones</TripSectionTitle>
+          {history.map(renderItem)}
+        </View>
+      )}
     </ProtectedPage>
   );
 }

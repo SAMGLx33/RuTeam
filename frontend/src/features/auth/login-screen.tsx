@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { Link } from 'expo-router';
-import { Text, TextInput, View, type TextInputProps } from 'react-native';
+import { StyleSheet, type TextInputProps } from 'react-native';
+import { Link, Text, TextInput, View } from '../../theme/primitives';
+import { IconButton } from '../../components/ui/button';
 import {
   AccountPage,
   accountStyles as s,
@@ -12,12 +13,31 @@ import type { UsagePreference } from '@ruteam/contracts';
 
 export function AccountField({
   label,
+  secureTextEntry,
   ...props
 }: TextInputProps & { label: string }) {
+  const [visible, setVisible] = useState(false);
   return (
     <View style={s.field}>
       <Text style={s.label}>{label}</Text>
-      <TextInput {...props} accessibilityLabel={label} style={s.input} />
+      <View style={styles.inputRow}>
+        <TextInput
+          {...props}
+          accessibilityLabel={label}
+          secureTextEntry={secureTextEntry && !visible}
+          autoCapitalize={secureTextEntry ? 'none' : props.autoCapitalize}
+          autoCorrect={secureTextEntry ? false : props.autoCorrect}
+          spellCheck={secureTextEntry ? false : props.spellCheck}
+          style={[s.input, styles.inputGrow]}
+        />
+        {secureTextEntry && (
+          <IconButton
+            label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            icon={visible ? 'eye-off' : 'eye'}
+            onPress={() => setVisible(!visible)}
+          />
+        )}
+      </View>
     </View>
   );
 }
@@ -95,7 +115,7 @@ export function LoginScreen() {
   const [password, setPassword] = useState('');
   const action = useAccountAction();
   return (
-    <AccountPage title="Iniciar sesión">
+    <AccountPage title="Iniciar sesión" intro>
       <AccountField
         label="Correo institucional"
         autoCapitalize="none"
@@ -115,7 +135,8 @@ export function LoginScreen() {
       <AccountFeedback error={action.error ?? session.error} />
       <Button
         title={action.busy ? 'Iniciando sesión…' : 'Iniciar sesión'}
-        disabled={action.busy || !email.trim() || !password}
+        loading={action.busy}
+        disabled={!email.trim() || !password}
         onPress={() => {
           void action.run(() =>
             session.signIn({ email: email.trim(), password }),
@@ -220,3 +241,8 @@ export function RegisterScreen() {
     </AccountPage>
   );
 }
+
+const styles = StyleSheet.create({
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  inputGrow: { flex: 1, minWidth: 0 },
+});

@@ -1,6 +1,7 @@
+import { Text, TextInput, View } from '../../theme/primitives';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Switch } from 'react-native';
 import type {
   CampusMeetingPoint,
   MobilityPreferenceInput,

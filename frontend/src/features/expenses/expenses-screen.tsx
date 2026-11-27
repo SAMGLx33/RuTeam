@@ -1,7 +1,8 @@
+import { Link, Text, TextInput, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import type {
   TripExpenseDetails,
   TripExpenseEstimate,

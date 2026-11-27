@@ -1,12 +1,13 @@
+import { Link, Pressable, Text, TextInput, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import {
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import type {
   RatingTarget,
   SubmittedRating,

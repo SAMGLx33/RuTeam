@@ -1,5 +1,6 @@
+import { Text } from '../../theme/primitives';
 import type { ComponentType } from 'react';
-import { Text } from 'react-native';
+
 import { formStyles as s } from '../../components/ui/protected-page';
 
 export interface BoardingCameraProps {

@@ -1,8 +1,11 @@
+import { Link, Text, View } from '../../theme/primitives';
 import { EnvironmentPanel } from './environment-panel';
 import { useState } from 'react';
-import { Link } from 'expo-router';
+import { StyleSheet } from 'react-native';
+import { colors, radii } from '../../theme/tokens';
+
 import { useQuery } from '@tanstack/react-query';
-import { Text, View } from 'react-native';
+
 import type { MobilityStatistics, MobilityTotals } from '@ruteam/contracts';
 import {
   ProtectedPage,
@@ -63,6 +66,61 @@ function Totals({ value }: { value: MobilityTotals }) {
   );
 }
 
+function MonthlyTravel({ rows }: { rows: MobilityStatistics['monthly'] }) {
+  const maximum = Math.max(1, ...rows.map(({ sharedTrips }) => sharedTrips));
+  return (
+    <View style={s.section}>
+      <Text role="heading" aria-level={2} style={s.title}>
+        Desplazamientos compartidos por mes
+      </Text>
+      {rows.map(({ period, sharedTrips }) => {
+        const month = new Intl.DateTimeFormat('es-CO', {
+          month: 'short',
+          year: 'numeric',
+          timeZone: 'UTC',
+        }).format(new Date(period + '-01T00:00:00Z'));
+        return (
+          <View key={period} style={chart.row}>
+            <Text style={[s.text, chart.label]}>{month}</Text>
+            <View style={chart.track} accessible={false}>
+              <View
+                style={[
+                  chart.bar,
+                  { width: `${(100 * sharedTrips) / maximum}%` },
+                ]}
+              />
+            </View>
+            <Text style={chart.value}>{sharedTrips}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const chart = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  label: { width: 83 },
+  track: {
+    flex: 1,
+    borderRadius: radii.control,
+    height: 10,
+    backgroundColor: colors.selected,
+    overflow: 'hidden',
+  },
+  bar: {
+    height: '100%',
+    borderRadius: radii.control,
+    backgroundColor: colors.primary,
+  },
+  value: {
+    minWidth: 26,
+    textAlign: 'right',
+    color: colors.ink,
+    fontWeight: '700',
+  },
+});
+
 export function MobilityStatisticsScreen() {
   const { user } = useSession();
   const [months, setMonths] = useState(12);
@@ -104,6 +162,9 @@ export function MobilityStatisticsScreen() {
           </>
         )}
       </View>
+      {query.data && query.data.monthly.length > 0 && (
+        <MonthlyTravel rows={query.data.monthly} />
+      )}
       {query.data && <EnvironmentPanel value={query.data.environmental} />}
       {query.data?.monthly.map((row) => (
         <View key={row.period} style={s.section}>

@@ -159,3 +159,12 @@ En `task/release-readiness` sobre `f7013ea` se añadieron siete incrementos de t
 ## Evolución del 26/11/2026
 
 RF-019 pasó de infraestructura a cálculo de operación y atribución. Se incorporaron SSE, seguimiento, contexto posviaje, agenda, actividad, reutilización y preferencias de notificación. Los [relevos por incremento](../handoffs/README.md#evolución-ambiental-y-comunicación) registran implementación y evidencia. La entrega en dispositivo y proveedores reales sigue una validación separada.
+
+## 27/11/2026 · Rediseño de navegación, mapas y frontend
+
+Rama local `task/frontend-ux-redesign` desde feature `2b69336`. Se aplicó una
+identidad común con tema persistente, navegación adaptable, mapa interactivo
+compartido, publicación guiada y pantallas de viaje/actividad/mensajes reorganizadas.
+Conserva API y datos locales, con cartografía optativa y puntos de integración para
+el otro frente. Revisar el [inventario de integración](FRONTEND_UX_INTEGRATION.md)
+y el [handoff](../handoffs/2026-11-27_frontend-ux-redesign.md).

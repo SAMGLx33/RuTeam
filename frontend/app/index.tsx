@@ -1,5 +1,6 @@
+import { ActivityIndicator } from '../src/theme/primitives';
 import { Redirect } from 'expo-router';
-import { ActivityIndicator } from 'react-native';
+
 import { useSession } from '../src/providers/session-provider';
 import { LoginScreen } from '../src/features/auth/login-screen';
 import { HomeScreen } from '../src/features/home/home-screen';

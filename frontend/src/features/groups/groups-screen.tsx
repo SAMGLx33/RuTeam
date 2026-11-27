@@ -1,8 +1,9 @@
+import { Link, Text, TextInput, View } from '../../theme/primitives';
 import { EconomicTerms } from '../expenses/economic-terms';
 import { useState } from 'react';
-import { Link } from 'expo-router';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import type {
   CreatedTripGroup,
   TripGroupPreview,

@@ -1,8 +1,8 @@
+import { Link, Text, View } from '../../theme/primitives';
 import { ReputationLabel } from '../ratings/reputation-label';
 import { EconomicTerms } from '../expenses/economic-terms';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
-import { Link } from 'expo-router';
+
 import { useForm, useWatch } from 'react-hook-form';
 import {
   useInfiniteQuery,

@@ -1,5 +1,6 @@
+import { Text, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Platform, Share, Text, View } from 'react-native';
+import { Platform, Share } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import type { IncidentExport, TripIncidentKind } from '@ruteam/contracts';
 import { api } from '../../services/api/client';

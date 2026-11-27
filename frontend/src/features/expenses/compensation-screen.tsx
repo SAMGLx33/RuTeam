@@ -1,7 +1,8 @@
+import { Text, View } from '../../theme/primitives';
 import { useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Text, View } from 'react-native';
+
 import type {
   CompensationAction,
   CompensationDetails,

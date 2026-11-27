@@ -92,6 +92,12 @@ test('el conductor gestiona una recurrencia y abre sus historiales desde la nave
     ).toBeVisible();
     await expect(page.getByLabel('Nombre de la recurrencia')).toHaveValue(name);
     await page.getByLabel('Hora Colombia (HH:mm)').fill('18:15');
+    const nextStep = page.getByRole('button', {
+      name: 'Continuar',
+      exact: true,
+    });
+    await nextStep.click();
+    await nextStep.click();
     await page.getByRole('button', { name: 'Revisar viaje' }).click();
     await page.getByRole('checkbox', { name: /Confirmo que la ruta/ }).click();
     await page.getByRole('button', { name: 'Guardar recurrencia' }).click();

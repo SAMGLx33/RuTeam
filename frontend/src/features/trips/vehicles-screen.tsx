@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { VehicleEnergyInput } from '@ruteam/contracts';
 import { EnergyFields, VehicleEnergyEditor } from '../mobility/vehicle-energy';
 import { useSession } from '../../providers/session-provider';
-import { Pressable, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Pressable, Text, View } from '../../theme/primitives';
 import { useForm, useWatch } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
@@ -17,6 +18,12 @@ import {
   ProtectedPage,
   formStyles as s,
 } from '../../components/ui/protected-page';
+import {
+  TripColumns,
+  TripSectionTitle,
+  tripSurfaceStyles as ui,
+} from './trip-surface';
+
 interface VehicleFormValues {
   plate: string;
   type: VehicleType;
@@ -58,15 +65,24 @@ function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
     },
   });
   return (
-    <View style={s.section}>
+    <View style={[ui.subdued, styles.vehicle]} testID={`vehicle-${vehicle.id}`}>
+      <View style={ui.row}>
+        <Text role="heading" aria-level={3} style={ui.heading}>
+          {vehicle.plate}
+        </Text>
+        <Text style={s.text}>{documentLabels[vehicle.verificationStatus]}</Text>
+      </View>
       <Text style={s.text}>
-        {vehicle.plate} · {vehicle.type === 'CAR' ? 'Automóvil' : 'Moto'} ·{' '}
-        {vehicle.passengerCapacity} plazas de pasajeros ·{' '}
-        {documentLabels[vehicle.verificationStatus]}
+        {vehicle.brand} · {vehicle.modelYear} · {vehicle.color} ·{' '}
+        {vehicle.type === 'CAR' ? 'Automóvil' : 'Moto'} ·{' '}
+        {vehicle.passengerCapacity}{' '}
+        {vehicle.passengerCapacity === 1
+          ? 'plaza de pasajero'
+          : 'plazas de pasajeros'}
       </Text>
       <Text style={s.text}>
         {vehicle.soatExpiresAt
-          ? `Vigencia declarada hasta ${new Date(vehicle.soatExpiresAt).toLocaleDateString('es-CO')}`
+          ? `Vigencia declarada hasta ${new Date(vehicle.soatExpiresAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`
           : 'Sin vigencia SOAT declarada'}
       </Text>
       <Field
@@ -80,10 +96,13 @@ function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
         </Text>
       )}
       {save.isSuccess && (
-        <Text>Vigencia declarada actualizada; no es verificación oficial.</Text>
+        <Text style={s.text} accessibilityLiveRegion="polite">
+          Vigencia declarada actualizada; no es verificación oficial.
+        </Text>
       )}
       <Button
         title={`Actualizar SOAT ${vehicle.plate}`}
+        secondary
         disabled={save.isPending}
         onPress={() => {
           void form.handleSubmit((values) => save.mutate(values))();
@@ -168,174 +187,226 @@ export function VehiclesScreen() {
       allowOnboarding
     >
       <Text style={s.text}>
-        Declara únicamente vehículos propios o con autorización de uso. La
-        vigencia declarada no acredita verificación oficial de licencia o SOAT.
-        Las pruebas de desarrollo sólo habilitan documentos sintéticos; la
-        verificación autorizada sigue pendiente.
+        Declara vehículos propios o con autorización de uso. Consulta el estado
+        de verificación de la licencia y el SOAT en cada registro.
       </Text>
-      <View style={s.section}>
-        <Text role="heading" aria-level={2} style={s.title}>
-          Mis vehículos
-        </Text>
-        {vehicles.isPending && <Text>Cargando vehículos…</Text>}
-        {vehicles.error && (
-          <Text accessibilityRole="alert" style={s.error}>
-            {vehicles.error.message}
-          </Text>
-        )}
-        {vehicles.data?.length === 0 && (
-          <Text style={s.text}>Aún no tienes vehículos.</Text>
-        )}
-        {vehicles.data?.map((vehicle) => (
-          <SoatRenewal key={vehicle.id} vehicle={vehicle} />
-        ))}
-      </View>
-      <View style={s.section}>
-        <Text role="heading" aria-level={2} style={s.title}>
-          Registrar vehículo
-        </Text>
-        {(['CAR', 'MOTORCYCLE'] as const).map((value) => (
-          <Pressable
-            key={value}
-            accessibilityRole="radio"
-            accessibilityLabel={value === 'CAR' ? 'Automóvil' : 'Motocicleta'}
-            accessibilityState={{ checked: type === value }}
-            onPress={() => {
-              form.setValue('type', value);
-              form.setValue('passengerCapacity', value === 'CAR' ? '3' : '1');
-            }}
-            style={[s.choice, type === value && s.selected]}
-          >
-            <Text>{value === 'CAR' ? 'Automóvil' : 'Motocicleta'}</Text>
-          </Pressable>
-        ))}
-        <Field control={form.control} name="plate" label="Placa" />
-        <Field control={form.control} name="brand" label="Marca" />
-        <Field control={form.control} name="modelYear" label="Año del modelo" />
-        <Field
-          control={form.control}
-          name="passengerCapacity"
-          label="Plazas de pasajeros (sin conductor)"
-        />
-        <Text style={s.text}>Color</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {catalog.data?.colors.map((color) => (
-            <Pressable
-              key={color}
-              accessibilityRole="radio"
-              accessibilityLabel={`Color ${color}`}
-              accessibilityState={{ checked: selectedColor === color }}
-              onPress={() => form.setValue('color', color)}
-              style={[s.choice, selectedColor === color && s.selected]}
-            >
-              <Text>{color}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Field
-          control={form.control}
-          name="soatExpiresAt"
-          label="Vencimiento SOAT (AAAA-MM-DD)"
-        />
-        {energy ? (
+      <TripColumns
+        main={
           <>
-            <EnergyFields value={energy} change={setEnergy} />
-            <Button
-              secondary
-              title="Continuar sin declarar energía"
-              onPress={() => setEnergy(undefined)}
-            />
+            <View style={ui.panel} testID="vehicle-list">
+              <TripSectionTitle>Mis vehículos</TripSectionTitle>
+              {vehicles.isPending && (
+                <Text style={s.text}>Cargando vehículos…</Text>
+              )}
+              {vehicles.error && (
+                <Text accessibilityRole="alert" style={s.error}>
+                  {vehicles.error.message}
+                </Text>
+              )}
+              {vehicles.data?.length === 0 && (
+                <Text style={s.text}>Aún no tienes vehículos.</Text>
+              )}
+              {vehicles.data?.map((vehicle) => (
+                <SoatRenewal key={vehicle.id} vehicle={vehicle} />
+              ))}
+            </View>
+            <View style={ui.panel} testID="vehicle-registration">
+              <TripSectionTitle>Registrar vehículo</TripSectionTitle>
+              <View style={ui.row}>
+                {(['CAR', 'MOTORCYCLE'] as const).map((value) => (
+                  <Pressable
+                    key={value}
+                    accessibilityRole="radio"
+                    accessibilityLabel={
+                      value === 'CAR' ? 'Automóvil' : 'Motocicleta'
+                    }
+                    accessibilityState={{ checked: type === value }}
+                    onPress={() => {
+                      form.setValue('type', value);
+                      form.setValue(
+                        'passengerCapacity',
+                        value === 'CAR' ? '3' : '1',
+                      );
+                    }}
+                    style={[s.choice, type === value && s.selected]}
+                  >
+                    <Text>{value === 'CAR' ? 'Automóvil' : 'Motocicleta'}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={styles.formRow}>
+                <View style={styles.formField}>
+                  <Field control={form.control} name="plate" label="Placa" />
+                </View>
+                <View style={styles.formField}>
+                  <Field control={form.control} name="brand" label="Marca" />
+                </View>
+                <View style={styles.formField}>
+                  <Field
+                    control={form.control}
+                    name="modelYear"
+                    label="Año del modelo"
+                  />
+                </View>
+                <View style={styles.formField}>
+                  <Field
+                    control={form.control}
+                    name="passengerCapacity"
+                    label="Plazas de pasajeros (sin conductor)"
+                  />
+                </View>
+              </View>
+              <Text style={[s.text, ui.emphasized]}>Color</Text>
+              {catalog.isPending && (
+                <Text style={s.text}>Cargando colores…</Text>
+              )}
+              {catalog.error && (
+                <Text accessibilityRole="alert" style={s.error}>
+                  {catalog.error.message}
+                </Text>
+              )}
+              <View style={ui.row}>
+                {catalog.data?.colors.map((color) => (
+                  <Pressable
+                    key={color}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`Color ${color}`}
+                    accessibilityState={{ checked: selectedColor === color }}
+                    onPress={() => form.setValue('color', color)}
+                    style={[s.choice, selectedColor === color && s.selected]}
+                  >
+                    <Text>{color}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Field
+                control={form.control}
+                name="soatExpiresAt"
+                label="Vencimiento SOAT (AAAA-MM-DD)"
+              />
+              {energy ? (
+                <>
+                  <EnergyFields value={energy} change={setEnergy} />
+                  <Button
+                    secondary
+                    title="Continuar sin declarar energía"
+                    onPress={() => setEnergy(undefined)}
+                  />
+                </>
+              ) : (
+                <Button
+                  secondary
+                  title="Añadir datos energéticos (opcional)"
+                  onPress={() =>
+                    setEnergy({ propulsion: 'COMBUSTION', source: 'OTHER' })
+                  }
+                />
+              )}
+              {save.error && (
+                <Text accessibilityRole="alert" style={s.error}>
+                  {save.error.message}
+                </Text>
+              )}
+              {save.isSuccess && (
+                <Text style={s.text} accessibilityLiveRegion="polite">
+                  Vehículo registrado con información declarada; no es
+                  verificación oficial.
+                </Text>
+              )}
+              <Button
+                title={save.isPending ? 'Registrando…' : 'Registrar vehículo'}
+                disabled={
+                  save.isPending ||
+                  (energy?.average !== undefined &&
+                    (!Number.isFinite(energy.average) ||
+                      energy.average < 0.01 ||
+                      energy.average > 300))
+                }
+                onPress={() => {
+                  void form.handleSubmit((values) => save.mutate(values))();
+                }}
+              />
+            </View>
           </>
-        ) : (
-          <Button
-            secondary
-            title="Añadir datos energéticos (opcional)"
-            onPress={() =>
-              setEnergy({ propulsion: 'COMBUSTION', source: 'OTHER' })
-            }
-          />
-        )}
-        {save.error && (
-          <Text accessibilityRole="alert" style={s.error}>
-            {save.error.message}
-          </Text>
-        )}
-        {save.isSuccess && (
-          <Text accessibilityLiveRegion="polite">
-            Vehículo registrado con información declarada; no es verificación
-            oficial.
-          </Text>
-        )}
-        <Button
-          title={save.isPending ? 'Registrando…' : 'Registrar vehículo'}
-          disabled={
-            save.isPending ||
-            (energy?.average !== undefined &&
-              (!Number.isFinite(energy.average) ||
-                energy.average < 0.01 ||
-                energy.average > 300))
-          }
-          onPress={() => {
-            void form.handleSubmit((values) => save.mutate(values))();
-          }}
-        />
-      </View>
-      <View style={s.section}>
-        <Text role="heading" aria-level={2} style={s.title}>
-          Licencia de conducción
-        </Text>
-        {license.isPending && <Text>Cargando licencia…</Text>}
-        {license.error && (
-          <Text accessibilityRole="alert" style={s.error}>
-            {license.error.message}
-          </Text>
-        )}
-        <Text style={s.text}>
-          {license.data
-            ? `${licenseLabels[license.data.category]} · ${documentLabels[license.data.verificationStatus]} · vence ${new Date(license.data.expiresAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`
-            : 'Sin licencia registrada.'}
-        </Text>
-        {(['CAR', 'MOTORCYCLE', 'BOTH'] as const).map((value) => (
-          <Pressable
-            key={value}
-            accessibilityRole="radio"
-            accessibilityLabel={`Licencia ${licenseLabels[value]}`}
-            accessibilityState={{ checked: category === value }}
-            onPress={() => licenseForm.setValue('category', value)}
-            style={[s.choice, category === value && s.selected]}
-          >
-            <Text>
-              {value === 'BOTH'
-                ? 'Auto y moto (alcance declarado)'
-                : value === 'CAR'
-                  ? 'Automóvil'
-                  : 'Moto'}
-            </Text>
-          </Pressable>
-        ))}
-        <Field
-          control={licenseForm.control}
-          name="expiresAt"
-          label="Vencimiento licencia (AAAA-MM-DD)"
-        />
-        {saveLicense.error && (
-          <Text accessibilityRole="alert" style={s.error}>
-            {saveLicense.error.message}
-          </Text>
-        )}
-        {saveLicense.isSuccess && (
-          <Text>Licencia declarada guardada; no es verificación oficial.</Text>
-        )}
-        <Button
-          title="Guardar licencia declarada"
-          disabled={saveLicense.isPending}
-          onPress={() => {
-            void licenseForm.handleSubmit((values) =>
-              saveLicense.mutate(values),
-            )();
-          }}
-        />
-      </View>
+        }
+        side={
+          <View style={ui.panel} testID="vehicle-license">
+            <TripSectionTitle>Licencia de conducción</TripSectionTitle>
+            {license.isPending && (
+              <Text style={s.text}>Cargando licencia…</Text>
+            )}
+            {license.error && (
+              <Text accessibilityRole="alert" style={s.error}>
+                {license.error.message}
+              </Text>
+            )}
+            {license.isSuccess && (
+              <View style={ui.subdued}>
+                <Text style={s.text}>
+                  {license.data
+                    ? `${licenseLabels[license.data.category]} · ${documentLabels[license.data.verificationStatus]} · vence ${new Date(license.data.expiresAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`
+                    : 'Sin licencia registrada.'}
+                </Text>
+              </View>
+            )}
+            <View style={ui.row}>
+              {(['CAR', 'MOTORCYCLE', 'BOTH'] as const).map((value) => (
+                <Pressable
+                  key={value}
+                  accessibilityRole="radio"
+                  accessibilityLabel={`Licencia ${licenseLabels[value]}`}
+                  accessibilityState={{ checked: category === value }}
+                  onPress={() => licenseForm.setValue('category', value)}
+                  style={[s.choice, category === value && s.selected]}
+                >
+                  <Text>
+                    {value === 'BOTH'
+                      ? 'Auto y moto (alcance declarado)'
+                      : value === 'CAR'
+                        ? 'Automóvil'
+                        : 'Moto'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Field
+              control={licenseForm.control}
+              name="expiresAt"
+              label="Vencimiento licencia (AAAA-MM-DD)"
+            />
+            {saveLicense.error && (
+              <Text accessibilityRole="alert" style={s.error}>
+                {saveLicense.error.message}
+              </Text>
+            )}
+            {saveLicense.isSuccess && (
+              <Text style={s.text} accessibilityLiveRegion="polite">
+                Licencia declarada guardada; no es verificación oficial.
+              </Text>
+            )}
+            <Button
+              title="Guardar licencia declarada"
+              disabled={saveLicense.isPending}
+              onPress={() => {
+                void licenseForm.handleSubmit((values) =>
+                  saveLicense.mutate(values),
+                )();
+              }}
+            />
+          </View>
+        }
+      />
     </ProtectedPage>
   );
 }
+
+const styles = StyleSheet.create({
+  vehicle: { gap: 10 },
+  formRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  formField: { flexBasis: '45%', flexGrow: 1, flexShrink: 1, minWidth: 158 },
+});

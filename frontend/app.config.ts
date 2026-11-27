@@ -7,7 +7,7 @@ export default {
     version: '0.1.0',
     scheme: 'ruteam',
     orientation: 'portrait',
-    userInterfaceStyle: 'light',
+    userInterfaceStyle: 'automatic',
     plugins: [
       'expo-router',
       'expo-secure-store',
@@ -24,7 +24,7 @@ export default {
         'expo-location',
         {
           locationWhenInUsePermission:
-            'RuTeam usa tu ubicación cuando decides compartirla en un viaje activo.',
+            'RuTeam usa tu ubicación cuando eliges centrar el mapa o compartirla en un viaje activo.',
           locationAlwaysPermission: false,
           locationAlwaysAndWhenInUsePermission: false,
         },

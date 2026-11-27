@@ -4,8 +4,8 @@ import {
   requestForegroundPermissionsAsync,
 } from 'expo-location';
 import { Button } from '../../components/ui/button';
-import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useState, type KeyboardEvent } from 'react';
+import { Platform, StyleSheet } from 'react-native';
 import { useController, type Control } from 'react-hook-form';
 import type {
   CampusMeetingPoint,
@@ -16,6 +16,8 @@ import type {
 import { Field } from '../../components/forms/field';
 import { PlaceSearch } from '../../components/forms/place-search';
 import { formStyles as s } from '../../components/ui/protected-page';
+import { Pressable, Text, View } from '../../theme/primitives';
+import { colors } from '../../theme/tokens';
 import { accessLabel } from './route-preview';
 import { MeetingMapPicker, type Coordinates } from './meeting-map-picker';
 
@@ -59,14 +61,28 @@ export function Choice({
   onPress: () => void;
   checkbox?: boolean;
 }) {
+  const [focused, setFocused] = useState(false);
+  const keyboard =
+    Platform.OS === 'web'
+      ? {
+          onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+            if (event.key !== ' ') return;
+            event.preventDefault();
+            if (!event.repeat) onPress();
+          },
+        }
+      : undefined;
   return (
     <Pressable
+      {...keyboard}
       accessibilityRole={checkbox ? 'checkbox' : 'radio'}
       accessibilityLabel={label}
       accessibilityState={{ checked }}
       aria-checked={checked}
       onPress={onPress}
-      style={[s.choice, checked && s.selected]}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={[s.choice, checked && s.selected, focused && styles.choiceFocus]}
     >
       <Text>{label}</Text>
     </Pressable>
@@ -144,7 +160,9 @@ export function PointEditor({
     );
   return (
     <View style={s.section}>
-      <Text style={s.title}>{title}</Text>
+      <Text role="heading" aria-level={3} style={styles.pointTitle}>
+        {title}
+      </Text>
       {institutional !== false && (
         <>
           {institutional === undefined && (
@@ -293,6 +311,7 @@ export function StopAccessEditor({
 }
 
 export function pointInput(
+  title: string,
   value: PointValue,
   institutional?: boolean,
 ): MeetingPointInput {
@@ -305,14 +324,22 @@ export function pointInput(
       instructions,
     };
   if (institutional)
-    throw new Error('Elige una referencia USC para el punto de encuentro.');
+    throw new Error(`${title}. Elige una referencia USC para el encuentro.`);
   if (!value.coordinates)
     throw new Error(
-      'Busca o marca en el mapa una ubicación para cada punto externo.',
+      `${title}. Busca o marca en el mapa una ubicación pública.`,
     );
   if (label.length < 2 || !instructions)
-    throw new Error(
-      'Indica un nombre público e instrucciones para cada punto externo.',
-    );
+    throw new Error(`${title}. Indica un nombre público e instrucciones.`);
   return { label, ...value.coordinates, instructions };
 }
+
+const styles = StyleSheet.create({
+  choiceFocus: { borderColor: colors.ink },
+  pointTitle: {
+    color: colors.ink,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+});

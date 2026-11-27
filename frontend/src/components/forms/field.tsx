@@ -1,4 +1,5 @@
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from '../../theme/primitives';
+import { StyleSheet } from 'react-native';
 import {
   Controller,
   type Control,

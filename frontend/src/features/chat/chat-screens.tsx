@@ -1,18 +1,12 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Fragment, useEffect, useRef, useState, type RefObject } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import {
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import {
-  type ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { type ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import type {
   ChatConversationPage,
   ChatHistoryPage,
@@ -23,10 +17,23 @@ import {
   formStyles as s,
 } from '../../components/ui/protected-page';
 import { Button } from '../../components/ui/button';
+import { Icon } from '../../components/ui/icon';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
-import { colors } from '../../theme/tokens';
+import { useAppearance } from '../../theme/appearance';
+import { Link, Text, TextInput, View } from '../../theme/primitives';
+import { breakpoints, colors, radii } from '../../theme/tokens';
 import { tripDate } from '../trips/trip-feed';
+import { tripStatusLabel } from '../trips/route-preview';
+
+const messageDay = new Intl.DateTimeFormat('es-CO', {
+  timeZone: 'America/Bogota',
+  dateStyle: 'long',
+});
+const messageTime = new Intl.DateTimeFormat('es-CO', {
+  timeZone: 'America/Bogota',
+  timeStyle: 'short',
+});
 
 function cursorPath(cursor?: string | null) {
   return cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
@@ -43,7 +50,7 @@ function requestId() {
   );
 }
 
-export function ConversationsScreen() {
+function ConversationsPanel({ activeTrip }: { activeTrip?: string }) {
   const { user } = useSession();
   const list = useInfiniteQuery({
     queryKey: ['chat-list', user?.id],
@@ -58,7 +65,7 @@ export function ConversationsScreen() {
   });
   const items = list.data?.pages.flatMap(({ items }) => items) ?? [];
   return (
-    <ProtectedPage title="Mensajes">
+    <View style={styles.panelList}>
       {list.isPending && <Text style={s.text}>Cargando conversaciones…</Text>}
       {list.error && (
         <Text accessibilityRole="alert" style={s.error}>
@@ -66,7 +73,13 @@ export function ConversationsScreen() {
         </Text>
       )}
       {!list.isPending && !list.error && !items.length && (
-        <View style={s.section}>
+        <View style={[s.section, styles.empty]}>
+          <View style={styles.conversationIcon}>
+            <Icon name="message-circle" size={19} />
+          </View>
+          <Text role="heading" aria-level={2} style={s.title}>
+            Aún no tienes conversaciones
+          </Text>
           <Text style={s.text}>
             Cuando publiques un viaje o confirmes una plaza, podrás coordinar el
             encuentro por aquí.
@@ -76,27 +89,58 @@ export function ConversationsScreen() {
           </Link>
         </View>
       )}
-      {!list.error &&
-        items.map((item) => (
-          <View key={item.tripId} style={s.section}>
-            <Text style={s.title}>
-              {item.originLabel} → {item.destinationLabel}
-            </Text>
-            <Text style={s.text}>
-              {tripDate(item.departureAt)}
-              {item.hasUnread ? ` · ${item.unreadCount ?? 1} sin leer` : ''}
-            </Text>
-            <Link
-              href={{
-                pathname: '/chat/[tripId]',
-                params: { tripId: item.tripId },
-              }}
-              style={s.link}
+      {!list.error && items.length > 0 && (
+        <View style={styles.conversations}>
+          {items.map((item, index) => (
+            <View
+              key={item.tripId}
+              style={[
+                styles.conversation,
+                index > 0 && styles.divider,
+                item.hasUnread && styles.unreadConversation,
+                activeTrip === item.tripId && styles.activeConversation,
+              ]}
             >
-              Abrir conversación
-            </Link>
-          </View>
-        ))}
+              <View style={styles.conversationHeading}>
+                <View style={styles.conversationIcon}>
+                  <Icon name="message-circle" size={18} />
+                </View>
+                <View style={styles.conversationContent}>
+                  <View style={styles.wrapRow}>
+                    <Text style={styles.routeLabel}>
+                      {item.originLabel} → {item.destinationLabel}
+                    </Text>
+                    {item.hasUnread && (
+                      <Text style={styles.unreadBadge}>
+                        {item.unreadCount ?? 1} sin leer
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={styles.meta}>
+                    {tripDate(item.departureAt)} ·{' '}
+                    {item.canSend
+                      ? tripStatusLabel[item.status]
+                      : 'Solo lectura'}
+                  </Text>
+                </View>
+              </View>
+              <Link
+                href={{
+                  pathname: '/chat/[tripId]',
+                  params: { tripId: item.tripId },
+                }}
+                aria-current={activeTrip === item.tripId ? 'page' : undefined}
+                style={[
+                  styles.actionLink,
+                  item.hasUnread && styles.unreadAction,
+                ]}
+              >
+                Abrir conversación
+              </Link>
+            </View>
+          ))}
+        </View>
+      )}
       {list.hasNextPage && (
         <Button
           title="Ver más conversaciones"
@@ -107,6 +151,29 @@ export function ConversationsScreen() {
           }}
         />
       )}
+    </View>
+  );
+}
+
+export function ConversationsScreen() {
+  const { width } = useWindowDimensions();
+  const wide = width >= breakpoints.columns;
+  return (
+    <ProtectedPage title="Mensajes">
+      <View style={wide ? styles.split : undefined}>
+        <View style={wide ? styles.sidebar : undefined}>
+          <ConversationsPanel />
+        </View>
+        {wide && (
+          <View style={[s.section, styles.room, styles.openHint]}>
+            <Icon name="message-circle" size={27} />
+            <Text style={s.title}>Abre una conversación</Text>
+            <Text style={s.text}>
+              Coordina los detalles de tu viaje desde Mensajes.
+            </Text>
+          </View>
+        )}
+      </View>
     </ProtectedPage>
   );
 }
@@ -121,6 +188,7 @@ function ChatRoom({
   scrollRef: RefObject<ScrollView | null>;
 }) {
   const client = useQueryClient();
+  const { reducedMotion } = useAppearance();
   const historyKey = ['chat', userId, tripId];
   const endpoint = `/trips/${encodeURIComponent(tripId)}/chat`;
   const [body, setBody] = useState('');
@@ -166,10 +234,10 @@ function ChatRoom({
   useEffect(() => {
     if (!newest) return;
     const frame = requestAnimationFrame(() =>
-      scrollRef.current?.scrollToEnd({ animated: true }),
+      scrollRef.current?.scrollToEnd({ animated: !reducedMotion }),
     );
     return () => cancelAnimationFrame(frame);
-  }, [newest, scrollRef]);
+  }, [newest, reducedMotion, scrollRef]);
   if (history.error)
     return (
       <Text accessibilityRole="alert" style={s.error}>
@@ -183,45 +251,67 @@ function ChatRoom({
         (message) => [message.id, message],
       ),
     ).values(),
-  ];
+  ].reverse();
   const cursor = (older.at(-1) ?? current).nextCursor;
   return (
     <>
-      <Text style={s.title}>
-        {current.conversation.originLabel} →{' '}
-        {current.conversation.destinationLabel}
-      </Text>
-      {!current.conversation.canSend && (
-        <Text style={s.text}>
-          Viaje cerrado. Puedes consultar la conversación durante las 24 horas
-          posteriores.
+      <View style={[s.section, styles.roomHeader]}>
+        <Text role="heading" aria-level={2} style={styles.routeLabel}>
+          {current.conversation.originLabel} →{' '}
+          {current.conversation.destinationLabel}
         </Text>
-      )}
-      {!messages.length && (
-        <Text style={s.text}>
-          Aún no hay mensajes. Usa este chat para coordinar el encuentro.
+        <Text style={styles.meta}>
+          {tripDate(current.conversation.departureAt)} ·{' '}
+          {tripStatusLabel[current.conversation.status]}
         </Text>
-      )}
-      {cursor && (
-        <Button
-          title="Cargar mensajes anteriores"
-          secondary
-          disabled={loadOlder.isPending}
-          onPress={() => loadOlder.mutate(cursor)}
-        />
-      )}
-      {[...messages].reverse().map((message) => (
-        <View
-          key={message.id}
-          style={[s.section, message.isMine && styles.mine]}
-        >
-          <Text style={s.title}>
-            {message.isMine ? 'Tú' : message.authorName}
+        {!current.conversation.canSend && (
+          <Text style={styles.readOnly}>
+            Solo lectura. Puedes consultar la conversación durante las 24 horas
+            posteriores al cierre del viaje.
           </Text>
-          <Text style={s.text}>{message.body}</Text>
-          <Text style={s.text}>{tripDate(message.createdAt)}</Text>
-        </View>
-      ))}
+        )}
+      </View>
+      <View style={[s.section, styles.messages]}>
+        {cursor && (
+          <View style={styles.centered}>
+            <Button
+              title="Cargar mensajes anteriores"
+              secondary
+              disabled={loadOlder.isPending}
+              onPress={() => loadOlder.mutate(cursor)}
+            />
+          </View>
+        )}
+        {!messages.length && (
+          <Text style={[s.text, styles.centeredText]}>
+            {current.conversation.canSend
+              ? 'Aún no hay mensajes. Usa este chat para coordinar el encuentro.'
+              : 'No se enviaron mensajes en esta conversación.'}
+          </Text>
+        )}
+        {messages.map((message, index) => {
+          const date = new Date(message.createdAt);
+          const day = messageDay.format(date);
+          const previous = messages[index - 1];
+          const newDay =
+            !previous ||
+            day !== messageDay.format(new Date(previous.createdAt));
+          return (
+            <Fragment key={message.id}>
+              {newDay && <Text style={styles.day}>{day}</Text>}
+              <View style={[styles.bubble, message.isMine && styles.outgoing]}>
+                <Text style={styles.author}>
+                  {message.isMine ? 'Tú' : message.authorName}
+                </Text>
+                <Text selectable style={styles.body}>
+                  {message.body}
+                </Text>
+                <Text style={styles.time}>{messageTime.format(date)}</Text>
+              </View>
+            </Fragment>
+          );
+        })}
+      </View>
       {(send.error || read.error || loadOlder.error) && (
         <Text accessibilityRole="alert" style={s.error}>
           {send.error?.message ??
@@ -230,15 +320,17 @@ function ChatRoom({
         </Text>
       )}
       {!!current.messages[0] && current.conversation.hasUnread && (
-        <Button
-          title="Marcar conversación como leída"
-          secondary
-          disabled={read.isPending}
-          onPress={() => read.mutate(current.messages[0].id)}
-        />
+        <View style={styles.centered}>
+          <Button
+            title="Marcar conversación como leída"
+            secondary
+            disabled={read.isPending}
+            onPress={() => read.mutate(current.messages[0].id)}
+          />
+        </View>
       )}
       {current.conversation.canSend && (
-        <View style={s.section}>
+        <View style={[s.section, styles.composer]}>
           <TextInput
             accessibilityLabel="Mensaje"
             placeholder="Escribe un mensaje"
@@ -258,6 +350,8 @@ function ChatRoom({
                   : 'Enviar mensaje'
             }
             disabled={!body.trim() || send.isPending}
+            loading={send.isPending}
+            icon="send"
             onPress={() => {
               const text = body.trim();
               const input =
@@ -278,31 +372,169 @@ export function ChatScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const { user } = useSession();
   const scrollRef = useRef<ScrollView>(null);
+  const { width } = useWindowDimensions();
+  const wide = width >= breakpoints.columns;
   return (
     <ProtectedPage title="Chat del viaje" scrollRef={scrollRef}>
-      <Link href="/chat" style={s.link}>
-        Volver a mensajes
-      </Link>
-      {!!tripId && !!user?.capabilities.passenger && (
-        <ChatRoom
-          key={tripId}
-          tripId={tripId}
-          userId={user.id}
-          scrollRef={scrollRef}
-        />
-      )}
+      <View style={wide ? styles.split : undefined}>
+        {wide && (
+          <View style={styles.sidebar}>
+            <Text style={s.title}>Conversaciones</Text>
+            <ConversationsPanel activeTrip={tripId} />
+          </View>
+        )}
+        <View style={styles.room}>
+          {!wide && (
+            <Link href="/chat" style={styles.actionLink}>
+              Volver a mensajes
+            </Link>
+          )}
+          {!!tripId && !!user?.capabilities.passenger && (
+            <ChatRoom
+              key={tripId}
+              tripId={tripId}
+              userId={user.id}
+              scrollRef={scrollRef}
+            />
+          )}
+        </View>
+      </View>
     </ProtectedPage>
   );
 }
 
 const styles = StyleSheet.create({
-  mine: { backgroundColor: colors.selected },
+  split: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
+  panelList: { gap: 12 },
+  sidebar: { width: '34%', minWidth: 230, maxWidth: 360, gap: 11 },
+  room: { flex: 1, minWidth: 0, gap: 13 },
+  openHint: { minHeight: 250, alignItems: 'center', justifyContent: 'center' },
+  activeConversation: { borderLeftWidth: 3, borderLeftColor: colors.primary },
+  empty: { alignItems: 'flex-start' },
+  conversations: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.panel,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+  },
+  conversation: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+  },
+  divider: { borderTopWidth: 1, borderColor: colors.border },
+  conversationHeading: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 260,
+  },
+  conversationIcon: {
+    width: 38,
+    height: 38,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radii.control,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+  },
+  conversationContent: { flex: 1, minWidth: 0, gap: 4 },
+  unreadConversation: { backgroundColor: colors.selected },
+  wrapRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+  },
+  routeLabel: { color: colors.ink, fontSize: 17, fontWeight: '700' },
+  meta: { color: colors.muted, fontSize: 13, lineHeight: 19 },
+  unreadBadge: {
+    color: colors.primary,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radii.control,
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  actionLink: {
+    color: colors.primary,
+    alignSelf: 'flex-start',
+    paddingVertical: 12,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '700',
+  },
+  unreadAction: { color: colors.ink, textDecorationLine: 'underline' },
+  roomHeader: { gap: 5 },
+  readOnly: {
+    marginTop: 4,
+    color: colors.muted,
+    lineHeight: 20,
+  },
+  messages: { gap: 12, minHeight: 135 },
+  centered: { alignSelf: 'center' },
+  centeredText: { marginVertical: 12, textAlign: 'center' },
+  day: {
+    alignSelf: 'center',
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: '700',
+    paddingVertical: 4,
+  },
+  bubble: {
+    alignSelf: 'flex-start',
+    maxWidth: '88%',
+    minWidth: 100,
+    gap: 3,
+    borderRadius: 16,
+    borderBottomLeftRadius: 4,
+    borderColor: colors.border,
+    borderWidth: 1,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    backgroundColor: colors.background,
+  },
+  outgoing: {
+    alignSelf: 'flex-end',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 4,
+    borderColor: colors.selected,
+    backgroundColor: colors.selected,
+  },
+  author: { color: colors.ink, fontSize: 12, fontWeight: '700' },
+  body: { color: colors.ink, fontSize: 15, lineHeight: 22 },
+  time: { alignSelf: 'flex-end', color: colors.muted, fontSize: 11 },
+  composer: {
+    padding: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+  },
   input: {
-    minHeight: 72,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 240,
+    minHeight: 48,
+    maxHeight: 150,
     padding: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 8,
+    borderRadius: 10,
+    textAlignVertical: 'top',
+    backgroundColor: colors.background,
     color: colors.ink,
     fontSize: 16,
   },

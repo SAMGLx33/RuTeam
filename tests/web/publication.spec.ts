@@ -57,6 +57,9 @@ async function selectMapPoint(page: Page, label: string, x: number, y: number) {
   const map = page.getByRole('button', {
     name: `Mapa para seleccionar · ${label}`,
   });
+  await expect(
+    page.getByRole('button', { name: 'Marcar centro del mapa' }),
+  ).toBeEnabled();
   const bounds = await map.boundingBox();
   if (!bounds) throw new Error('El mapa no es visible');
   await map.click({ position: { x: bounds.width * x, y: bounds.height * y } });
@@ -141,13 +144,21 @@ test('publicación, feed automático, aviso persistente y participación directa
       .getByRole('radio', { name: new RegExp(`Vehículo ${plate}`) })
       .click();
     await page
+      .getByLabel('Salida Colombia (AAAA-MM-DD HH:mm)')
+      .fill('2020-01-01 10:00');
+    const nextStep = page.getByRole('button', {
+      name: 'Continuar',
+      exact: true,
+    });
+    await nextStep.click();
+    await page
       .getByRole('radio', { name: /Origen · Plazoleta de los Sabios/ })
       .click();
     await page.getByLabel('Nombre público · Destino').fill(destination);
     await expect(page.getByLabel(/^(Latitud|Longitud|Geometría)/)).toHaveCount(
       0,
     );
-    await selectMapPoint(page, 'Destino', 0.82, 0.2);
+    await selectMapPoint(page, 'Destino', 0.63, 0.4);
     // Only the provider response is controlled. Selection and publication use the real form and DB.
     await page.route('**/api/v1/geocoding/search', async (route) => {
       expect(route.request().method()).toBe('POST');
@@ -235,9 +246,7 @@ test('publicación, feed automático, aviso persistente y participación directa
         'Motor vial sin configurar',
       );
     }
-    await page
-      .getByLabel('Salida Colombia (AAAA-MM-DD HH:mm)')
-      .fill('2020-01-01 10:00');
+    await nextStep.click();
     const review = page.getByRole('button', {
       name: 'Revisar viaje',
       exact: true,
@@ -254,11 +263,8 @@ test('publicación, feed automático, aviso persistente y participación directa
     await publish.click();
     await expect(page.getByRole('alert')).toContainText('30 minutos');
     await page
-      .getByRole('button', { name: 'Editar antes de publicar' })
+      .getByRole('button', { name: 'Volver a vehículo y horario' })
       .click();
-    await page
-      .getByLabel('Punto de encuentro libre · Origen')
-      .fill('Sótano, junto a la escalera');
     const date = new Date(
       Date.now() +
         (testInfo.project.name === 'desktop' ? 10 : 11) * 86400000 -
@@ -268,11 +274,10 @@ test('publicación, feed automático, aviso persistente y participación directa
       .slice(0, 16)
       .replace('T', ' ');
     await page.getByLabel('Salida Colombia (AAAA-MM-DD HH:mm)').fill(date);
+    await nextStep.click();
     await page
-      .getByRole('radio', { name: 'Calcular aporte con gastos declarados' })
-      .click();
-    await page.getByLabel('Combustible en COP').fill('10001');
-    await page.getByRole('checkbox', { name: 'Nequi', exact: true }).click();
+      .getByLabel('Punto de encuentro libre · Origen')
+      .fill('Sótano, junto a la escalera');
     for (const index of [1, 2]) {
       await page.getByRole('button', { name: 'Añadir parada' }).click();
       await page
@@ -352,6 +357,12 @@ test('publicación, feed automático, aviso persistente y participación directa
       .click();
     await page.getByRole('button', { name: 'Consultar rutas viales' }).click();
     await page.getByRole('button', { name: 'Elegir alternativa 1' }).click();
+    await nextStep.click();
+    await page
+      .getByRole('radio', { name: 'Calcular aporte con gastos declarados' })
+      .click();
+    await page.getByLabel('Combustible en COP').fill('10001');
+    await page.getByRole('checkbox', { name: 'Nequi', exact: true }).click();
     await review.click();
     await expect(page.getByText('Resumen para publicar')).toBeVisible();
     await expect(
@@ -603,10 +614,10 @@ test('publicación, feed automático, aviso persistente y participación directa
     expect(
       await db.reservation.count({ where: { tripId, status: 'PENDING' } }),
     ).toBe(0);
-    expect(
-      (await db.trip.findUniqueOrThrow({ where: { id: tripId } }))
-        .occupiedSeats,
-    ).toBe(1);
+    const publishedTrip = await db.trip.findUniqueOrThrow({
+      where: { id: tripId },
+    });
+    expect(publishedTrip.occupiedSeats).toBe(1);
     const publishedCard = page.getByTestId(`driver-trip-${tripId}`);
     await publishedCard
       .getByRole('button', { name: 'Ver recorrido y participantes' })
@@ -617,6 +628,38 @@ test('publicación, feed automático, aviso persistente y participación directa
     await expect(
       publishedCard.getByText('Confirmada · Viaje programado', { exact: true }),
     ).toBeVisible();
+
+    // Enter the origin boarding window without waiting for the scheduled trip.
+    const boardingDeparture = new Date(Date.now() + 15 * 60_000);
+    await db.trip.update({
+      where: { id: tripId },
+      data: {
+        departureAt: boardingDeparture,
+        expectedEndAt: new Date(
+          boardingDeparture.getTime() +
+            publishedTrip.estimatedDurationMinutes * 60_000,
+        ),
+      },
+    });
+    await passenger.goto(`/trip-operation/${tripId}`);
+    await expect(
+      passenger.getByRole('heading', {
+        name: 'Seguimiento y resumen del viaje',
+      }),
+    ).toBeVisible();
+    const showPass = passenger.getByRole('button', {
+      name: 'Mostrar QR de abordaje',
+    });
+    await showPass.click();
+    const qr = passenger.getByLabel('QR temporal de abordaje de RuTeam');
+    await expect(qr).toBeVisible();
+    await expect(passenger.getByText(/Válido hasta/)).toBeVisible();
+    await expect(
+      passenger.getByRole('button', { name: 'Iniciar viaje', exact: true }),
+    ).toHaveCount(0);
+    await passenger.getByRole('button', { name: 'Ocultar QR' }).click();
+    await expect(qr).toHaveCount(0);
+
     await passenger.goto('http://localhost:8082/my-reservations');
     await expect(
       passenger.getByText('Confirmada · Viaje programado'),

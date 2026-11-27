@@ -1,5 +1,6 @@
+import { Text, TextInput, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { Linking, Switch, Text, TextInput, View } from 'react-native';
+import { Linking, Switch } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   EmergencyContact,

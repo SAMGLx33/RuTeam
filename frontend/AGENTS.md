@@ -86,3 +86,13 @@ Usa las pantallas secundarias de Perfil e Inicio y los componentes compartidos d
 ## Evolución ambiental y comunicación
 
 Presentar los resultados y la cobertura ambiental de la API por rol y alcance. El flujo SSE invalida las consultas HTTP y mantiene su sondeo. Usar los componentes de abordaje, seguridad, localización y gestión existentes dentro del resumen de viaje. Los controles de preferencias deben guardar cambios reales. El registro push requiere un cliente nativo configurado con consentimiento.
+
+## Rediseño de experiencia
+
+Reutilizar `theme/tokens`, `theme/appearance` y `theme/primitives` para que la UI
+responda a temas claro, oscuro y del sistema. `ProtectedPage` compone navegación
+adaptable y conserva guardas. `MobilityMap` consume coordenadas y geometría publicadas
+y mantiene la atribución configurada. Una posición privada no determina solicitudes
+de teselas remotas. No añadir rutas, permisos ni operaciones de negocio para
+completar una maqueta. Consultar DESIGN_SYSTEM, FRONTEND_NAVIGATION, MAP_EXPERIENCE
+y FRONTEND_UX_INTEGRATION en docs/development.
