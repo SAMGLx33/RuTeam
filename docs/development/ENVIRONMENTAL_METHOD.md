@@ -1,0 +1,36 @@
+# Estimaciones ambientales de RuTeam
+
+Método `ruteam-operacion-v1`, incorporado el 26/11/2026. Las cifras estiman la operación del viaje según el recorrido publicado, los datos declarados y los abordajes registrados.
+
+## Energía y factores
+
+| Fuente declarada               | Factor original             | Alcance                                                                                                                              | Referencia                                                                                                                                       |
+| ------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Gasolina motor sin mezcla      | 8,808 kg CO₂/galón EE. UU.  | CO₂ de la combustión                                                                                                                 | [FECOC 2016, tabla 5, pp. 30–31](https://app.upme.gov.co/Calculadora_Emisiones1/new/Informe_Final_FECOC_Correcciones_UPME_FunNatura.pdf#page=31) |
+| Gasolina E10                   | 7,618 kg CO₂/galón EE. UU.  | CO₂ de la combustión según la fila E10 publicada                                                                                     | [FECOC 2016, tabla 5](https://app.upme.gov.co/Calculadora_Emisiones1/new/Informe_Final_FECOC_Correcciones_UPME_FunNatura.pdf#page=31)            |
+| Diésel de referencia           | 10,180 kg CO₂/galón EE. UU. | CO₂ de la combustión según la fila Diésel del informe. Se usa si esa referencia corresponde al combustible declarado                 | [FECOC 2016, tabla 5](https://app.upme.gov.co/Calculadora_Emisiones1/new/Informe_Final_FECOC_Correcciones_UPME_FunNatura.pdf#page=31)            |
+| Electricidad de red colombiana | 0,220 kg CO₂e/kWh           | Emisiones indirectas de generación. Referencia anual SIN 2024 de inventarios. El año queda visible también para viajes de otros años | [UPME, Resolución 0085 de 2026, art. 1.B](https://docs.upme.gov.co/Normatividad/0085_2026.pdf#page=3)                                            |
+
+El catálogo vive en `mobility/domain/emissions.ts`. Cada entrada conserva ID, versión, unidad, alcance, disponibilidad y fuente. Las mezclas desconocidas y la carga eléctrica de origen desconocido quedan sin estimación. Para híbridos se estima el componente de combustible declarado. La descarga del informe FECOC comprende la caracterización de la combustión y su unidad de volumen. La página de movilidad de UPME describe el trabajo separado de FECOC+ por ciclos y tecnologías. [Movilidad sostenible, UPME](https://www.upme.gov.co/simec/eficiencia-energetica/movilidad-sostenible/)
+
+## Cálculo y atribución
+
+1. Para km/L, convertir a L/100 km como `100 / consumo`. Conservar la declaración original junto con el valor normalizado. La electricidad se registra en kWh/100 km.
+2. Multiplicar `km publicados × consumo normalizado / 100`. Multiplicar el resultado por el factor aplicable. Para FECOC, dividir antes el factor por los 3,7854118 L de un galón EE. UU. [GHG Protocol, método basado en combustible y distancia](https://ghgptechassistance.zendesk.com/hc/en-us/articles/37791078550420-How-do-I-calculate-emissions-from-transportation) · [FECOC, p. 47](https://app.upme.gov.co/Calculadora_Emisiones1/new/Informe_Final_FECOC_Correcciones_UPME_FunNatura.pdf#page=47)
+3. Distribuir la distancia total publicada usando las proporciones de longitud de la geometría guardada entre paradas. Se exige orden y cercanía al trazado de 100 m, y se rechazan cruces ambiguos. Cuando sólo hay origen y destino se usa la distancia total publicada. Los tramos dudosos quedan sin dato. La finalización del conductor es la evidencia del recorrido publicado utilizado en esta estimación.
+4. En cada tramo, dividir las emisiones por el conductor y los pasajeros que abordaron y cuyo segmento reservado lo incluye. El descenso es una estimación basada en la reserva. Se excluyen ausentes, retiros, cancelados e interrumpidos. Si un tramo parcial carece de distancia válida, la estimación total del vehículo aún puede estar disponible. El reparto queda sin dato.
+5. Sumar antes de dar formato a la presentación. Los totales separan rol, mes de finalización en Colombia y unidad. El total del vehículo se presenta al conductor. La atribución personal está disponible al conductor y al pasajero abordado.
+
+La publicación congela consumo y factor. El cierre escribe en el mismo commit la distancia, tramos, ocupación, atribuciones, versión y fecha de cálculo. Los viajes anteriores a la migración muestran la falta de registro histórico. Editar el vehículo sólo afecta nuevas publicaciones. La reejecución de la transición conserva el registro ya cerrado.
+
+## Viaje alternativo
+
+Una participación individual abordada admite una alternativa voluntaria. La comparación es `emisión estimada alternativa − parte atribuida` sobre el mismo tramo sustentado. Caminata y bicicleta tienen cero emisiones operativas dentro de este perímetro. Un resultado negativo indica una atribución mayor al compartir el viaje. Auto y moto requieren consumo y factor del mismo alcance. Transporte público, otro o datos faltantes conservan la ausencia de estimación. Cada contraste se presenta para el pasajero que lo declaró. Se excluye de los totales y evita agregar contrafactuales de varias personas. El resultado es de escenario y no constituye certificación.
+
+## Procedencia del descenso
+
+Los cierres nuevos de viajes con participantes abordados guardan por viajero si
+el punto de descenso del cálculo fue confirmado o previsto. Ambos usan la distancia
+de la geometría publicada y los segmentos autorizados. Una lectura GPS individual
+no acredita kilómetros recorridos. Los cierres históricos permanecen con su
+metodología, distancias y factores originales.

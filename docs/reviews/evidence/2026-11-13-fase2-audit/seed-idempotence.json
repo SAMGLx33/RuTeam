@@ -1,0 +1,31 @@
+{
+  "checkedTables": [
+    "user",
+    "profile",
+    "institutionalMembership",
+    "driverEligibility",
+    "vehicle",
+    "vehicleDocument",
+    "tripRuleDefinition",
+    "campusDestination",
+    "trip",
+    "tripStop",
+    "tripRuleSelection",
+    "tripEvent"
+  ],
+  "counts": {
+    "user": 4,
+    "profile": 4,
+    "institutionalMembership": 4,
+    "driverEligibility": 1,
+    "vehicle": 1,
+    "vehicleDocument": 1,
+    "tripRuleDefinition": 3,
+    "campusDestination": 2,
+    "trip": 0,
+    "tripStop": 0,
+    "tripRuleSelection": 0,
+    "tripEvent": 0
+  },
+  "unchanged": true
+}

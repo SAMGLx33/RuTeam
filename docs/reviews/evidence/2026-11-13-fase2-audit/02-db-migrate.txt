@@ -1,0 +1,17 @@
+COMMAND: npm run db:migrate
+UTC: 2026-11-14T02:24:44.772Z
+EXIT: 0
+
+Datasource "db": PostgreSQL database "ruteam", schema "public" at "127.0.0.1:55432"
+
+4 migrations found in prisma/migrations
+
+
+No pending migrations to apply.
+npm notice run ruteam@0.1.0 db:migrate
+npm notice run npm run db:migrate -w @ruteam/api
+npm notice run @ruteam/api@0.1.0 db:migrate
+npm notice run prisma migrate deploy --config prisma.config.ts
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma/schema.prisma.

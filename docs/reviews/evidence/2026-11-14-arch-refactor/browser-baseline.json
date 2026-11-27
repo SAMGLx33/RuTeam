@@ -1,0 +1,90 @@
+{
+  "phase": "baseline",
+  "browserPlugin": "not available; Playwright fallback",
+  "results": [
+    {
+      "label": "desktop",
+      "url": "http://localhost:8081/",
+      "title": "RuTeam",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "meaningfulScreen": true,
+      "alert": [
+        "No pudimos conectar con la API. Revisa la URL LAN, la red y que Nest esté iniciado.",
+        "No pudimos conectar con la API. Revisa la URL LAN, la red y que Nest esté iniciado."
+      ],
+      "requests": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "method": "POST"
+        }
+      ],
+      "failed": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "error": "net::ERR_CONNECTION_REFUSED"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "error": "net::ERR_CONNECTION_REFUSED"
+        }
+      ],
+      "pageErrors": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "overflow": false,
+      "screenshotOutsideGit": "/home/darik/RuTeam/review-artifacts/2026-11-14-architecture/baseline-desktop.png",
+      "limitation": "Network-error/login failure observation only; no PostgreSQL flow or native device verified"
+    },
+    {
+      "label": "mobile-web",
+      "url": "http://localhost:8081/",
+      "title": "RuTeam",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "meaningfulScreen": true,
+      "alert": [
+        "No pudimos conectar con la API. Revisa la URL LAN, la red y que Nest esté iniciado.",
+        "No pudimos conectar con la API. Revisa la URL LAN, la red y que Nest esté iniciado."
+      ],
+      "requests": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "method": "GET"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "method": "POST"
+        }
+      ],
+      "failed": [
+        {
+          "url": "http://localhost:3000/api/v1/auth/me",
+          "error": "net::ERR_CONNECTION_REFUSED"
+        },
+        {
+          "url": "http://localhost:3000/api/v1/auth/demo/login",
+          "error": "net::ERR_CONNECTION_REFUSED"
+        }
+      ],
+      "pageErrors": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "overflow": false,
+      "screenshotOutsideGit": "/home/darik/RuTeam/review-artifacts/2026-11-14-architecture/baseline-mobile-web.png",
+      "limitation": "Network-error/login failure observation only; no PostgreSQL flow or native device verified"
+    }
+  ]
+}

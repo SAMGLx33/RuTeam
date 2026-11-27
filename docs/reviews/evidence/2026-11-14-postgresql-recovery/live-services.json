@@ -1,0 +1,45 @@
+{
+  "checkedAt": "2026-11-15T02:28:26.074Z",
+  "http": [
+    {
+      "path": "health",
+      "status": 200,
+      "allowOrigin": "http://localhost:8081",
+      "database": "up",
+      "demo": true
+    },
+    {
+      "path": "docs-json",
+      "status": 200,
+      "allowOrigin": "http://localhost:8081",
+      "swaggerPaths": 16
+    },
+    {
+      "path": "auth/me",
+      "status": 401,
+      "allowOrigin": "http://localhost:8081"
+    }
+  ],
+  "database": [
+    {
+      "database": "ruteam",
+      "data_directory": "/home/darik/RuTeam/.local-data/postgresql-18/data",
+      "port": "55432",
+      "listen_addresses": "127.0.0.1",
+      "server_version": "18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)",
+      "started_at": "2026-11-15T02:07:39.333Z"
+    },
+    {
+      "database": "ruteam_test",
+      "data_directory": "/home/darik/RuTeam/.local-data/postgresql-18/data",
+      "port": "55432",
+      "listen_addresses": "127.0.0.1",
+      "server_version": "18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)",
+      "started_at": "2026-11-15T02:07:39.333Z"
+    }
+  ],
+  "web": {
+    "url": "http://localhost:8081",
+    "status": 200
+  }
+}

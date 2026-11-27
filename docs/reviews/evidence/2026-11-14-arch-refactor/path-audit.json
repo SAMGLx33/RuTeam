@@ -1,0 +1,97 @@
+{
+  "command": "rg --json --hidden apps/api|apps/client|apps/* . with generated/node_modules/private/evidence exclusions",
+  "exitCode": 0,
+  "activeObsoleteConfigOrCodePaths": [],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "matches": 1,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "backend/AGENTS.md",
+      "matches": 1,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/architecture/REPOSITORY_STRUCTURE.md",
+      "matches": 2,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/demo/EVIDENCE.md",
+      "matches": 2,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/handoffs/2026-11-13_main_foundation_vertical.md",
+      "matches": 2,
+      "classification": "historical snapshot"
+    },
+    {
+      "path": "docs/handoffs/2026-11-13_task-trips-publicacion_auditoria-fase2-reservas-plan.md",
+      "matches": 1,
+      "classification": "historical snapshot"
+    },
+    {
+      "path": "docs/handoffs/2026-11-13_task-trips-publicacion_fase2.md",
+      "matches": 1,
+      "classification": "historical snapshot"
+    },
+    {
+      "path": "docs/handoffs/2026-11-14_task-refactor-monorepo-structure.md",
+      "matches": 1,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/requirements/TRACEABILITY.md",
+      "matches": 1,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/requirements/UML_CROSSWALK.md",
+      "matches": 2,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/reviews/ARCH_REFACTOR_BASELINE.md",
+      "matches": 4,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/reviews/ARCH_REFACTOR_PLAN.md",
+      "matches": 1,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/reviews/ARCH_REFACTOR_REVIEW.md",
+      "matches": 2,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "docs/reviews/FASE2_COMMIT_MANIFEST.json",
+      "matches": 52,
+      "classification": "historical snapshot"
+    },
+    {
+      "path": "docs/reviews/FASE2_COMMIT_PROPOSAL.md",
+      "matches": 52,
+      "classification": "historical snapshot"
+    },
+    {
+      "path": "docs/reviews/FASE2_REVIEW.md",
+      "matches": 1,
+      "classification": "historical snapshot"
+    },
+    {
+      "path": "frontend/AGENTS.md",
+      "matches": 1,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    },
+    {
+      "path": "scripts/verify-workspace-move.mjs",
+      "matches": 2,
+      "classification": "explicit before/after mapping or baseline (not an executable old path)"
+    }
+  ]
+}

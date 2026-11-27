@@ -1,0 +1,10 @@
+{
+  "command": "npm run dev:client",
+  "mode": "expo start --lan --port 8081",
+  "status": 200,
+  "platform": "android manifest requested by HTTP, not phone",
+  "projectConfigName": "RuTeam Demo",
+  "sdkVersion": "54.0.0",
+  "apiUrl": "http://localhost:3000/api/v1",
+  "physicalDeviceVerified": false
+}

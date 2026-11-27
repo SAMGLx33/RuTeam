@@ -1,0 +1,52 @@
+{
+  "name": "ruteam",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.12 <23",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev:api": "npm run dev -w @ruteam/api",
+    "dev:client": "npm run start -w @ruteam/client -- --clear",
+    "dev:web": "npm run web -w @ruteam/client -- --clear",
+    "build:api": "npm run build -w @ruteam/api",
+    "build:web": "npm run export:web -w @ruteam/client",
+    "db:generate": "npm run db:generate -w @ruteam/api",
+    "db:migrate": "npm run db:migrate -w @ruteam/api",
+    "db:seed": "npm run db:seed -w @ruteam/api",
+    "db:test:setup": "node --env-file=.env scripts/test-db.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p tsconfig.tests.json",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "test": "npm run test -w @ruteam/api",
+    "test:e2e": "playwright test",
+    "smoke": "node --env-file=.env scripts/smoke.mjs",
+    "check:env": "node scripts/check-env.mjs"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "eslint": "^9.39.1",
+    "@eslint/js": "^9.39.1",
+    "typescript-eslint": "^8.48.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.6.2",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.19.0",
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3"
+  },
+  "overrides": {
+    "@expo/metro-config": {
+      "postcss": "8.5.23"
+    },
+    "@prisma/config": {
+      "effect": "3.22.1"
+    }
+  }
+}

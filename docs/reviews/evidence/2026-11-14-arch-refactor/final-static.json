@@ -1,0 +1,55 @@
+{
+  "runs": [
+    {
+      "command": "node scripts/verify-workspace-move.mjs",
+      "exitCode": 0,
+      "durationMs": 127,
+      "summary": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "durationMs": 3425,
+      "summary": "passed"
+    },
+    {
+      "command": "npm run format:check",
+      "exitCode": 1,
+      "durationMs": 4194,
+      "summary": "Checking formatting...\nnpm notice run ruteam@0.1.0 format:check\nnpm notice run prettier --check .\n[warn] docs/reviews/evidence/2026-11-14-arch-refactor/final-checks.json\n[warn] Code style issues found in the above file. Run Prettier with --write to fix.\n"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMs": 22,
+      "summary": "passed"
+    },
+    {
+      "command": "npm ls --workspaces --depth=0",
+      "exitCode": 0,
+      "durationMs": 1385,
+      "summary": "passed"
+    }
+  ],
+  "note": "No rerun of DB suites after documentation-only closure; previously recorded failures remain.",
+  "followupAfterMetadataFormatting": [
+    {
+      "command": "npm run format:check",
+      "exitCode": 0,
+      "durationMs": 4330,
+      "summary": "passed after formatting evidence metadata"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "durationMs": 23,
+      "summary": "passed after formatting evidence metadata"
+    },
+    {
+      "command": "node scripts/verify-workspace-move.mjs",
+      "exitCode": 0,
+      "durationMs": 163,
+      "summary": "passed after formatting evidence metadata"
+    }
+  ]
+}
