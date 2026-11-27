@@ -116,6 +116,7 @@ export interface EmissionRider {
   userId: string;
   first: number;
   last: number;
+  observedDropoff?: boolean;
 }
 
 export interface EmissionSnapshot {
@@ -132,6 +133,7 @@ export interface EmissionSnapshot {
     userId: string;
     distanceMeters: number | null;
     kg: number | null;
+    dropoffBasis?: 'CONFIRMED_STOP' | 'PLANNED_STOP';
   }[];
 }
 
@@ -182,7 +184,13 @@ export function calculateTrip(
             : null,
     segmentMeters,
     occupants,
-    riders: riders.map(({ userId, first, last: end }) => ({
+    riders: riders.map(({ userId, first, last: end, observedDropoff }) => ({
+      dropoffBasis:
+        observedDropoff === undefined
+          ? undefined
+          : observedDropoff
+            ? 'CONFIRMED_STOP'
+            : 'PLANNED_STOP',
       userId,
       distanceMeters: segments
         ? segments

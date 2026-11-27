@@ -15,6 +15,7 @@ export interface MobilityPreferenceInput {
   longitude?: number | null;
   radiusKm: number;
   vehicleTypes: VehicleType[];
+  maxContributionCop?: number | null;
   notificationsEnabled: boolean;
   active: boolean;
 }
@@ -66,6 +67,7 @@ export interface TripDetail extends Omit<AvailableTrip, 'match'> {
   occupiedSeats: number;
   isDriver: boolean;
   acceptsParticipation: boolean;
+  canSaveInterest?: boolean;
   acceptsPickupProposal: boolean;
   recommendation: TripRecommendation | null;
 }
@@ -89,13 +91,22 @@ export type TripNoticeKind =
   | 'COMPENSATION_DISPUTED'
   | 'OCCURRENCE_PUBLISHED'
   | 'TRIP_INTERRUPTED'
-  | 'INCIDENT_RECORDED';
+  | 'INCIDENT_RECORDED'
+  | 'DESTINATION_REACHED'
+  | 'TRIP_DELAYED'
+  | 'TRIP_EXPIRED'
+  | 'TRIP_EDITED'
+  | 'SEAT_AVAILABLE'
+  | 'TRIP_DEPARTURE_REMINDER'
+  | 'TRIP_PICKUP_REMINDER'
+  | 'PICKUP_CONFIRMATION_REMINDER';
 
 export type AccountNoticeKind =
   | 'RECURRENCE_PAUSED'
   | 'OCCURRENCE_FAILED'
   | 'ACCOUNT_REACTIVATED'
-  | 'ELIGIBILITY_CHANGED';
+  | 'ELIGIBILITY_CHANGED'
+  | 'DRIVING_DOCUMENT_REMINDER';
 
 export type TripNotificationView = (
   | {

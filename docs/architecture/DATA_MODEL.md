@@ -83,3 +83,15 @@ Las estadísticas y la economía son proyecciones de lectura sobre las relacione
 - `20261126212000_notification_preferences` agrega preferencias privadas, PushDevice y PushDelivery. La relación sesión-dispositivo permite revocar envíos. La clave de aviso y dispositivo deduplica la cola internamente.
 
 Agenda y actividades se calculan desde tablas actuales. Los recorridos previos conservan sus estados y la ausencia de factores históricos.
+
+## Operación y preferencias
+
+Las migraciones aditivas `20261127010000`, `20261127030000`, `20261127030100` y `20261127040000`
+incorporan marcas de descenso, estimación, vencimiento, guardados, señales privadas, lugares y
+precisión de la última posición. `Reservation.droppedOffAt` exige abordaje
+anterior y ausencia nula. `Trip.estimatedDepartureAt` debe ser posterior a la
+salida original. `Trip.expiredAt` registra el vencimiento sin reescribir el estado.
+El control `Trip.version` protege cambios concurrentes y activa señales. El histórico
+de puntos permanece referenciado por reservas, grupos y propuestas. La posición
+en vivo caduca y el registro ambiental añade procedencia sin reescribir cierres
+anteriores.

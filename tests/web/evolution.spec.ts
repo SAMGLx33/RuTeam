@@ -1,6 +1,7 @@
 import { PrismaClient } from '../../backend/src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { expect, test } from '@playwright/test';
+import type { NotificationPage } from '../../packages/contracts/src/index';
 import {
   expectSuccessfulLogin,
   submitFixtureLogin,
@@ -9,7 +10,9 @@ import {
 const api = 'http://localhost:3100/api/v1';
 const web = { Origin: 'http://localhost:8082', 'x-ruteam-client': 'web' };
 
-test('la agenda abre el viaje, SSE actualiza plazas y las preferencias sobreviven a recargar', async ({
+test('agenda, SSE, preferencias y enlaces a avisos propios', async ({
+  browser,
+  baseURL,
   page,
   request,
 }) => {
@@ -125,7 +128,49 @@ test('la agenda abre el viaje, SSE actualiza plazas y las preferencias sobrevive
       page.getByText('Pendientes en otras paradas · 1', { exact: true }),
     ).toBeVisible({ timeout: 8000 });
 
+    const inbox = await request.get(api + '/notifications', { headers: auth });
+    expect(inbox.ok()).toBe(true);
+    const { items } = (await inbox.json()) as NotificationPage;
+    const notice = items.find(
+      ({ kind, tripId }) => kind === 'PARTICIPATION_CONFIRMED' && tripId === id,
+    );
+    if (!notice) throw new Error('No se registró el aviso de participación');
+    const link = `/open/notice/${notice.id}`;
+    await page.goto(link);
+    await expect(
+      page.getByText('Este aviso ya no está disponible para tu cuenta.'),
+    ).toBeVisible();
+
+    const guest = await browser.newContext({ baseURL });
+    try {
+      const passengerPage = await guest.newPage();
+      await passengerPage.goto(link);
+      await expect(
+        passengerPage.getByText(
+          'Inicia sesión para abrir el enlace de RuTeam.',
+        ),
+      ).toBeVisible();
+      await passengerPage
+        .getByLabel('Correo institucional', { exact: true })
+        .fill('ana@student-fixtures.ruteam.invalid');
+      await passengerPage
+        .getByLabel('Contraseña', { exact: true })
+        .fill(password);
+      await expectSuccessfulLogin(passengerPage);
+      await expect(passengerPage).toHaveURL(
+        new RegExp(`/trip-operation/${id}$`),
+      );
+      await expect(
+        passengerPage.getByText('Salida programada', { exact: false }),
+      ).toBeVisible();
+    } finally {
+      await guest.close();
+    }
+
     await page.goto('/notification-settings');
+    await expect(
+      page.getByRole('button', { name: 'Activar avisos en este dispositivo' }),
+    ).toHaveCount(0);
     const option = page.getByRole('checkbox', {
       name: 'Recomendaciones de viajes',
       exact: true,

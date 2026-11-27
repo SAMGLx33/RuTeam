@@ -7,12 +7,14 @@ interface DriverFix {
   longitude: number;
   capturedAt: Date;
   sharedAt: Date;
+  accuracyMeters: number | null;
 }
 
 interface PositionUnit {
   last(): Promise<{ sharedAt: Date; capturedAt: Date } | null>;
+  revokedThrough: Date | null;
   save(data: DriverFix): Promise<void>;
-  clear(): Promise<void>;
+  clear(revokedThrough?: Date): Promise<void>;
 }
 
 @Injectable()
@@ -21,7 +23,7 @@ export class TripTrackingRepository {
 
   forActiveParticipant(tripId: string, actorId: string) {
     return this.db.trip.findFirst({
-      where: activeTripVisibleTo(tripId, actorId),
+      where: activeTripVisibleTo(tripId, actorId, true),
       select: {
         driverId: true,
         trackingSharedAt: true,
@@ -31,6 +33,7 @@ export class TripTrackingRepository {
             longitude: true,
             capturedAt: true,
             sharedAt: true,
+            accuracyMeters: true,
           },
         },
         routeGeometry: true,
@@ -79,15 +82,18 @@ export class TripTrackingRepository {
           'No tienes un viaje en curso con ese identificador',
         );
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${actorId}::uuid FOR NO KEY UPDATE`;
-      const active = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id FROM "Trip"
+      const [active] = await tx.$queryRaw<
+        { trackingRevokedThroughAt: Date | null }[]
+      >`
+        SELECT "trackingRevokedThroughAt" FROM "Trip"
         WHERE id = ${tripId}::uuid AND "driverId" = ${actorId}::uuid AND "status" = 'EN_CURSO'
         FOR UPDATE`;
-      if (!active.length)
+      if (!active)
         throw new NotFoundException(
           'No tienes un viaje en curso con ese identificador',
         );
       return operation({
+        revokedThrough: active.trackingRevokedThroughAt,
         last: () =>
           tx.tripDriverPosition.findUnique({
             where: { tripId },
@@ -104,11 +110,18 @@ export class TripTrackingRepository {
             data: { trackingSharedAt: data.sharedAt },
           });
         },
-        clear: async () => {
+        clear: async (revokedThrough) => {
           await tx.tripDriverPosition.deleteMany({ where: { tripId } });
           await tx.trip.update({
             where: { id: tripId },
-            data: { trackingSharedAt: null },
+            data: {
+              trackingSharedAt: null,
+              ...(revokedThrough &&
+                (!active.trackingRevokedThroughAt ||
+                  revokedThrough > active.trackingRevokedThroughAt) && {
+                  trackingRevokedThroughAt: revokedThrough,
+                }),
+            },
           });
         },
       });

@@ -9,6 +9,7 @@ const tokens = new Map();
 const users = new Map();
 const trips = [];
 const extraUsers = [];
+const extraVehicles = [];
 
 function call(actor, method, path) {
   const client = request(app.getHttpServer());
@@ -26,31 +27,39 @@ async function login(actor, email) {
   tokens.set(actor, response.body.token);
 }
 
-async function publish(offeredSeats = 2) {
-  const { body: trip } = await call('diego', 'post', '/trips')
-    .send({
-      vehicleId: vehicle.id,
-      departureAt: new Date(Date.now() + hours++ * 3600000).toISOString(),
-      offeredSeats,
-      estimatedDurationMinutes: 20,
-      ruleIds: [],
-      itinerary: {
-        publicMeetingPoints: true,
-        description: 'Trayecto aislado de grupos',
-        origin: { campusPointId: campus.id, label: 'Entrada de prueba USC' },
-        destination: {
-          label: 'Encuentro público',
-          latitude: 3.43,
-          longitude: -76.515,
-          instructions: 'Junto al comercio',
-        },
-        stops: [],
+async function publish(offeredSeats = 2, options = {}) {
+  const draft = {
+    vehicleId: options.vehicleId ?? vehicle.id,
+    departureAt:
+      options.departureAt ??
+      new Date(Date.now() + hours++ * 3600000).toISOString(),
+    offeredSeats,
+    estimatedDurationMinutes: 20,
+    ruleIds: [],
+    itinerary: {
+      publicMeetingPoints: true,
+      description: 'Trayecto aislado de grupos',
+      origin: { campusPointId: campus.id, label: 'Entrada de prueba USC' },
+      destination: {
+        label: 'Encuentro público',
+        latitude: 3.43,
+        longitude: -76.515,
+        instructions: 'Junto al comercio',
       },
-    })
+      stops: [],
+    },
+  };
+  const { body: trip } = await call(options.driver ?? 'diego', 'post', '/trips')
+    .send(draft)
     .expect(201);
   trips.push(trip.id);
   const [pickup, dropoff] = trip.itinerary.stops;
-  return { id: trip.id, input: { pickupId: pickup.id, dropoffId: dropoff.id } };
+  return {
+    id: trip.id,
+    version: trip.version,
+    draft,
+    input: { pickupId: pickup.id, dropoffId: dropoff.id },
+  };
 }
 
 const open = (trip, actor, expectedMembers = 2) =>
@@ -148,8 +157,14 @@ afterAll(async () => {
       await db.reservation.deleteMany({ where: { tripId: { in: trips } } });
       await db.trip.deleteMany({ where: { id: { in: trips } } });
     }
-    if (extraUsers.length)
+    if (extraVehicles.length)
+      await db.vehicle.deleteMany({ where: { id: { in: extraVehicles } } });
+    if (extraUsers.length) {
+      await db.driverEligibility.deleteMany({
+        where: { userId: { in: extraUsers } },
+      });
       await db.user.deleteMany({ where: { id: { in: extraUsers } } });
+    }
   } finally {
     await app?.close();
   }
@@ -351,4 +366,59 @@ test('revalida vigencia y rechaza confirmaciones tras cancelar o iniciar el viaj
     group.status === 200 ? 2 : 0,
     group.status === 200 ? [users.get('ana'), users.get('sara')] : [],
   );
+});
+
+test('un conflicto horario de un integrante conserva el grupo sin plazas y desaparece con el retiro', async () => {
+  const expiresAt = new Date(Date.now() + 30 * 86400000);
+  await db.driverEligibility.create({
+    data: {
+      userId: users.get('juan'),
+      category: 'CAR',
+      expiresAt,
+      reviewStatus: 'APPROVED',
+    },
+  });
+  const alternate = await db.vehicle.create({
+    data: {
+      ownerId: users.get('juan'),
+      plate: 'GRP273',
+      type: 'CAR',
+      passengerCapacity: 2,
+      brand: 'Marca sintética',
+      color: 'GRIS',
+      modelYear: 2021,
+      document: { create: { expiresAt, reviewStatus: 'APPROVED' } },
+    },
+  });
+  extraVehicles.push(alternate.id);
+  const target = await publish();
+  const other = await publish(2, {
+    driver: 'juan',
+    vehicleId: alternate.id,
+    departureAt: target.draft.departureAt,
+  });
+  const existing = (
+    await call('sara', 'post', `/trips/${other.id}/participations`)
+      .send(other.input)
+      .expect(201)
+  ).body;
+  const { body: invitation } = await open(target, 'ana').expect(201);
+  await join('sara', invitation.invitationCode).expect(200);
+  await call('diego', 'patch', `/trips/${target.id}`)
+    .send({
+      version: target.version,
+      publication: { ...target.draft, offeredSeats: 1 },
+    })
+    .expect(409);
+  await confirm('ana', invitation.group)
+    .expect(409)
+    .expect(({ body }) => {
+      expect(body.message).toMatch(/conflicto de horario/);
+    });
+  await confirmed(target.id, 0, []);
+  await call('sara', 'post', `/participations/${existing.id}/cancel`).expect(
+    200,
+  );
+  await confirm('ana', invitation.group).expect(200);
+  await confirmed(target.id, 2, [users.get('ana'), users.get('sara')]);
 });

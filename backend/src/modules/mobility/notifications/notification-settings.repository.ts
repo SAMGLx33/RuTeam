@@ -26,10 +26,11 @@ export class NotificationSettingsRepository {
   }
 
   update(userId: string, input: NotificationPreferences) {
-    return this.db.user.update({
-      where: { id: userId },
-      data: { notificationPreferences: { ...input } },
-    });
+    return this.db.$executeRaw`
+      UPDATE "User"
+      SET "notificationPreferences" = COALESCE("notificationPreferences", '{}'::jsonb) || ${JSON.stringify(input)}::jsonb
+      WHERE id=${userId}::uuid
+    `;
   }
 
   register(

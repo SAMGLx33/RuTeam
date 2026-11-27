@@ -427,7 +427,10 @@ test('confirmaciones individuales, historial de grupo sin promoción y abordaje 
     (await db.reservation.findUnique({ where: { id: legacy.id } })).status,
   ).toBe('REJECTED');
   await call('post', endpoint, 'ana').send(input).expect(409);
-  await transition('FINISH').expect(200);
+  await transition('FINISH').expect(409);
+  await call('post', `/trips/${groupTrip.id}/transition`)
+    .send({ action: 'FINISH', confirmMissingDropoffs: true })
+    .expect(200);
   await call('post', `/participations/${confirmed.body.id}/board`).expect(409);
   expect(
     await db.trip.findUnique({ where: { id: groupTrip.id } }),
@@ -459,11 +462,11 @@ test('dos conductores pueden confirmar plazas recíprocamente en paralelo', asyn
         document: { create: { expiresAt: expiry, reviewStatus: 'APPROVED' } },
       },
     });
-    const publish = async (actor, vehicleId) => {
+    const publish = async (actor, vehicleId, hours) => {
       const trip = (
         await call('post', '/trips', actor)
           .send({
-            ...weekday(32, {
+            ...weekday(hours, {
               origin: { campusPointId: plaza.id },
               destination: floralia,
             }),
@@ -474,8 +477,8 @@ test('dos conductores pueden confirmar plazas recíprocamente en paralelo', asyn
       reciprocalTrips.push(trip.id);
       return trip;
     };
-    const tripByDiego = await publish('diego', vehicle.id);
-    const tripByAna = await publish('ana', secondVehicle.id);
+    const tripByDiego = await publish('diego', vehicle.id, 32);
+    const tripByAna = await publish('ana', secondVehicle.id, 34);
     const ask = (actor, trip) => {
       const [pickup, dropoff] = trip.itinerary.stops;
       return call('post', `/trips/${trip.id}/participations`, actor)
@@ -666,7 +669,7 @@ test('registra llegada intermedia una vez, distingue abordaje y ausencia y prese
     boarded.body.boardedAt,
   );
   const finished = await call('post', `${path}/transition`)
-    .send({ action: 'FINISH' })
+    .send({ action: 'FINISH', confirmMissingDropoffs: true })
     .expect(200);
   expect(finished.body).toMatchObject({
     startedAt: started.body.startedAt,
@@ -726,5 +729,307 @@ test('pérdida de matrícula permite cerrar sólo viajes propios, sin habilitar 
       where: { userId: users.diego },
       data: original,
     });
+  }
+});
+
+test('el descenso requiere recogida, llegada y conductor, retiene la plaza y conserva historial', async () => {
+  const trip = (
+    await call('post', '/trips')
+      .send(
+        weekday(173, {
+          origin: { campusPointId: plaza.id },
+          destination: floralia,
+        }),
+      )
+      .expect(201)
+  ).body;
+  tripIds.push(trip.id);
+  const path = '/trips/' + trip.id;
+  const [pickup, dropoff] = trip.itinerary.stops;
+  const participation = (
+    await call('post', path + '/participations', 'ana')
+      .send({ pickupId: pickup.id, dropoffId: dropoff.id })
+      .expect(201)
+  ).body;
+  const participant = '/participations/' + participation.id;
+  await call('post', path + '/transition')
+    .send({ action: 'START' })
+    .expect(200);
+  await call('post', participant + '/drop-off').expect(409);
+  await call('post', participant + '/board').expect(200);
+  await call('post', participant + '/drop-off', 'ana').expect(403);
+  await call('post', participant + '/drop-off').expect(409);
+  await call('post', path + '/transition')
+    .send({ action: 'FINISH' })
+    .expect(409);
+  await call('post', path + '/stops/' + dropoff.id + '/reach').expect(200);
+  const replays = await Promise.all([
+    call('post', participant + '/drop-off').expect(200),
+    call('post', participant + '/drop-off').expect(200),
+  ]);
+  expect(replays[0].body).toMatchObject({
+    stage: 'DROPPED_OFF',
+    droppedOffAt: expect.any(String),
+  });
+  expect(replays[1].body.droppedOffAt).toBe(replays[0].body.droppedOffAt);
+  expect(
+    await db.tripNotification.count({
+      where: { tripId: trip.id, kind: 'DESTINATION_REACHED' },
+    }),
+  ).toBe(1);
+  await call('get', path + '/location', 'ana').expect(404);
+  const operation = (await call('get', path + '/operation').expect(200)).body;
+  expect(operation.manifest).toMatchObject({
+    boarded: 1,
+    droppedOff: 1,
+    aboard: 0,
+  });
+  await call('post', path + '/transition')
+    .send({ action: 'FINISH' })
+    .expect(200);
+  const environment = (
+    await call('get', '/mobility/environment/trips/' + trip.id, 'ana').expect(
+      200,
+    )
+  ).body;
+  expect(environment.dropoffBasis).toBe('CONFIRMED_STOP');
+  await call('post', participant + '/drop-off').expect(200);
+  const passenger = (await call('get', path + '/operation', 'ana').expect(200))
+    .body;
+  expect(passenger.participation).toMatchObject({
+    stage: 'COMPLETED',
+    droppedOffAt: replays[0].body.droppedOffAt,
+  });
+  expect(await db.trip.findUnique({ where: { id: trip.id } })).toMatchObject({
+    occupiedSeats: 1,
+    status: 'COMPLETADO',
+  });
+});
+
+test('edición versionada y demora conservan las condiciones aceptadas; el vencimiento deja historial', async () => {
+  const publication = weekday(176, {
+    origin: { campusPointId: plaza.id },
+    destination: floralia,
+  });
+  const trip = (await call('post', '/trips').send(publication).expect(201))
+    .body;
+  tripIds.push(trip.id);
+  const path = '/trips/' + trip.id;
+  await call('patch', path, 'ana')
+    .send({ version: trip.version, description: 'Cambio ajeno' })
+    .expect(404);
+  const edit = (
+    await call('patch', path)
+      .send({
+        version: trip.version,
+        publication: { ...publication, offeredSeats: 2 },
+      })
+      .expect(200)
+  ).body;
+  expect(edit).toMatchObject({
+    id: trip.id,
+    offeredSeats: 2,
+    version: trip.version + 1,
+  });
+  const [pickup, dropoff] = edit.itinerary.stops;
+  await call('patch', path)
+    .send({ version: trip.version, description: 'Cambio obsoleto' })
+    .expect(409);
+  const participation = (
+    await call('post', path + '/participations', 'ana')
+      .send({ pickupId: pickup.id, dropoffId: dropoff.id })
+      .expect(201)
+  ).body;
+  const version = edit.version + 1;
+  await call('patch', path)
+    .send({ version, publication: { ...publication, offeredSeats: 3 } })
+    .expect(409);
+  await call('patch', path)
+    .send({ version, description: 'Referencia pública corregida' })
+    .expect(200);
+  await call('post', path + '/delay', 'ana')
+    .send({ estimatedDepartureAt: fromNow(177) })
+    .expect(403);
+  const estimatedDepartureAt = new Date(
+    Date.parse(trip.departureAt) + 15 * 60000,
+  ).toISOString();
+  await call('post', path + '/delay')
+    .send({ estimatedDepartureAt })
+    .expect(200);
+  await call('post', path + '/delay')
+    .send({ estimatedDepartureAt })
+    .expect(200);
+  let summary = (await call('get', path + '/operation', 'ana').expect(200))
+    .body;
+  expect(summary).toMatchObject({
+    departureAt: trip.departureAt,
+    estimatedDepartureAt,
+    departureState: 'DELAYED',
+    participation: { noShowAt: null },
+  });
+  expect(
+    await db.tripNotification.count({
+      where: { tripId: trip.id, kind: 'TRIP_DELAYED' },
+    }),
+  ).toBe(2);
+  const past = Date.now() - 4 * 3600000;
+  await db.trip.update({
+    where: { id: trip.id },
+    data: {
+      departureAt: new Date(past),
+      expectedEndAt: new Date(
+        past + publication.estimatedDurationMinutes * 60000,
+      ),
+      estimatedDepartureAt: new Date(past + 30 * 60000),
+    },
+  });
+  await call('post', path + '/transition')
+    .send({ action: 'START' })
+    .expect(409);
+  await call('post', path + '/participations', 'sara')
+    .send({ pickupId: pickup.id, dropoffId: dropoff.id })
+    .expect(409);
+  const { ReservationsService } =
+    await import('../dist/src/modules/reservations/application/reservations.service.js');
+  await Promise.all([
+    app.get(ReservationsService).expireDue(),
+    app.get(ReservationsService).expireDue(),
+  ]);
+  summary = (await call('get', path + '/operation', 'ana').expect(200)).body;
+  expect(summary).toMatchObject({
+    status: 'PROGRAMADO',
+    departureState: 'EXPIRED',
+    expiredAt: expect.any(String),
+    participation: { noShowAt: null },
+  });
+  expect(
+    await db.tripNotification.count({
+      where: { tripId: trip.id, kind: 'TRIP_EXPIRED' },
+    }),
+  ).toBe(2);
+  await call(
+    'post',
+    '/participations/' + participation.id + '/cancel',
+    'ana',
+  ).expect(200);
+});
+
+test('dos viajes de distintos conductores no admiten confirmaciones simultáneas del mismo estudiante', async () => {
+  const expiresAt = new Date('2030-12-31T00:00Z');
+  const original = await db.driverEligibility.findUnique({
+    where: { userId: users.sara },
+  });
+  const eligibility = {
+    category: 'BOTH',
+    expiresAt,
+    reviewStatus: 'APPROVED',
+    verificationSource: 'DEMO_REVIEW',
+  };
+  const prior = await db.driverEligibility.findUnique({
+    where: { userId: users.diego },
+  });
+  const approved = {
+    ...eligibility,
+    verificationSource: prior.verificationSource,
+    reviewedById: prior.reviewedById,
+    reviewedAt: prior.reviewedAt,
+  };
+  const car = await db.vehicle.create({
+    data: {
+      ownerId: users.sara,
+      plate: 'OPE273',
+      type: 'CAR',
+      brand: 'Pruebas sintéticas',
+      modelYear: 2021,
+      color: 'GRIS',
+      passengerCapacity: 2,
+      document: {
+        create: {
+          kind: 'SOAT',
+          ...Object.fromEntries(
+            Object.entries(approved).filter(([key]) => key !== 'category'),
+          ),
+        },
+      },
+    },
+  });
+  await db.driverEligibility.upsert({
+    where: { userId: users.sara },
+    create: { userId: users.sara, ...approved },
+    update: approved,
+  });
+  const created = [];
+  try {
+    const draft = weekday(182, {
+      origin: { campusPointId: plaza.id },
+      destination: floralia,
+    });
+    const first = (await call('post', '/trips').send(draft).expect(201)).body;
+    created.push(first.id);
+    const second = (
+      await call('post', '/trips', 'sara')
+        .send({ ...draft, vehicleId: car.id })
+        .expect(201)
+    ).body;
+    created.push(second.id);
+    const confirm = (trip) =>
+      call('post', '/trips/' + trip.id + '/participations', 'ana').send({
+        pickupId: trip.itinerary.stops[0].id,
+        dropoffId: trip.itinerary.stops.at(-1).id,
+      });
+    const responses = await Promise.all([confirm(first), confirm(second)]);
+    expect(responses.map(({ status }) => status).sort()).toEqual([201, 409]);
+    expect(responses.find(({ status }) => status === 409).body.message).toMatch(
+      /desplazamientos confirmados/,
+    );
+    expect(
+      await db.reservation.count({ where: { tripId: { in: created } } }),
+    ).toBe(1);
+    const rows = await db.trip.findMany({
+      where: { id: { in: created } },
+      select: { occupiedSeats: true },
+    });
+    expect(rows.map(({ occupiedSeats }) => occupiedSeats).sort()).toEqual([
+      0, 1,
+    ]);
+  } finally {
+    await db.reservation.deleteMany({ where: { tripId: { in: created } } });
+    await db.trip.deleteMany({ where: { id: { in: created } } });
+    await db.vehicle.delete({ where: { id: car.id } });
+    if (original) {
+      const { userId, ...rest } = original;
+      await db.driverEligibility.update({ where: { userId }, data: rest });
+    } else await db.driverEligibility.delete({ where: { userId: users.sara } });
+  }
+});
+
+test('edición completa y confirmación concurrentes conservan una sola versión de las condiciones', async () => {
+  const draft = weekday(185, {
+    origin: { campusPointId: plaza.id },
+    destination: floralia,
+  });
+  const trip = (await call('post', '/trips').send(draft).expect(201)).body;
+  tripIds.push(trip.id);
+  const path = '/trips/' + trip.id;
+  const [pickup, dropoff] = trip.itinerary.stops;
+  const [edit, seat] = await Promise.all([
+    call('patch', path).send({
+      version: trip.version,
+      publication: { ...draft, offeredSeats: 2 },
+    }),
+    call('post', path + '/participations', 'ana').send({
+      pickupId: pickup.id,
+      dropoffId: dropoff.id,
+    }),
+  ]);
+  const row = await db.trip.findUniqueOrThrow({ where: { id: trip.id } });
+  expect(row.version).toBe(1);
+  if (edit.status === 200) {
+    expect([400, 409]).toContain(seat.status);
+    expect(row).toMatchObject({ offeredSeats: 2, occupiedSeats: 0 });
+  } else {
+    expect(edit.status).toBe(409);
+    expect(seat.status).toBe(201);
+    expect(row).toMatchObject({ offeredSeats: 1, occupiedSeats: 1 });
   }
 });

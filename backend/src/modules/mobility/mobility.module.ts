@@ -1,3 +1,8 @@
+import { SavedMobilityController } from './controllers/saved-mobility.controller.js';
+import { SavedMobilityRepository } from './infrastructure/repositories/saved-mobility.repository.js';
+import { SavedMobilityService } from './application/saved-mobility.service.js';
+import { DailyMobilityWorker } from './application/daily-mobility.worker.js';
+import { MobilityReminderRepository } from './infrastructure/repositories/mobility-reminder.repository.js';
 import { ExpoPushDelivery } from './notifications/expo-push-delivery.js';
 import { NotificationSettingsController } from './notifications/notification-settings.controller.js';
 import { NotificationSettingsService } from './notifications/notification-settings.service.js';
@@ -25,6 +30,7 @@ import { MobilityStatisticsController } from './controllers/mobility-statistics.
     MobilityStatisticsController,
     EnvironmentController,
     DailyMobilityController,
+    SavedMobilityController,
     NotificationSettingsController,
   ],
   providers: [
@@ -33,6 +39,10 @@ import { MobilityStatisticsController } from './controllers/mobility-statistics.
     ExpoPushDelivery,
     NotificationSettingsRepository,
     DailyMobilityService,
+    DailyMobilityWorker,
+    MobilityReminderRepository,
+    SavedMobilityRepository,
+    SavedMobilityService,
     DailyMobilityRepository,
     EnvironmentService,
     EnvironmentRepository,

@@ -5,6 +5,7 @@ import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.
 export function activeTripVisibleTo(
   tripId: string,
   actorId: string,
+  requiresActiveParticipation = false,
 ): Prisma.TripWhereInput {
   return {
     id: tripId,
@@ -16,6 +17,7 @@ export function activeTripVisibleTo(
           some: {
             status: 'CONFIRMED',
             noShowAt: null,
+            ...(requiresActiveParticipation && { droppedOffAt: null }),
             members: { some: { userId: actorId } },
           },
         },

@@ -143,3 +143,19 @@ tanto en la API como en el bundle. Se cerraron ambos procesos del ensayo.
 La IP del anfitrión y la conexión desde un teléfono quedan para la prueba
 física. Para esa prueba, crea la ruta privada descrita arriba y genera
 credenciales propias al sembrar la base de QA.
+
+## Seguimiento y avisos en operación
+
+En Expo Go compatible con SDK 54, comprueba en una red privada la API, inicio de
+sesión con cuenta sintética, bandeja, detalle, cámara para QR y permiso de GPS
+en primer plano. Con dos cuentas en un viaje activo, rechaza y después concede
+GPS, comparte, consulta la precisión, bloquea la pantalla, vuelve y verifica
+el estado. Registra el descenso y confirma que el pasajero conserva su historial
+y pierde ubicación en vivo. Comprueba la pantalla sin red y al restablecerla.
+
+Para push remoto usa un development build con proyecto, credenciales y
+dispositivo autorizados. Comprueba permiso rechazado, registro aceptado,
+rotación y revocación, aviso de prueba, enlace con sesión cerrada, reconsultar
+tras ingresar y repetir con un recurso ajeno. Registra modelo, sistema, versión
+de Expo Go o build, estado de permisos y resultado sin copiar tokens ni datos
+privados. La prueba física queda pendiente de dispositivo.

@@ -1,11 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Equals, IsBoolean, IsIn, Matches } from 'class-validator';
+import { Equals, IsBoolean, IsIn, IsOptional, Matches } from 'class-validator';
 import type { NotificationPreferences } from '@ruteam/contracts';
 
 export class NotificationSettingsDto implements NotificationPreferences {
   @ApiProperty() @IsBoolean() recommendations!: boolean;
   @ApiProperty() @IsBoolean() messages!: boolean;
   @ApiProperty() @IsBoolean() reminders!: boolean;
+  @ApiProperty({ enum: [15, 30, 60], required: false })
+  @IsOptional()
+  @IsIn([15, 30, 60])
+  reminderLeadMinutes?: 15 | 30 | 60;
   @ApiProperty() @IsBoolean() recurrences!: boolean;
   @ApiProperty() @IsBoolean() optionalTripUpdates!: boolean;
 }

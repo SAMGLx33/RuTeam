@@ -18,6 +18,12 @@ const schema = z.object({
     .min(1)
     .max(28)
     .default(7),
+  TRIP_EXPIRATION_GRACE_MINUTES: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(180)
+    .default(30),
   SESSION_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(3600),
   AUTH_TOKEN_SECRET: z.string().min(32).optional(),
   AUTH_PUBLIC_URL: z.url().optional(),

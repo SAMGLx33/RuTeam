@@ -226,3 +226,24 @@ Las notificaciones internas pueden abrir una conversación cuando sigue disponib
 RuTeam estima emisiones de viajes completados con factores FECOC y SIN. Congela datos de energía, calcula por tramo si hay evidencia y conserva la ausencia de datos. Permite declarar una alternativa de movilidad voluntaria por participación individual abordada.
 
 Los datos de viaje, chat y ubicación se revalidan al recibir señales SSE. El viaje activo reúne el seguimiento y las acciones por rol. El resumen posviaje conserva el acceso a calificaciones, compensaciones e incidencias según el abordaje y el estado. Agenda y Actividades proyectan registros propios. Los grupos mantienen consentimiento individual y sus avisos de confirmación. Las preferencias aplican a avisos opcionales y preservan los cambios operativos esenciales.
+
+## Operación del viaje y movilidad cotidiana
+
+Conductor y pasajero distinguen abordaje, descenso observado, ausencia, retiro e
+interrupción. Un descenso conserva las plazas ocupadas y el historial y termina
+el acceso del pasajero a GPS en directo. El cierre sin descensos registrados
+requiere confirmación explícita. Las calificaciones conservan su condición de viaje
+completado.
+
+La agenda usa ventanas por tramo cuando se conocen y ventanas completas cuando
+faltan tiempos. Un estudiante evita superponer desplazamientos en los que conduce o
+participa. La demora conserva la salida publicada y admite nueva estimación. El
+vencimiento cierra oportunidades de participación y conserva el historial. Las
+publicaciones futuras sin referencias admiten correcciones de itinerario y condiciones.
+Con reservas, grupos o propuestas se conserva su contexto y se permite corregir
+la descripción. Las personas afectadas reciben un aviso.
+
+Guardados, plazas observadas, agenda, lugares habituales y límite voluntario de
+aporte complementan la búsqueda. Nest protege estos datos del usuario. El
+seguimiento periódico requiere consentimiento y primer plano. Expo Go conserva
+la bandeja interna. El push remoto se prueba en un development build configurado.

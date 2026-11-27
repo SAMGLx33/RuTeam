@@ -86,3 +86,11 @@ Usa las pantallas secundarias de Perfil e Inicio y los componentes compartidos d
 ## Evolución ambiental y comunicación
 
 Presentar los resultados y la cobertura ambiental de la API por rol y alcance. El flujo SSE invalida las consultas HTTP y mantiene su sondeo. Usar los componentes de abordaje, seguridad, localización y gestión existentes dentro del resumen de viaje. Los controles de preferencias deben guardar cambios reales. El registro push requiere un cliente nativo configurado con consentimiento.
+
+## Operación, conexión y dispositivos
+
+Mostrar salida programada, nueva estimación, inicio efectivo y vencimiento como
+hechos distintos. Conservar la versión vista al empezar a editar. Una acción sin
+respuesta se reconcilia con el backend antes de confirmar al usuario su resultado.
+GPS en primer plano y adaptador de notificaciones tienen disponibilidad por
+plataforma. Consultar la [guía de dispositivos](../docs/development/MOBILE_TESTING.md).

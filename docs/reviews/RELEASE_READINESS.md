@@ -229,3 +229,18 @@ El corte integra estimaciones RF-019, actualizaciones SSE, viaje activo y resume
 - [Preferencias, dispositivos y recibos](../development/NOTIFICATION_SETTINGS.md)
 - [Endpoints](../development/API.md#endpoints-de-evolución-ambiental-y-comunicación)
 - [Evidencia y relevos](../handoffs/README.md#evolución-ambiental-y-comunicación)
+
+## Operación y movilidad cotidiana del 27/11/2026
+
+La revisión de `task/trip-operations` se realiza sobre las cuatro migraciones
+aditivas y los contratos del incremento. La validación local aprobó 224 casos
+Jest, 18 casos Playwright, 6 comprobaciones de smoke y 18 de Expo Doctor. Ver
+los resultados por comando y el alcance de cada prueba en el
+[handoff de integración](../handoffs/2026-11-27_trip-operations_integracion.md).
+
+Quedan pendientes revisión cruzada de módulos y prueba física de Expo Go.
+Push remoto requiere un development build autorizado, dispositivo físico y
+credenciales del proyecto. La vigencia institucional oficial, verificación
+documental externa, atención institucional de incidencias, pagos, sanciones,
+restricciones de género y eliminación irreversible conservan sus decisiones
+pendientes.

@@ -24,12 +24,14 @@ export interface MobilityProfile {
   longitude: number | null;
   radiusKm: number;
   vehicleTypes: VehicleType[];
+  maxContributionCop?: number | null;
 }
 export interface MobilityTrip {
   id: string;
   driverId: string;
   departureAt: Date;
   vehicleType: VehicleType;
+  suggestedContributionCop?: number | null;
   stops: RouteStop[];
   geometry: RouteGeometry | null;
 }
@@ -77,6 +79,8 @@ export function matchMobility(
     !direction ||
     direction !== profile.direction ||
     !profile.vehicleTypes.includes(trip.vehicleType) ||
+    (profile.maxContributionCop != null &&
+      (trip.suggestedContributionCop ?? 0) > profile.maxContributionCop) ||
     profile.latitude === null ||
     profile.longitude === null
   )

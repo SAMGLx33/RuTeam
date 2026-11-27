@@ -31,6 +31,8 @@ enum VerificationOutcome {
   DENIED
 }
 model User {
+  savedTrips SavedTrip[]
+  frequentPlaces FrequentPlace[]
   notificationPreferences Json?
   id String @id @default(uuid()) @db.Uuid
   email String @unique @db.VarChar(254)
@@ -232,6 +234,7 @@ model TripRuleDefinition {
   selections TripRuleSelection[]
 }
 model Trip {
+  savedBy SavedTrip[]
   environmentInput Json?
   environmentSnapshot Json?
   id String @id @default(uuid()) @db.Uuid
@@ -245,6 +248,9 @@ model Trip {
   originLatitude Decimal @db.Decimal(9,6)
   originLongitude Decimal @db.Decimal(9,6)
   departureAt DateTime @db.Timestamptz(3)
+  estimatedDepartureAt DateTime? @db.Timestamptz(3)
+  expiredAt DateTime? @db.Timestamptz(3)
+  trackingRevokedThroughAt DateTime? @db.Timestamptz(3)
   estimatedDurationMinutes Int
   expectedEndAt DateTime @db.Timestamptz(3)
   offeredSeats Int
@@ -280,6 +286,7 @@ model Trip {
   recurringOccurrence RecurringOccurrence?
   @@index([driverId, departureAt, expectedEndAt])
   @@index([status, departureAt, id])
+  @@index([status, expiredAt, expectedEndAt])
 }
 
 enum MobilityDirection {
@@ -296,6 +303,7 @@ enum RecommendationMatchType {
   POTENTIAL
 }
 model MobilityPreference {
+  maxContributionCop Int?
   id String @id @default(uuid()) @db.Uuid
   userId String @db.Uuid
   campusPointId String @db.Uuid
@@ -431,6 +439,7 @@ model Reservation {
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   confirmedAt DateTime? @db.Timestamptz(3)
   boardedAt DateTime? @db.Timestamptz(3)
+  droppedOffAt DateTime? @db.Timestamptz(3)
   noShowAt DateTime? @db.Timestamptz(3)
   trip Trip @relation(fields: [tripId], references: [id])
   requester User @relation(fields: [requesterId], references: [id])
@@ -614,6 +623,7 @@ model TripDriverPosition {
   tripId String @id @db.Uuid
   latitude Decimal @db.Decimal(8,6)
   longitude Decimal @db.Decimal(9,6)
+  accuracyMeters Decimal? @db.Decimal(12, 3)
   capturedAt DateTime @db.Timestamptz(3)
   sharedAt DateTime @db.Timestamptz(3)
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
@@ -700,4 +710,29 @@ model PushDelivery {
   @@id([noticeId, deviceId])
   @@index([stage, availableAt])
   @@index([deviceId])
+}
+
+model SavedTrip {
+  userId String @db.Uuid
+  tripId String @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  alertRequestedAt DateTime? @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  @@id([userId, tripId])
+  @@index([tripId])
+}
+
+model FrequentPlace {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  name String @db.VarChar(80)
+  placeLabel String @db.VarChar(160)
+  kind String @db.VarChar(24)
+  latitude Decimal @db.Decimal(9, 6)
+  longitude Decimal @db.Decimal(9, 6)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
 }

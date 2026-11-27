@@ -1,3 +1,5 @@
+import { Link } from 'expo-router';
+import { FrequentPlacePicker } from './frequent-place-picker';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { StyleSheet, Switch, Text, TextInput, View } from 'react-native';
@@ -64,6 +66,14 @@ function PreferenceEditor({
   const [vehicles, setVehicles] = useState<VehicleType[]>(
     entry?.vehicleTypes ?? ['CAR', 'MOTORCYCLE'],
   );
+  const [maxContribution, setMaxContribution] = useState(
+    entry?.maxContributionCop?.toString() ?? '',
+  );
+  const normalizedContribution = maxContribution.trim();
+  const contributionIsValid =
+    !normalizedContribution ||
+    (/^\d+$/.test(normalizedContribution) &&
+      Number(normalizedContribution) <= 2_147_483_647);
   const [notificationsEnabled, setNotices] = useState(
     entry?.notificationsEnabled ?? true,
   );
@@ -87,7 +97,8 @@ function PreferenceEditor({
     startMinute !== null &&
     endMinute !== null &&
     startMinute <= endMinute &&
-    vehicles.length > 0;
+    vehicles.length > 0 &&
+    contributionIsValid;
   const base = '/mobility/preferences';
   const path = entry ? `${base}/${entry.id}` : base;
   const mutation = useMutation({
@@ -114,6 +125,9 @@ function PreferenceEditor({
       endMinute,
       radiusKm,
       vehicleTypes: vehicles,
+      maxContributionCop: normalizedContribution
+        ? Number(normalizedContribution)
+        : null,
       notificationsEnabled,
       active,
       latitude: coordinates?.latitude ?? null,
@@ -152,6 +166,13 @@ function PreferenceEditor({
           ? 'Zona aproximada marcada.'
           : 'Marca una zona aproximada para recibir coincidencias por cercanía.'}
       </Text>
+      <FrequentPlacePicker
+        onSelect={({ latitude, longitude, placeLabel }) => {
+          setPlace(placeLabel);
+          setCoordinates({ latitude, longitude });
+          setSearchFocus({ latitude, longitude });
+        }}
+      />
       <PlaceSearch
         title="Zona habitual"
         onSelect={({ latitude, longitude, label: name }) => {
@@ -287,6 +308,20 @@ function PreferenceEditor({
           />
         ))}
       </View>
+      <Text style={accountStyles.label}>
+        Aporte máximo sugerido en COP (opcional)
+      </Text>
+      <TextInput
+        accessibilityLabel="Aporte máximo sugerido en COP"
+        style={accountStyles.input}
+        keyboardType="number-pad"
+        value={maxContribution}
+        onChangeText={setMaxContribution}
+        maxLength={10}
+      />
+      {!contributionIsValid && (
+        <Text style={s.error}>Indica un valor entero válido en pesos.</Text>
+      )}
       <View style={styles.toggle}>
         <Text style={s.text}>Recibir avisos de viajes compatibles</Text>
         <Switch
@@ -359,6 +394,12 @@ export function MobilityScreen() {
 
   return (
     <ProtectedPage title="Preferencias de movilidad" allowOnboarding>
+      <Link href="/frequent-places" style={s.link}>
+        Mis lugares habituales
+      </Link>
+      <Link href="/saved-trips" style={s.link}>
+        Mis viajes guardados
+      </Link>
       <Text style={s.text}>
         Guarda tus zonas y horarios habituales para recibir recomendaciones. Tus
         preferencias son privadas.

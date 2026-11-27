@@ -26,3 +26,11 @@ La publicación congela consumo y factor. El cierre escribe en el mismo commit l
 ## Viaje alternativo
 
 Una participación individual abordada admite una alternativa voluntaria. La comparación es `emisión estimada alternativa − parte atribuida` sobre el mismo tramo sustentado. Caminata y bicicleta tienen cero emisiones operativas dentro de este perímetro. Un resultado negativo indica una atribución mayor al compartir el viaje. Auto y moto requieren consumo y factor del mismo alcance. Transporte público, otro o datos faltantes conservan la ausencia de estimación. Cada contraste se presenta para el pasajero que lo declaró. Se excluye de los totales y evita agregar contrafactuales de varias personas. El resultado es de escenario y no constituye certificación.
+
+## Procedencia del descenso
+
+Los cierres nuevos de viajes con participantes abordados guardan por viajero si
+el punto de descenso del cálculo fue confirmado o previsto. Ambos usan la distancia
+de la geometría publicada y los segmentos autorizados. Una lectura GPS individual
+no acredita kilómetros recorridos. Los cierres históricos permanecen con su
+metodología, distancias y factores originales.

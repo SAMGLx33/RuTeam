@@ -5,7 +5,6 @@ import type {
   NotificationPreferences,
   NotificationSettings,
 } from '@ruteam/contracts';
-import { Button } from '../../components/ui/button';
 import {
   ProtectedPage,
   formStyles as s,
@@ -13,14 +12,18 @@ import {
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
 import { Choice } from '../trips/itinerary-form';
+import { PushDeviceSettings } from './push-device-settings';
 
-const labels: Record<keyof NotificationPreferences, string> = {
+const labels = {
   recommendations: 'Recomendaciones de viajes',
   messages: 'Avisos de mensajes',
-  reminders: 'Recordatorios de calificación',
+  reminders: 'Recordatorios de viajes, documentos y calificaciones',
   recurrences: 'Avisos de recurrencias',
   optionalTripUpdates: 'Avisos de nuevos pasajeros y propuestas recibidas',
-};
+} satisfies Record<
+  Exclude<keyof NotificationPreferences, 'reminderLeadMinutes'>,
+  string
+>;
 export function NotificationSettingsScreen() {
   const { user } = useSession();
   const client = useQueryClient();
@@ -42,11 +45,6 @@ export function NotificationSettingsScreen() {
       void client.invalidateQueries({ queryKey: ['notification-list'] });
     },
   });
-  const revoke = useMutation({
-    mutationFn: (id: string) =>
-      api('/notification-settings/devices/' + id, { method: 'DELETE' }),
-    onSuccess: () => query.refetch(),
-  });
   const settings = query.data;
   return (
     <ProtectedPage title="Preferencias de avisos">
@@ -58,16 +56,16 @@ export function NotificationSettingsScreen() {
         permanecen visibles.
       </Text>
       {query.isPending && <Text style={s.text}>Cargando preferencias…</Text>}
-      {(query.error || save.error || revoke.error) && (
+      {(query.error || save.error) && (
         <Text accessibilityRole="alert" style={s.error}>
-          {(query.error || save.error || revoke.error)?.message}
+          {(query.error || save.error)?.message}
         </Text>
       )}
       {settings && (
         <>
           <View style={s.section}>
             <Text style={s.title}>Avisos opcionales</Text>
-            {(Object.keys(labels) as (keyof NotificationPreferences)[]).map(
+            {(Object.keys(labels) as (keyof typeof labels)[]).map(
               (category) => (
                 <Choice
                   checkbox
@@ -84,32 +82,41 @@ export function NotificationSettingsScreen() {
                 />
               ),
             )}
+            {settings.preferences.reminders && (
+              <>
+                <Text style={s.title}>
+                  Anticipación para viajes y documentos
+                </Text>
+                {([15, 30, 60] as const).map((minutes) => (
+                  <Choice
+                    key={minutes}
+                    label={`${minutes} minutos`}
+                    checked={
+                      (settings.preferences.reminderLeadMinutes ?? 30) ===
+                      minutes
+                    }
+                    onPress={() => {
+                      if (!save.isPending)
+                        save.mutate({
+                          ...settings.preferences,
+                          reminderLeadMinutes: minutes,
+                        });
+                    }}
+                  />
+                ))}
+              </>
+            )}
             {save.isPending && (
               <Text style={s.text}>Guardando preferencias…</Text>
             )}
           </View>
-          <View style={s.section}>
-            <Text style={s.title}>Avisos del sistema operativo</Text>
-            <Text style={s.text}>
-              El registro remoto requiere una compilación habilitada y
-              consentimiento en el dispositivo. Los avisos de RuTeam se pueden
-              consultar desde la bandeja.
-            </Text>
-            {!settings.nativePushConfigured && (
-              <Text style={s.text}>
-                El registro remoto está deshabilitado en este entorno.
-              </Text>
-            )}
-            {settings.devices.map(({ id, platform }) => (
-              <Button
-                key={id}
-                secondary
-                title={'Revocar dispositivo ' + platform}
-                disabled={revoke.isPending}
-                onPress={() => revoke.mutate(id)}
-              />
-            ))}
-          </View>
+          {user && (
+            <PushDeviceSettings
+              key={user.id}
+              accountId={user.id}
+              settings={settings}
+            />
+          )}
         </>
       )}
     </ProtectedPage>

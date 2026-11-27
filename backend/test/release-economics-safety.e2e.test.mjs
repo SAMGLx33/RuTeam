@@ -106,7 +106,10 @@ function join(actor, trip) {
 
 function transition(trip, action) {
   return call('diego', 'post', `/trips/${trip.id}/transition`)
-    .send({ action })
+    .send({
+      action,
+      confirmMissingDropoffs: action === 'FINISH' ? true : undefined,
+    })
     .expect(200);
 }
 

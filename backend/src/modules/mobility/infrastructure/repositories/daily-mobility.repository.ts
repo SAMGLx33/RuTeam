@@ -7,6 +7,11 @@ const trip = {
   driverId: true,
   originLabel: true,
   departureAt: true,
+  expectedEndAt: true,
+  estimatedDepartureAt: true,
+  estimatedDurationMinutes: true,
+  startedAt: true,
+  expiredAt: true,
   status: true,
   recurringOccurrence: { select: { scheduleId: true } },
 } as const satisfies Prisma.TripSelect;
@@ -23,7 +28,25 @@ export class DailyMobilityRepository {
     calendarStart: Date,
     calendarEnd: Date,
   ) {
-    const window = { departureAt: { gte: start, lt: until } };
+    const window: Prisma.TripWhereInput = {
+      OR: [
+        { departureAt: { gte: start, lt: until } },
+        { departureAt: { lt: until }, expectedEndAt: { gt: start } },
+        // A changed departure may have moved the estimated end into this window.
+        {
+          estimatedDepartureAt: {
+            gte: new Date(+start - 360 * 60_000),
+            lt: until,
+          },
+        },
+        { startedAt: { gte: new Date(+start - 360 * 60_000), lt: until } },
+      ],
+    };
+    const stop = {
+      label: true,
+      position: true,
+      estimatedOffsetSeconds: true,
+    } as const;
     return Promise.all([
       this.db.trip.findMany({
         where: { driverId: userId, ...window },
@@ -36,7 +59,15 @@ export class DailyMobilityRepository {
           trip: window,
         },
         orderBy: { createdAt: 'desc' },
-        select: { id: true, status: true, trip: { select: trip } },
+        select: {
+          id: true,
+          status: true,
+          noShowAt: true,
+          droppedOffAt: true,
+          pickup: { select: stop },
+          dropoff: { select: stop },
+          trip: { select: { ...trip, _count: { select: { stops: true } } } },
+        },
       }),
       this.db.recurringTrip.findMany({
         where: {

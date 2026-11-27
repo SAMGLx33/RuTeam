@@ -18,7 +18,10 @@ import {
   type AuthenticatedRequest,
 } from '../../../common/guards/session.guard.js';
 import { TripTrackingService } from '../application/trip-tracking.service.js';
-import { TripDriverLocationDto } from '../dto/trip-tracking.dto.js';
+import {
+  TripDriverLocationDto,
+  TripDriverLocationStopDto,
+} from '../dto/trip-tracking.dto.js';
 
 @ApiTags('seguridad')
 @ApiCookieAuth()
@@ -53,7 +56,8 @@ export class TripTrackingController {
   forget(
     @Req() req: AuthenticatedRequest,
     @Param('tripId', ParseUUIDPipe) tripId: string,
+    @Body() data?: TripDriverLocationStopDto,
   ) {
-    return this.tracking.forget(tripId, req.principal.userId);
+    return this.tracking.forget(tripId, req.principal.userId, data);
   }
 }

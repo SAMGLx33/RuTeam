@@ -47,6 +47,7 @@ function view(row: EnvironmentRow, userId: string): EnvironmentalTrip {
     attributedKg: attributed,
     factor,
     methodology: snapshot?.methodology ?? null,
+    dropoffBasis: rider?.dropoffBasis,
     calculatedAt: snapshot?.at ?? null,
     missing: snapshot
       ? attributed !== null && !driver

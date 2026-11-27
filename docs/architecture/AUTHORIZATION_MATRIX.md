@@ -123,3 +123,14 @@ viajes se entregan a estudiantes autorizados a ver el viaje.
 | Operación del viaje                                | Conductor o miembro de una participación propia. El manifiesto y sus conteos son del conductor.                                                                           |
 | Actividades y agenda                               | Sólo registros vinculados a la cuenta autenticada. Una previsión de plantilla no equivale a oferta.                                                                       |
 | Preferencias y registros push                      | Titular con sesión vigente. El registro exige consentimiento y secreto de instalación. Logout, cambio de sesión y desactivación invalidan entregas de la sesión anterior. |
+
+## Operación y datos personales
+
+| Acción                                            | Alcance                                                                                                                                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Editar descripción, publicación o informar demora | Conductor propietario con sesión de producto y viaje programado. Nest revalida la elegibilidad según el cambio y las referencias existentes. |
+| Registrar descenso                                | Conductor propietario del viaje activo con pasajero a bordo y parada autorizada alcanzada.                                                   |
+| Retirar participación programada                  | Solicitante antes del abordaje. El historial sigue visible a los actores autorizados.                                                        |
+| Consultar GPS activo                              | Conductor o participante confirmado vigente que no haya descendido ni tenga ausencia.                                                        |
+| Guardados, lugares, preferencias, agenda y avisos | Usuario autenticado, acceso a sus propios registros.                                                                                         |
+| Responder a un deep link de aviso                 | Permisos de sesión y del endpoint de destino. El enlace no concede acceso.                                                                   |

@@ -135,3 +135,14 @@ corte todavía se consolida por el integrador. CURRENT_STATUS no cambia por esta
 ## Decisiones y dependencias de evolución
 
 La [metodología ambiental](../development/ENVIRONMENTAL_METHOD.md) habilita estimaciones operativas con factores identificados. Transporte público y mezclas sin factor aplicable conservan datos faltantes. La reconexión en tiempo real reconsulta PostgreSQL. La entrega push física depende de development build con integración cliente, credenciales y pruebas. Los controles de bandeja y registro de dispositivos pueden usarse desde la configuración actual. Otras decisiones de Producto conservan su alcance.
+
+## Seguimiento de políticas operativas
+
+El margen temporal operativo se parametriza con
+`TRIP_EXPIRATION_GRACE_MINUTES` (30 minutos por omisión, rango 0 a 180). El
+cierre operativo por minuto y el límite de demora de tres horas son decisiones
+de implementación para revisar con el PO. Las referencias de consentimientos
+impiden la edición de condiciones esenciales. El PO conserva la definición de
+penalidades, sanciones, restricciones de género y reglas de conservación. La
+configuración y recepción efectiva de push requiere un dispositivo físico y un
+proyecto autorizado.

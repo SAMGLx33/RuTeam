@@ -146,7 +146,9 @@ test('invitar, consentir y confirmar en dos sesiones libera el acceso a las plaz
     await guest.reload();
     await guest.getByRole('link', { name: 'Consultar mi plaza' }).click();
     await expect(
-      guest.getByText('Confirmada · Viaje programado', { exact: true }),
+      guest.getByText('En espera de recogida · Viaje programado', {
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(
       db.reservation.count({

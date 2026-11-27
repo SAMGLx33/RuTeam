@@ -55,9 +55,16 @@ function Conditions({ group }: { group: TripGroupPreview }) {
   );
 }
 
-function JoinGroup({ onJoined }: { onJoined: () => void }) {
-  const [code, setCode] = useState('');
+function JoinGroup({
+  onJoined,
+  invitationCode,
+}: {
+  onJoined: () => void;
+  invitationCode?: string;
+}) {
+  const [code, setCode] = useState(invitationCode ?? '');
   const preview = useMutation({
+    gcTime: 0,
     mutationFn: (value: string) =>
       api<TripGroupPreview>('/trip-groups/preview', {
         method: 'POST',
@@ -65,6 +72,7 @@ function JoinGroup({ onJoined }: { onJoined: () => void }) {
       }),
   });
   const join = useMutation({
+    gcTime: 0,
     mutationFn: (value: string) =>
       api<TripGroupView>('/trip-groups/join', {
         method: 'POST',
@@ -238,7 +246,7 @@ function GroupCard({
   );
 }
 
-export function GroupsScreen() {
+export function GroupsScreen({ invitationCode }: { invitationCode?: string }) {
   const { user } = useSession();
   const client = useQueryClient();
   const key = ['trip-groups', user?.id] as const;
@@ -256,7 +264,11 @@ export function GroupsScreen() {
       <Link href="/my-reservations" style={s.link}>
         Volver a mis participaciones
       </Link>
-      <JoinGroup key={user?.id} onJoined={refresh} />
+      <JoinGroup
+        key={user?.id}
+        onJoined={refresh}
+        invitationCode={invitationCode}
+      />
       {list.isPending && <Text style={s.text}>Consultando tus grupos…</Text>}
       {list.error && (
         <Text accessibilityRole="alert" style={s.error}>

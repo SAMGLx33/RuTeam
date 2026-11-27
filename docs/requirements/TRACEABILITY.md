@@ -240,3 +240,14 @@ Criterios y comandos de prueba en el [plan](../development/TEST_PLAN.md#pruebas-
 | RF-008/RF-009/RF-010/RF-030 | Centro de actividades y resumen posviaje con enlaces autorizados a compensaciones, notas e incidencias.                                                    |
 
 Pruebas y límites en [preparación de entrega](../reviews/RELEASE_READINESS.md#evolución-ambiental-y-comunicación).
+
+## Operación del viaje y movilidad cotidiana
+
+| Requisito              | Implementación y evidencia localizada                                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RF-003, RF-004, RF-023 | `ViajeService.edit`, `student-schedule.ts`, versión, recurrencias y publicación. `driver-routes.e2e`, `activity-window.test`.                                            |
+| RF-005, RF-006         | Preferencias, guardados y agenda en Mobility. Confirmación individual y grupos bajo el mismo orden de bloqueos. `daily-mobility.e2e`, `groups.e2e`, `driver-routes.e2e`. |
+| RF-012, RF-015, RF-027 | Descenso, retiro antes de comenzar, vencimiento y resumen de operación. `driver-routes.e2e`, `boarding-qr.e2e`.                                                          |
+| RF-018, RNF-033        | Consentimiento, precisión y caducidad en Safety. `trip-tracking.e2e` y `safety.spec`. Validación física pendiente.                                                       |
+| RF-019                 | Procedencia del descenso en el cierre ambiental, con geometría planificada. `product-evolution.e2e`.                                                                     |
+| RF-014, RNF-032        | Reconciliación de chat, bandeja, reconsulta SSE y enlaces de notificación. `chat.e2e`, `connectivity.spec` y `evolution.spec`. Push físico pendiente.                    |

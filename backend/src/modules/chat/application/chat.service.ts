@@ -75,10 +75,12 @@ function conversation(row: ChatTripRow): ChatConversation {
 }
 
 function messageView(row: ChatMessageRow, actorId: string): ChatMessage {
+  const isMine = row.authorId === actorId;
   return {
     id: row.id,
     authorName: row.author.profile?.displayName ?? 'Participante',
-    isMine: row.authorId === actorId,
+    isMine,
+    ...(isMine && { clientMessageId: row.clientMessageId }),
     body: row.body,
     createdAt: row.createdAt.toISOString(),
   };
