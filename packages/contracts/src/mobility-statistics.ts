@@ -63,6 +63,7 @@ export interface EnvironmentalTrip {
   missing: EnvironmentalMissing | null;
   alternative: { mode: AlternativeMode; differenceKg: number | null } | null;
   canDeclareAlternative: boolean;
+  dropoffBasis?: 'CONFIRMED_STOP' | 'PLANNED_STOP';
 }
 export interface EnvironmentalTotals {
   period: string | null;

@@ -14,6 +14,7 @@ import {
 } from '../../components/ui/protected-page';
 import { api } from '../../services/api/client';
 import { colors } from '../../theme/tokens';
+import { notificationContent } from './notification-content';
 import { TripCards, tripDate, useTripFeed } from '../trips/trip-feed';
 
 export function HomeScreen({ user }: { user: Account }) {
@@ -56,6 +57,10 @@ export function HomeScreen({ user }: { user: Account }) {
   const unread =
     notifications.data?.items.filter(({ readAt }) => !readAt) ?? [];
 
+  const reminders = unread
+    .filter(({ kind, available }) => available && kind.endsWith('_REMINDER'))
+    .slice(0, 3);
+
   return (
     <ProtectedPage title="Inicio">
       <View style={styles.welcome}>
@@ -84,6 +89,20 @@ export function HomeScreen({ user }: { user: Account }) {
           Agenda de viajes
         </Link>
       </View>
+      {reminders.length > 0 && (
+        <View style={s.section}>
+          <Text style={s.title}>Recordatorios</Text>
+          {reminders.map((notice) => (
+            <Link
+              key={notice.id}
+              href={`/open/notice/${notice.id}`}
+              style={s.link}
+            >
+              {notificationContent(notice).title}
+            </Link>
+          ))}
+        </View>
+      )}
       {user.capabilities.driverAccess && (
         <View style={s.section}>
           <Text style={s.title}>Tus próximos viajes publicados</Text>

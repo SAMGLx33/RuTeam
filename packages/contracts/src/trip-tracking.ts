@@ -4,6 +4,11 @@ export interface TripDriverLocationInput {
   latitude: number;
   longitude: number;
   capturedAt: string;
+  accuracyMeters?: number;
+}
+
+export interface TripDriverLocationStopInput {
+  throughCapturedAt?: string;
 }
 
 export interface TripTrackingView {

@@ -19,6 +19,7 @@ import type {
   TripDetail,
 } from '@ruteam/contracts';
 import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import { tripWindow } from '../../trips/domain/activity-window.js';
 import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
 import {
   matchStops,
@@ -70,6 +71,7 @@ function preferenceView(row: StoredPreference): MobilityPreferenceView {
     latitude: row.latitude === null ? null : Number(row.latitude),
     longitude: row.longitude === null ? null : Number(row.longitude),
     radiusKm: Number(row.radiusKm),
+    maxContributionCop: row.maxContributionCop,
     vehicleTypes: row.vehicleTypes,
     active: row.active,
     notificationsEnabled: row.notificationsEnabled,
@@ -77,11 +79,12 @@ function preferenceView(row: StoredPreference): MobilityPreferenceView {
     updatedAt: row.updatedAt.toISOString(),
   };
 }
-export function candidateAvailable(
+export function marketOpen(
   trip: SearchableTrip,
   now: Date,
   access: RecommendationAccess,
 ): boolean {
+  const window = tripWindow(trip);
   return (
     recommendationActorEligible(trip.driver, access, now) &&
     (!trip.vehicle.document?.demo || trip.driver.demoIdentity !== null) &&
@@ -90,19 +93,26 @@ export function candidateAvailable(
     !!trip.routeDescription &&
     !!tripDirection(presentStops(trip)) &&
     trip.status === 'PROGRAMADO' &&
+    !trip.expiredAt &&
     trip.departureAt > now &&
-    trip.offeredSeats > trip.occupiedSeats &&
     trip.offeredSeats <= trip.vehicle.passengerCapacity &&
     isActiveMembership(trip.driver.membership, now) &&
-    VehiculoPolicy.esPublicable(trip.vehicle.document, trip.expectedEndAt) &&
-    VehiculoPolicy.esPublicable(
-      trip.driver.driverEligibility,
-      trip.expectedEndAt,
-    ) &&
+    VehiculoPolicy.esPublicable(trip.vehicle.document, window.end) &&
+    VehiculoPolicy.esPublicable(trip.driver.driverEligibility, window.end) &&
     (trip.driver.driverEligibility?.category === 'BOTH' ||
       trip.driver.driverEligibility?.category === trip.vehicle.type)
   );
 }
+export function candidateAvailable(
+  trip: SearchableTrip,
+  now: Date,
+  access: RecommendationAccess,
+) {
+  return (
+    trip.offeredSeats > trip.occupiedSeats && marketOpen(trip, now, access)
+  );
+}
+
 export function bestMobilityMatch(
   trip: SearchableTrip,
   profiles: StoredPreference[],
@@ -112,6 +122,7 @@ export function bestMobilityMatch(
     driverId: trip.driverId,
     departureAt: trip.departureAt,
     vehicleType: trip.vehicle.type,
+    suggestedContributionCop: trip.suggestedContributionCop,
     stops: presentStops(trip),
     geometry: presentItinerary(trip)?.geometry ?? null,
   };
@@ -284,10 +295,12 @@ export class MobilityService {
     if (!trip || !trip.routeDescription)
       throw new NotFoundException('Viaje inexistente');
     const isDriver = trip.driverId === actorId;
-    const available = candidateAvailable(trip, new Date(), this.env);
+    const now = new Date();
+    const inMarket = marketOpen(trip, now, this.env);
+    const available = inMarket && trip.offeredSeats > trip.occupiedSeats;
     if (
       !isDriver &&
-      !available &&
+      !inMarket &&
       !(await this.repository.mayReadHistory(actorId, id))
     )
       throw new NotFoundException('Viaje no disponible');
@@ -326,6 +339,7 @@ export class MobilityService {
       recommendation,
       acceptsParticipation,
       acceptsPickupProposal,
+      canSaveInterest: !isDriver && inMarket,
       status: trip.status,
       terminationReason: trip.terminationReason,
       expectedEndAt: trip.expectedEndAt.toISOString(),
@@ -395,16 +409,25 @@ export class MobilityService {
       const participant = row.trip.reservations.length > 0;
       const operating = row.trip.status === 'EN_CURSO';
       const completed = row.trip.status === 'COMPLETADO';
+      const scheduled = row.trip.status === 'PROGRAMADO' && !row.trip.expiredAt;
       const available =
-        kind === 'COMPENSATION_DECLARED'
-          ? owner && completed
-          : kind === 'COMPENSATION_ACKNOWLEDGED'
-            ? participant && completed
-            : kind === 'PICKUP_NEXT' || kind === 'TRIP_STARTED'
-              ? operating && participant
-              : kind === 'PICKUP_ACCEPTED' || kind === 'PICKUP_REJECTED'
-                ? row.trip.status === 'PROGRAMADO'
-                : true;
+        kind === 'SEAT_AVAILABLE' || kind === 'PICKUP_CONFIRMATION_REMINDER'
+          ? !owner &&
+            !participant &&
+            candidateAvailable(row.trip, new Date(), this.env)
+          : kind === 'TRIP_DEPARTURE_REMINDER'
+            ? scheduled && owner
+            : kind === 'TRIP_PICKUP_REMINDER'
+              ? (scheduled || operating) && participant
+              : kind === 'COMPENSATION_DECLARED'
+                ? owner && completed
+                : kind === 'COMPENSATION_ACKNOWLEDGED'
+                  ? participant && completed
+                  : kind === 'PICKUP_NEXT' || kind === 'TRIP_STARTED'
+                    ? operating && participant
+                    : kind === 'PICKUP_ACCEPTED' || kind === 'PICKUP_REJECTED'
+                      ? row.trip.status === 'PROGRAMADO'
+                      : true;
       return {
         id: row.id,
         tripId: row.tripId,

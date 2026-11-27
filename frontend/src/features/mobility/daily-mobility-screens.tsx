@@ -1,4 +1,4 @@
-import { Link, type Href } from 'expo-router';
+import { Link, useLocalSearchParams, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -73,16 +73,23 @@ function destination(item: PendingActivity): Href {
 
 export function ActivityScreen() {
   const { user } = useSession();
+  const { activity: focus } = useLocalSearchParams<{ activity?: string }>();
   const activity = useQuery({
     queryKey: ['activity', user?.id],
     enabled: !!user?.capabilities.passenger,
     queryFn: () => api<PendingActivity[]>('/mobility/activity'),
     refetchInterval: 30000,
   });
+  const items = focus
+    ? activity.data?.filter(({ id }) => id === focus)
+    : activity.data;
   return (
     <ProtectedPage title="Mis actividades">
       <Link href="/agenda" style={s.link}>
         Ver agenda
+      </Link>
+      <Link href="/saved-trips" style={s.link}>
+        Viajes guardados
       </Link>
       {activity.isPending && <Text>Cargando actividades…</Text>}
       {activity.error && (
@@ -90,10 +97,19 @@ export function ActivityScreen() {
           {activity.error.message}
         </Text>
       )}
-      {activity.data?.length === 0 && (
-        <Text style={s.text}>No tienes actividades para revisar.</Text>
+      {items?.length === 0 && (
+        <Text style={s.text}>
+          {focus
+            ? 'Esta actividad ya no está pendiente para tu cuenta.'
+            : 'No tienes actividades para revisar.'}
+        </Text>
       )}
-      {activity.data?.map((item) => (
+      {focus && (
+        <Link href="/activity" style={s.link}>
+          Ver todas mis actividades
+        </Link>
+      )}
+      {items?.map((item) => (
         <View key={item.id} style={s.section}>
           <Link href={destination(item)} style={s.link}>
             {item.title}
@@ -160,15 +176,49 @@ export function AgendaScreen() {
         <View key={entry.id} style={s.section}>
           <Text style={s.text}>
             {travelTime(entry.at)} · {agendaLabel[entry.kind]}
+            {entry.scheduleId && entry.tripId ? ' · Ocurrencia recurrente' : ''}
           </Text>
           <Text style={s.title}>{entry.label}</Text>
           {entry.status && (
             <Text style={s.text}>
               {entry.status === 'WITHDRAWN'
                 ? 'Participación retirada'
-                : tripStatusLabel[entry.status]}
+                : entry.status === 'EXPIRED'
+                  ? 'Viaje vencido'
+                  : tripStatusLabel[entry.status]}
             </Text>
           )}
+          {entry.estimatedDepartureAt && (
+            <Text style={s.text}>
+              Retraso · Salida estimada {travelTime(entry.estimatedDepartureAt)}
+            </Text>
+          )}
+          {entry.kind === 'PARTICIPATION' && (
+            <>
+              <Text style={s.text}>
+                {entry.pickupAt
+                  ? `Recogida prevista ${travelTime(entry.pickupAt)}`
+                  : 'Recogida sin hora estimada'}
+              </Text>
+              <Text style={s.text}>
+                {entry.dropoffAt
+                  ? `Descenso estimado ${travelTime(entry.dropoffAt)}`
+                  : 'Descenso sin hora estimada'}
+              </Text>
+            </>
+          )}
+          {entry.conflictWithTripIds?.map((tripId) => (
+            <Link
+              key={tripId}
+              href={{
+                pathname: '/trip-operation/[tripId]',
+                params: { tripId },
+              }}
+              style={s.link}
+            >
+              Ver viaje con posible conflicto de horario
+            </Link>
+          ))}
           {entry.failure && <Text style={s.text}>{entry.failure}</Text>}
           {entry.tripId ? (
             <Link

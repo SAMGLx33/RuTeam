@@ -26,12 +26,25 @@ const statusLabel: Record<ReservationStatus, string> = {
   REJECTED: 'Solicitud histórica rechazada',
   CANCELLED: 'Cancelada',
 };
-function participationLabel(item: ReservationView): string {
-  if (item.status !== 'CONFIRMED') return statusLabel[item.status];
-  if (item.noShowAt) return 'Ausencia registrada';
-  if (item.tripStatus === 'COMPLETADO')
-    return item.boardedAt ? 'Completada' : 'Sin abordaje registrado';
-  return item.boardedAt ? 'Abordada' : statusLabel[item.status];
+const stageLabels = {
+  AWAITING_PICKUP: 'En espera de recogida',
+  ABOARD: 'A bordo',
+  DROPPED_OFF: 'Descenso confirmado',
+  COMPLETED: 'Completada',
+  ABSENT: 'Ausencia registrada',
+  CANCELLED: 'Cancelada',
+  INTERRUPTED: 'Interrumpida',
+  UNCONFIRMED: 'Sin confirmación',
+} satisfies Record<ReservationView['stage'], string>;
+
+export function participationLabel(
+  item: Pick<ReservationView, 'stage' | 'status' | 'droppedOffAt'>,
+) {
+  if (item.stage === 'COMPLETED' && !item.droppedOffAt)
+    return 'Completada · descenso sin confirmar';
+  return item.stage === 'UNCONFIRMED'
+    ? statusLabel[item.status]
+    : stageLabels[item.stage];
 }
 
 export function ReservationSummary({ item }: { item: ReservationView }) {
@@ -104,9 +117,9 @@ export function ReservationsScreen() {
         Mis grupos
       </Link>
       <Text style={s.text}>
-        Aquí puedes consultar tu plaza individual o confirmada en grupo.
-        Retirarte de un viaje futuro antes de abordar libera la plaza y conserva
-        tu historial.
+        Aquí puedes consultar tu plaza individual o confirmada en grupo. Puedes
+        retirarte antes de abordar si el viaje sigue programado. Tu plaza se
+        libera y el historial se conserva.
       </Text>
       {list.isPending && <Text>Consultando tus participaciones…</Text>}
       {list.error && (

@@ -12,6 +12,7 @@ import { api } from '../../services/api/client';
 import { TripEnvironment } from '../mobility/environment-panel';
 import { TripLocation } from '../safety/trip-location';
 import { TripSafetyLink } from '../safety/trip-safety-link';
+import { participationLabel } from './reservations-screen';
 import { TripCard } from './my-trips-screen';
 import { RoutePreview, travelTime, tripStatusLabel } from './route-preview';
 
@@ -55,6 +56,20 @@ export function TripOperationScreen() {
             <Text style={s.text}>
               Salida programada · {travelTime(row.departureAt)}
             </Text>
+            {row.departureState === 'SOON' && (
+              <Text style={s.text}>Salida próxima</Text>
+            )}
+            {row.departureState === 'DELAYED' && (
+              <Text style={s.text}>Salida retrasada</Text>
+            )}
+            {row.estimatedDepartureAt && (
+              <Text style={s.text}>
+                Nueva salida estimada · {travelTime(row.estimatedDepartureAt)}
+              </Text>
+            )}
+            {row.departureState === 'EXPIRED' && (
+              <Text style={s.text}>Vencido sin iniciar</Text>
+            )}
             {row.startedAt && (
               <Text style={s.text}>
                 Inicio registrado · {travelTime(row.startedAt)}
@@ -71,6 +86,13 @@ export function TripOperationScreen() {
             </Text>
             {active && (
               <>
+                {row.role === 'DRIVER' && (
+                  <Text style={s.text}>
+                    {row.trackingEnabled
+                      ? 'Compartición de ubicación habilitada'
+                      : 'Ubicación sin compartir'}
+                  </Text>
+                )}
                 <Text style={s.text}>
                   Paradas registradas · {row.progress.reached}/
                   {row.progress.total}
@@ -90,16 +112,7 @@ export function TripOperationScreen() {
             {passenger && (
               <>
                 <Text style={s.text}>
-                  Participación ·{' '}
-                  {passenger.noShowAt
-                    ? 'Ausencia registrada'
-                    : passenger.boardedAt
-                      ? 'Abordaje registrado'
-                      : passenger.status === 'CONFIRMED'
-                        ? 'Confirmada'
-                        : passenger.status === 'CANCELLED'
-                          ? 'Cancelada'
-                          : 'Sin confirmación'}
+                  Participación · {participationLabel(passenger)}
                 </Text>
                 {passenger.pickup && (
                   <Text style={s.text}>
@@ -111,10 +124,26 @@ export function TripOperationScreen() {
                     Descenso previsto · {passenger.dropoff.label}
                   </Text>
                 )}
+                {passenger.droppedOffAt && (
+                  <Text style={s.text}>
+                    Descenso confirmado · {travelTime(passenger.droppedOffAt)}
+                  </Text>
+                )}
+                {passenger.dropoffEstimatedAt &&
+                  !passenger.droppedOffAt &&
+                  active &&
+                  admitted && (
+                    <Text style={s.text}>
+                      Hora estimada de descenso ·{' '}
+                      {travelTime(passenger.dropoffEstimatedAt)}
+                    </Text>
+                  )}
                 {passenger.pickupEstimatedAt &&
                   !passenger.boardedAt &&
                   admitted &&
-                  (row.status === 'PROGRAMADO' || active) && (
+                  ((row.status === 'PROGRAMADO' &&
+                    row.departureState !== 'EXPIRED') ||
+                    active) && (
                     <Text style={s.text}>
                       Hora estimada de recogida ·{' '}
                       {travelTime(passenger.pickupEstimatedAt)}
@@ -138,6 +167,18 @@ export function TripOperationScreen() {
                   Abordaron · {row.manifest.boarded} · Ausencias ·{' '}
                   {row.manifest.noShows}
                 </Text>
+                {active && (
+                  <Text style={s.text}>
+                    A bordo · {row.manifest.aboard} · Descensos registrados ·{' '}
+                    {row.manifest.droppedOff}
+                  </Text>
+                )}
+                {active && (
+                  <Text style={s.text}>
+                    Por descender en esta parada ·{' '}
+                    {row.manifest.awaitingDropoffHere}
+                  </Text>
+                )}
                 {!!row.manifest.pendingProposals && (
                   <Text style={s.text}>
                     Propuestas por revisar · {row.manifest.pendingProposals}
@@ -155,9 +196,12 @@ export function TripOperationScreen() {
               {mine.error.message}
             </Text>
           )}
-          {active && user && (row.role === 'DRIVER' || admitted) && (
-            <TripLocation userId={user.id} tripId={tripId} />
-          )}
+          {active &&
+            user &&
+            (row.role === 'DRIVER' ||
+              (admitted && !passenger?.droppedOffAt)) && (
+              <TripLocation userId={user.id} tripId={tripId} />
+            )}
           {active && admitted && <TripSafetyLink tripId={tripId} />}
           {(row.status === 'PROGRAMADO' || active) &&
             (admitted || row.role === 'DRIVER') && (

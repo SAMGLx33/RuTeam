@@ -1,15 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type { RealtimeSignal } from '@ruteam/contracts';
 import { openApiStream } from './client';
+import { browserOffline } from './connection-status';
 
 const routes = {
-  FEED: ['trip-feed', 'trip-detail', 'available-trips'],
+  FEED: ['trip-feed', 'trip-detail', 'available-trips', 'saved-trips'],
   PERSON: [
     'notification-settings',
     'notifications',
     'notification-list',
+    'saved-trips',
     'chat-list',
     'trip-schedules',
     'groups',
@@ -30,6 +32,7 @@ const routes = {
     'trip-operation',
     'trip-location',
     'trip-safety',
+    'saved-trips',
     'activity',
     'agenda',
     'trip-environment',
@@ -40,7 +43,7 @@ const routes = {
   TRACKING: ['trip-location'],
 } as const;
 const allKeys = new Set(Object.values(routes).flat() as readonly string[]);
-const foreground = () => AppState.currentState !== 'background';
+const foreground = () => AppState.currentState === 'active';
 function invalidate(
   client: QueryClient,
   keys: readonly string[],
@@ -70,8 +73,13 @@ function invalidate(
   );
 }
 
-export function useLiveUpdates(userId: string | undefined, eligible: boolean) {
+export function useLiveUpdates(
+  userId: string | undefined,
+  eligible: boolean,
+  revalidateSession: () => void,
+) {
   const client = useQueryClient();
+  const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
   useEffect(() => {
     if (!userId || !eligible) return;
     let closed = false;
@@ -86,11 +94,13 @@ export function useLiveUpdates(userId: string | undefined, eligible: boolean) {
     };
     const expire = () => {
       closed = true;
-      void client.invalidateQueries({ queryKey: ['me'] });
+      setConnectedAccount(null);
+      revalidateSession();
     };
     const apply = (event: RealtimeSignal) => {
       if (event.kind === 'READY') {
         attempts = 0;
+        setConnectedAccount(userId);
         recover();
       } else if (event.kind === 'SESSION_ENDED') expire();
       else if (event.kind === 'PING') return;
@@ -102,7 +112,7 @@ export function useLiveUpdates(userId: string | undefined, eligible: boolean) {
         );
     };
     const connect = async () => {
-      if (closed || controller || !foreground()) return;
+      if (closed || controller || !foreground() || browserOffline()) return;
       const stream = new AbortController();
       controller = stream;
       let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -120,7 +130,7 @@ export function useLiveUpdates(userId: string | undefined, eligible: boolean) {
         let buffer = '';
         while (!closed && !stream.signal.aborted) {
           const { value, done } = await reader.read();
-          if (done) break;
+          if (done || closed || stream.signal.aborted) break;
           watchdog();
           buffer += decoder.decode(value, { stream: true });
           if (buffer.length > 32768) break;
@@ -139,7 +149,8 @@ export function useLiveUpdates(userId: string | undefined, eligible: boolean) {
         clearTimeout(timeout);
         stream.abort();
         controller = undefined;
-        if (!closed && foreground())
+        if (!closed) setConnectedAccount(null);
+        if (!closed && foreground() && !browserOffline())
           retry = setTimeout(
             () => void connect(),
             Math.min(30000, 1000 * 2 ** attempts++),
@@ -156,12 +167,29 @@ export function useLiveUpdates(userId: string | undefined, eligible: boolean) {
         clearTimeout(retry);
       }
     });
+    const online = () => {
+      clearTimeout(retry);
+      void connect();
+    };
+    const offline = () => {
+      clearTimeout(retry);
+      controller?.abort();
+    };
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      window.addEventListener('online', online);
+      window.addEventListener('offline', offline);
+    }
     void connect();
     return () => {
       closed = true;
       controller?.abort();
       clearTimeout(retry);
       app.remove();
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        window.removeEventListener('online', online);
+        window.removeEventListener('offline', offline);
+      }
     };
-  }, [client, userId, eligible]);
+  }, [client, userId, eligible, revalidateSession]);
+  return eligible && connectedAccount !== userId;
 }

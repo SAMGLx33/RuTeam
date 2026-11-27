@@ -1,33 +1,29 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppState, Platform, Share, Text, View } from 'react-native';
-import {
-  Accuracy,
-  getCurrentPositionAsync,
-  requestForegroundPermissionsAsync,
-} from 'expo-location';
-import type {
-  TripDriverLocationInput,
-  TripTrackingView,
-} from '@ruteam/contracts';
+import { Platform, Share, Text, View } from 'react-native';
+import type { TripTrackingView } from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';
 import { formStyles as s } from '../../components/ui/protected-page';
 import { api, ApiError } from '../../services/api/client';
 import { RouteGeometryPreview, travelTime } from '../trips/route-preview';
 
-function ensureForeground(signal: AbortSignal) {
-  if (signal.aborted || AppState.currentState !== 'active')
-    throw new Error('Mantén abierta esta pantalla para compartir.');
+import { useLocationSharing } from './use-location-sharing';
+import { useSession } from '../../providers/session-provider';
+
+export function TripLocation(props: { userId: string; tripId: string }) {
+  return (
+    <TripLocationContent key={`${props.userId}:${props.tripId}`} {...props} />
+  );
 }
 
-export function TripLocation({
+function TripLocationContent({
   userId,
   tripId,
 }: {
   userId: string;
   tripId: string;
 }) {
+  const { user, connection } = useSession();
   const [previewedSample, setPreviewedSample] = useState<string>();
   const [sharingError, setSharingError] = useState('');
   const [expiredSample, setExpiredSample] = useState<string>();
@@ -35,8 +31,11 @@ export function TripLocation({
   const path = `/trips/${encodeURIComponent(tripId)}/location`;
   const client = useQueryClient();
   const queryKey = ['trip-location', userId, tripId];
-  const activeShare = useRef<AbortController | null>(null);
-  useFocusEffect(useCallback(() => () => activeShare.current?.abort(), []));
+  const refresh = useCallback(() => {
+    void client.invalidateQueries({
+      queryKey: ['trip-location', userId, tripId],
+    });
+  }, [client, userId, tripId]);
 
   const location = useQuery({
     queryKey,
@@ -50,47 +49,15 @@ export function TripLocation({
         : 10000,
     retry: false,
   });
-  const share = useMutation({
-    mutationFn: async () => {
-      const controller = new AbortController();
-      activeShare.current = controller;
-      const { signal } = controller;
-      try {
-        ensureForeground(signal);
-        const permission = await requestForegroundPermissionsAsync();
-        if (!permission.granted)
-          throw new Error(
-            'El permiso de ubicación está desactivado. Puedes permitirlo en los ajustes del dispositivo.',
-          );
-        ensureForeground(signal);
-
-        const current = await api<TripTrackingView>(path, { signal });
-        if (!current.canShare)
-          throw new Error(
-            'Sólo el conductor del viaje en curso puede compartir su ubicación.',
-          );
-        ensureForeground(signal);
-        const fix = await getCurrentPositionAsync({
-          accuracy: Accuracy.Balanced,
-        });
-        ensureForeground(signal);
-        const body: TripDriverLocationInput = {
-          capturedAt: new Date(fix.timestamp).toISOString(),
-          latitude: fix.coords.latitude,
-          longitude: fix.coords.longitude,
-        };
-        await api(path, { method: 'POST', body, signal });
-      } finally {
-        activeShare.current = null;
-      }
-    },
-    onSuccess: () => client.invalidateQueries({ queryKey }),
-  });
-  const forget = useMutation({
-    mutationFn: () => api(path, { method: 'DELETE' }),
-    onSuccess: () => client.invalidateQueries({ queryKey }),
-  });
-  const view = location.isError ? undefined : location.data;
+  const view =
+    location.isError || connection === 'lost' ? undefined : location.data;
+  const isCurrentDriver = user?.id === userId && view?.canShare === true;
+  const sharing = useLocationSharing(
+    path,
+    isCurrentDriver && connection !== 'lost',
+    refresh,
+  );
+  const forget = useMutation({ mutationFn: sharing.stop, onSettled: refresh });
   const expiration = view?.expiresAt;
   useEffect(() => {
     if (!expiration) return;
@@ -106,20 +73,31 @@ export function TripLocation({
     new Date(expiration).getTime() > location.dataUpdatedAt;
   const effectiveState =
     view?.state === 'AVAILABLE' && !recent ? 'STALE' : view?.state;
-  const exactSample = recent ? view?.sample : null;
-  const capturedAt = exactSample?.capturedAt;
+  const sample = recent ? view?.sample : null;
+  const accuracy =
+    sample?.accuracyMeters === undefined
+      ? undefined
+      : Math.max(1, Math.ceil(sample.accuracyMeters));
+  const imprecise = accuracy === undefined || accuracy > 100;
+  const capturedAt = sample?.capturedAt;
   useEffect(() => {
     if (!capturedAt) return;
     const timer = setInterval(() => setClock(Date.now()), 5000);
     return () => clearInterval(timer);
   }, [capturedAt]);
   const age = capturedAt
-    ? Math.max(0, Math.floor((clock - Date.parse(capturedAt)) / 1000))
+    ? Math.max(
+        0,
+        Math.floor(
+          (Math.max(clock, location.dataUpdatedAt) - Date.parse(capturedAt)) /
+            1000,
+        ),
+      )
     : null;
 
   const shareText =
-    exactSample && previewedSample === exactSample.sharedAt
-      ? `Última ubicación autorizada por el conductor RuTeam, registrada ${travelTime(exactSample.capturedAt)}. Coordenadas aproximadas ${exactSample.latitude}, ${exactSample.longitude}.`
+    sample && previewedSample === sample.sharedAt
+      ? `Última ubicación autorizada por el conductor RuTeam, registrada ${travelTime(sample.capturedAt)}. Coordenadas aproximadas ${sample.latitude}, ${sample.longitude}.${accuracy === undefined ? ' Precisión desconocida.' : ` Precisión estimada: ${accuracy} m.`}`
       : null;
   const canOpenShare =
     Platform.OS !== 'web' || typeof globalThis.navigator?.share === 'function';
@@ -157,8 +135,8 @@ export function TripLocation({
     }
   }
 
-  const pending = share.isPending || forget.isPending;
-  const operationError = share.error ?? forget.error;
+  const pending = sharing.state === 'starting' || forget.isPending;
+  const operationError = forget.error?.message ?? sharing.error;
 
   return (
     <View style={s.section}>
@@ -182,31 +160,26 @@ export function TripLocation({
       {effectiveState === 'ENDED' && (
         <Text style={s.text}>El seguimiento del viaje finalizó.</Text>
       )}
-      {exactSample && view?.route && (
+      {sample && view?.route && (
         <>
           <Text style={s.text}>
-            Última ubicación aproximada · {travelTime(exactSample.capturedAt)}
+            Última ubicación aproximada · {travelTime(sample.capturedAt)}
             {age !== null && ` · hace ${age} s`}
           </Text>
           <Text style={s.text}>
-            Antigüedad ·{' '}
-            {Math.max(
-              0,
-              Math.floor(
-                (location.dataUpdatedAt -
-                  new Date(exactSample.capturedAt).getTime()) /
-                  1000,
-              ),
-            )}{' '}
-            s al consultar
+            {accuracy === undefined
+              ? 'Precisión desconocida'
+              : `Precisión estimada · ${accuracy} m`}
           </Text>
           <RouteGeometryPreview
             geometry={view.route.geometry}
             stops={view.route.stops}
-            observedPosition={exactSample}
+            observedPosition={imprecise ? undefined : sample}
           />
           <Text style={s.text}>
-            El marcador naranja indica la última ubicación compartida.
+            {imprecise
+              ? 'La precisión es insuficiente para dibujar un punto. El esquema muestra el recorrido publicado.'
+              : 'El marcador naranja muestra la posición aproximada. El recorrido publicado es independiente.'}
           </Text>
           {shareText ? (
             <>
@@ -231,39 +204,47 @@ export function TripLocation({
               secondary
               onPress={() => {
                 setSharingError('');
-                setPreviewedSample(exactSample.sharedAt);
+                setPreviewedSample(sample.sharedAt);
               }}
             />
           )}
         </>
       )}
-      {view?.canShare && (
+      {isCurrentDriver && (
         <>
-          <Text style={s.text}>
-            Comparte un punto con los pasajeros confirmados cuando estés
-            estacionado. Caduca automáticamente.
+          <Text style={s.text} accessibilityLiveRegion="polite">
+            {sharing.state === 'active'
+              ? 'Compartición activa.'
+              : sharing.state === 'starting'
+                ? 'Consultando permiso y ubicación…'
+                : sharing.state === 'paused'
+                  ? 'Compartición pausada. El último punto caduca automáticamente.'
+                  : 'Activa la ubicación sólo mientras estés estacionado. Se comparte con los pasajeros autorizados durante el viaje activo.'}
           </Text>
-          <Button
-            title={
-              share.isPending
-                ? 'Obteniendo ubicación…'
-                : 'Compartir mi ubicación ahora'
-            }
-            disabled={pending}
-            onPress={() => {
-              forget.reset();
-              share.mutate();
-            }}
-          />
-          {(effectiveState === 'AVAILABLE' || effectiveState === 'STALE') && (
+          {sharing.state === 'active' ? (
+            <Button title="Pausar compartición" onPress={sharing.pause} />
+          ) : (
             <Button
-              title="Quitar ubicación compartida"
-              secondary
-              disabled={pending}
+              title={
+                sharing.state === 'paused'
+                  ? 'Reanudar compartición'
+                  : 'Activar compartición'
+              }
+              disabled={pending || connection === 'lost'}
               onPress={() => {
-                share.reset();
-                forget.mutate();
+                forget.reset();
+                void sharing.start();
               }}
+            />
+          )}
+          {(sharing.state !== 'idle' ||
+            effectiveState === 'AVAILABLE' ||
+            effectiveState === 'STALE') && (
+            <Button
+              title="Detener y quitar ubicación"
+              secondary
+              disabled={forget.isPending}
+              onPress={() => forget.mutate()}
             />
           )}
         </>
@@ -275,7 +256,7 @@ export function TripLocation({
       )}
       {operationError && (
         <Text accessibilityRole="alert" style={s.error}>
-          {operationError.message}
+          {operationError}
         </Text>
       )}
     </View>

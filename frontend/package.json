@@ -4,7 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start --lan --port 8081",
+    "start": "expo start --go --lan --port 8081",
     "web": "expo start --web --port 8081",
     "export:web": "expo export --platform web",
     "typecheck": "tsc --noEmit"
@@ -15,8 +15,12 @@
     "expo-router": "~6.0.23",
     "expo-status-bar": "~3.0.9",
     "expo-constants": "~18.0.13",
+    "expo-crypto": "~15.0.9",
+    "expo-dev-client": "~6.0.21",
+    "expo-device": "~8.0.10",
     "expo-linking": "~8.0.11",
     "expo-location": "~19.0.8",
+    "expo-notifications": "~0.32.17",
     "expo-secure-store": "~15.0.8",
     "react": "19.1.0",
     "react-dom": "19.1.0",

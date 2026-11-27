@@ -88,6 +88,11 @@ export interface TripSummary {
   origin: TripPoint;
   departureAt: string;
   expectedEndAt: string;
+  estimatedDepartureAt?: string | null;
+  expiredAt?: string | null;
+  version?: number;
+  descriptiveEditsOnly?: boolean;
+  canEdit?: boolean;
   startedAt?: string | null;
   finishedAt?: string | null;
   estimatedDurationMinutes: number;
@@ -144,3 +149,8 @@ export type * from './realtime.js';
 export type * from './trip-operation.js';
 export type * from './daily-mobility.js';
 export type * from './notification-preferences.js';
+
+export type TripEditInput = { version: number } & (
+  | { description: string; publication?: never }
+  | { description?: never; publication: PublishTripInput }
+);

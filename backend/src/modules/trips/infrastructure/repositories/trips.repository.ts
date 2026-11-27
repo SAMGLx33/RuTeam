@@ -1,9 +1,13 @@
+import { Prisma } from '../../../../generated/prisma/client.js';
+import { recordTripNotice } from '../../../mobility/infrastructure/trip-notices.js';
+import { requeueRecommendation } from '../../../mobility/infrastructure/repositories/requeue-recommendation.js';
+import { hasActivityConflict } from '../student-schedule.js';
+import { lockParticipationChanges } from '../../../reservations/infrastructure/participation-lock.js';
 import type { EmissionInput } from '../../../mobility/domain/emissions.js';
 import type { TripEconomicsPreview } from '@ruteam/contracts';
 import { publicEconomicTerms } from '../../../expenses/domain/expense-policy.js';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
-import type { Prisma } from '../../../../generated/prisma/client.js';
 import type { PublishTripDto } from '../../dto/publish-trip.dto.js';
 import type {
   AvailableTrip,
@@ -23,6 +27,13 @@ const include = {
   stops: { orderBy: { position: 'asc' as const } },
   rules: { include: { rule: true } },
   destination: true,
+  _count: {
+    select: {
+      reservations: true,
+      pickupProposals: true,
+      participationGroups: true,
+    },
+  },
   vehicle: { select: { plate: true, type: true } },
 } as const;
 type StoredTrip = Prisma.TripGetPayload<{ include: typeof include }>;
@@ -80,6 +91,14 @@ function present(trip: StoredTrip): TripSummary {
     },
     departureAt: trip.departureAt.toISOString(),
     expectedEndAt: trip.expectedEndAt.toISOString(),
+    estimatedDepartureAt: trip.estimatedDepartureAt?.toISOString() ?? null,
+    expiredAt: trip.expiredAt?.toISOString() ?? null,
+    version: trip.version,
+    canEdit:
+      trip.status === 'PROGRAMADO' &&
+      !trip.expiredAt &&
+      trip.departureAt > new Date(),
+    descriptiveEditsOnly: Object.values(trip._count).some((count) => count > 0),
     startedAt: trip.startedAt?.toISOString() ?? null,
     finishedAt: trip.finishedAt?.toISOString() ?? null,
     estimatedDurationMinutes: trip.estimatedDurationMinutes,
@@ -127,15 +146,42 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
           ? { id: { in: ids }, active: true }
           : { code: 'DEFAULT', active: true },
       }),
-    overlaps: async (start: Date, end: Date) =>
-      (await tx.trip.count({
-        where: {
-          driverId,
-          status: { in: ['PROGRAMADO', 'EN_CURSO'] },
-          departureAt: { lt: end },
-          expectedEndAt: { gt: start },
+    overlaps: (start: Date, end: Date, excludedTripId?: string) =>
+      hasActivityConflict(tx, driverId, { start, end }, excludedTripId),
+    editable: async (id: string) => {
+      const locked = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Trip" WHERE id = ${id}::uuid AND "driverId" = ${driverId}::uuid FOR UPDATE
+      `;
+      if (!locked.length) return null;
+      return tx.trip.findUnique({
+        where: { id },
+        include,
+      });
+    },
+    describe: async (id: string, description: string) => {
+      const trip = await tx.trip.update({
+        where: { id },
+        data: {
+          routeDescription: description,
+          version: { increment: 1 },
+          events: { create: { actorId: driverId, type: 'TRIP_EDITED' } },
         },
-      })) > 0,
+        include,
+      });
+      const members = await tx.reservationMember.findMany({
+        where: { reservation: { tripId: id, status: 'CONFIRMED' } },
+        select: { userId: true },
+      });
+      await recordTripNotice(
+        tx,
+        id,
+        'TRIP_EDITED',
+        members.map(({ userId }) => userId),
+        String(trip.version),
+      );
+      await requeueRecommendation(tx, id);
+      return present(trip);
+    },
     save: async (
       data: PublishTripDto,
       end: Date,
@@ -143,44 +189,75 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
       itinerary: PlannedItinerary,
       economics: TripEconomicsPreview,
       energy: EmissionInput | null,
+      existingId?: string,
     ) => {
       const origin = itinerary.stops[0];
-      return present(
-        await tx.trip.create({
-          data: {
-            driverId,
-            environmentInput: energy
-              ? (energy as unknown as Prisma.InputJsonObject)
-              : undefined,
-            vehicleId: data.vehicleId,
-            destinationId: itinerary.stops.at(-1)?.campusPointId,
-            routeDescription: itinerary.description,
-            routeGeometry: itinerary.geometry && {
+      const fields = {
+        driverId,
+        environmentInput: energy
+          ? (energy as unknown as Prisma.InputJsonObject)
+          : Prisma.DbNull,
+        vehicleId: data.vehicleId,
+        destinationId: itinerary.stops.at(-1)?.campusPointId,
+        routeDescription: itinerary.description,
+        routeGeometry: itinerary.geometry
+          ? {
               type: itinerary.geometry.type,
               coordinates: itinerary.geometry.coordinates,
+            }
+          : Prisma.DbNull,
+        routeDistanceMeters: itinerary.distanceMeters,
+        originLabel: origin.label,
+        originLatitude: origin.latitude,
+        originLongitude: origin.longitude,
+        departureAt: new Date(data.departureAt),
+        expectedEndAt: end,
+        estimatedDurationMinutes: data.estimatedDurationMinutes,
+        offeredSeats: data.offeredSeats,
+        suggestedContributionCop: economics.suggestedContributionCop,
+        compensationMethods: economics.compensationMethods,
+        providesHelmet: data.providesHelmet ?? null,
+      };
+      const stops = { create: itinerary.stops };
+      const rules = { create: ruleIds.map((ruleId) => ({ ruleId })) };
+      if (!existingId)
+        return present(
+          await tx.trip.create({
+            data: {
+              ...fields,
+              stops,
+              rules,
+              expenseEstimate: economics.estimate
+                ? { create: economics.estimate }
+                : undefined,
+              events: { create: { actorId: driverId, type: 'PUBLISHED' } },
+              recommendationJob: { create: {} },
             },
-            routeDistanceMeters: itinerary.distanceMeters,
-            originLabel: origin.label,
-            originLatitude: origin.latitude,
-            originLongitude: origin.longitude,
-            departureAt: new Date(data.departureAt),
-            expectedEndAt: end,
-            estimatedDurationMinutes: data.estimatedDurationMinutes,
-            offeredSeats: data.offeredSeats,
-            suggestedContributionCop: economics.suggestedContributionCop,
-            compensationMethods: economics.compensationMethods,
-            expenseEstimate: economics.estimate
-              ? { create: economics.estimate }
-              : undefined,
-            providesHelmet: data.providesHelmet ?? null,
-            stops: { create: itinerary.stops },
-            rules: { create: ruleIds.map((ruleId) => ({ ruleId })) },
-            events: { create: { actorId: driverId, type: 'PUBLISHED' } },
-            recommendationJob: { create: {} },
-          },
-          include,
-        }),
-      );
+            include,
+          }),
+        );
+      await tx.tripStop.deleteMany({ where: { tripId: existingId } });
+      await tx.tripRuleSelection.deleteMany({ where: { tripId: existingId } });
+      await tx.tripExpenseEstimate.deleteMany({
+        where: { tripId: existingId },
+      });
+      const trip = await tx.trip.update({
+        where: { id: existingId },
+        data: {
+          ...fields,
+          stops,
+          rules,
+          estimatedDepartureAt: null,
+          version: { increment: 1 },
+          expenseEstimate: economics.estimate
+            ? { create: economics.estimate }
+            : undefined,
+          events: { create: { actorId: driverId, type: 'TRIP_EDITED' } },
+        },
+        include,
+      });
+      await requeueRecommendation(tx, existingId);
+      return present(trip);
     },
   };
 }
@@ -236,6 +313,7 @@ export class ViajeRepository {
     ) => Promise<T>,
   ): Promise<T> {
     return this.db.$transaction(async (tx) => {
+      await lockParticipationChanges(tx, true);
       // Serializa todas las publicaciones de un conductor; SQL parametrizado exclusivamente para locking.
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${driverId}::uuid FOR NO KEY UPDATE`;
       return operation(publicationUnit(tx, driverId), tx);

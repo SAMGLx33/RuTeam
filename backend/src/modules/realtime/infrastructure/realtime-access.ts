@@ -19,7 +19,12 @@ export class RealtimeAccess {
         finishedAt: true,
         reservations: {
           where: { members: { some: { userId: actor } } },
-          select: { status: true, boardedAt: true, noShowAt: true },
+          select: {
+            status: true,
+            boardedAt: true,
+            droppedOffAt: true,
+            noShowAt: true,
+          },
         },
         pickupProposals: {
           where: { requesterId: actor },
@@ -42,7 +47,10 @@ export class RealtimeAccess {
     if (kind === 'TRACKING')
       return (
         trip.status === 'EN_CURSO' &&
-        (driver || confirmed.some(({ noShowAt }) => !noShowAt))
+        (driver ||
+          confirmed.some(
+            ({ noShowAt, droppedOffAt }) => !noShowAt && !droppedOffAt,
+          ))
       );
     return (
       chatAccess(trip, actor, confirmed[0] ?? null, new Date()) !== 'DENIED'

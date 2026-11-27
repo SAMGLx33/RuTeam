@@ -1,3 +1,5 @@
+import { tripWindow } from '../domain/activity-window.js';
+import type { EditTripDto } from '../dto/edit-trip.dto.js';
 import type { VehicleEnergyProfile } from '@ruteam/contracts';
 import { snapshotEnergy } from '../../mobility/domain/emissions.js';
 import {
@@ -5,6 +7,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ViajeRepository,
@@ -70,6 +73,71 @@ export class ViajeService {
     );
   }
 
+  edit(driverId: string, tripId: string, data: EditTripDto) {
+    return this.repository.withDriverLock(driverId, async (unit) => {
+      const current = await unit.editable(tripId);
+      if (!current)
+        throw new NotFoundException('Publicación propia inexistente');
+      const now = new Date();
+      if (
+        current.status !== 'PROGRAMADO' ||
+        current.departureAt <= now ||
+        current.expiredAt
+      )
+        throw new ConflictException(
+          'Sólo se editan publicaciones futuras sin iniciar',
+        );
+      if (current.version !== data.version)
+        throw new ConflictException(
+          'La publicación cambió. Vuelve a cargarla antes de editar',
+        );
+      if ((data.publication === undefined) === (data.description === undefined))
+        throw new BadRequestException(
+          'Envía la descripción o la publicación completa',
+        );
+      if (data.description !== undefined) {
+        await this.publicationVehicle(
+          driverId,
+          current,
+          unit,
+          now,
+          tripWindow(current).end,
+        );
+        const description = data.description.trim();
+        if (description.length < 2)
+          throw new BadRequestException('Describe el recorrido');
+        return unit.describe(tripId, description);
+      }
+      if (Object.values(current._count).some((count) => count > 0))
+        throw new ConflictException(
+          'Las participaciones, grupos o propuestas existentes conservan sus condiciones. Edita la descripción o cancela y publica de nuevo',
+        );
+      const publication = data.publication!;
+      const end = Viaje.validarPublicacion({ ...publication, stops: [] }, now);
+      const { ruleIds, economics, energy } = await this.publicationTerms(
+        driverId,
+        publication,
+        unit,
+        now,
+        end,
+      );
+      if (await unit.overlaps(new Date(publication.departureAt), end, tripId))
+        throw new ConflictException(
+          'El conductor ya tiene un desplazamiento superpuesto',
+        );
+      const itinerary = await this.prepareRoute(driverId, publication, unit);
+      return unit.save(
+        publication,
+        end,
+        ruleIds,
+        itinerary,
+        economics,
+        energy,
+        tripId,
+      );
+    });
+  }
+
   signSavedRoute(driverId: string, trip: PlannedItinerary, minutes: number) {
     if (!trip.geometry || !trip.distanceMeters) return undefined;
     const offsets = trip.stops.map(
@@ -112,9 +180,11 @@ export class ViajeService {
     return itinerary;
   }
 
-  async publicationTerms(
+  private async publicationVehicle(
     driverId: string,
-    data: Omit<PublishTripDto, 'departureAt'>,
+    data: Pick<PublishTripDto, 'vehicleId' | 'offeredSeats'> & {
+      providesHelmet?: boolean | null;
+    },
     unit: PublicationUnit,
     now: Date,
     end: Date,
@@ -158,6 +228,23 @@ export class ViajeService {
       throw new BadRequestException(
         'Casco debe declararse sólo para motocicleta',
       );
+    return vehicle;
+  }
+
+  async publicationTerms(
+    driverId: string,
+    data: Omit<PublishTripDto, 'departureAt'>,
+    unit: PublicationUnit,
+    now: Date,
+    end: Date,
+  ) {
+    const vehicle = await this.publicationVehicle(
+      driverId,
+      data,
+      unit,
+      now,
+      end,
+    );
     const rules = await unit.rules(data.ruleIds);
     if (rules.length !== (data.ruleIds.length || 1))
       throw new BadRequestException('Reglas inexistentes o deshabilitadas');
@@ -186,7 +273,9 @@ export class ViajeService {
       end,
     );
     if (await unit.overlaps(new Date(data.departureAt), end))
-      throw new ConflictException('El conductor ya tiene un viaje superpuesto');
+      throw new ConflictException(
+        'El conductor ya tiene un desplazamiento superpuesto',
+      );
     const itinerary =
       trustedRoute ?? (await this.prepareRoute(driverId, data, unit));
     return unit.save(data, end, ruleIds, itinerary, economics, energy);

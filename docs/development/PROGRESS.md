@@ -159,3 +159,22 @@ En `task/release-readiness` sobre `f7013ea` se añadieron siete incrementos de t
 ## Evolución del 26/11/2026
 
 RF-019 pasó de infraestructura a cálculo de operación y atribución. Se incorporaron SSE, seguimiento, contexto posviaje, agenda, actividad, reutilización y preferencias de notificación. Los [relevos por incremento](../handoffs/README.md#evolución-ambiental-y-comunicación) registran implementación y evidencia. La entrega en dispositivo y proveedores reales sigue una validación separada.
+
+## Operación y movilidad cotidiana del 27/11/2026
+
+Incrementos en `task/trip-operations`, desde la base integrada `2b69336`.
+Operación individual con descenso, cierre explícito y autorización de GPS por
+participación. Compatibilidad temporal entre funciones de una cuenta, demora,
+vencimiento y edición versionada. Guardados, avisos de plaza, agenda, lugares,
+reconexión y registro nativo opcional quedan integrados en una sola app Expo.
+
+- [Operación individual y descenso](../handoffs/2026-11-27_trip-operations_descenso.md)
+- [Ventanas, demoras y edición](../handoffs/2026-11-27_trip-operations_horarios-y-edicion.md)
+- [Movilidad cotidiana](../handoffs/2026-11-27_trip-operations_movilidad-cotidiana.md)
+- [Seguimiento y conectividad](../handoffs/2026-11-27_trip-operations_seguimiento-y-conectividad.md)
+- [Notificaciones nativas](../handoffs/2026-11-27_trip-operations_notificaciones-nativas.md)
+- [Integración y resultados](../handoffs/2026-11-27_trip-operations_integracion.md)
+
+La regresión integral aprobó 224 pruebas Jest y 18 Playwright. El smoke
+aprobó 6 verificaciones. PostgreSQL verificó 31 checksums de migración y
+Expo Doctor aprobó 18 comprobaciones. La prueba física queda pendiente.

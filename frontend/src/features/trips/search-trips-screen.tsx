@@ -1,3 +1,4 @@
+import { FrequentPlacePicker } from '../mobility/frequent-place-picker';
 import { ReputationLabel } from '../ratings/reputation-label';
 import { EconomicTerms } from '../expenses/economic-terms';
 import { useState } from 'react';
@@ -321,6 +322,11 @@ export function SearchTripsScreen() {
             Se muestran recorridos que pasan cerca. Para abordar, elige una
             parada autorizada.
           </Text>
+          <FrequentPlacePicker
+            onSelect={({ latitude, longitude }) =>
+              setNear({ latitude, longitude })
+            }
+          />
           {reference?.latitude != null && reference.longitude != null && (
             <MeetingMapPicker
               title="Lugar de interés"
@@ -415,6 +421,12 @@ export function SearchTripsScreen() {
             />
             {expanded === trip.id && (
               <>
+                <Link
+                  href={{ pathname: '/trip/[id]', params: { id: trip.id } }}
+                  style={s.link}
+                >
+                  Ver detalle y guardar viaje
+                </Link>
                 <RoutePreview {...trip.itinerary} />
                 <Text style={s.text}>
                   Duración declarada {trip.estimatedDurationMinutes} min ·{' '}

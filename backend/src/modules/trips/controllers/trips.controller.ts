@@ -1,8 +1,12 @@
+import { EditTripDto } from '../dto/edit-trip.dto.js';
 import {
   Body,
   Controller,
   Get,
   HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -29,6 +33,14 @@ export class ViajeController {
     @Body() data: PublishTripDto,
   ) {
     return this.service.publicarViaje(req.principal.userId, data);
+  }
+  @Patch('trips/:tripId')
+  edit(
+    @Req() req: AuthenticatedRequest,
+    @Param('tripId', ParseUUIDPipe) id: string,
+    @Body() input: EditTripDto,
+  ) {
+    return this.service.edit(req.principal.userId, id, input);
   }
   @Post('trips/route-options')
   @HttpCode(200)

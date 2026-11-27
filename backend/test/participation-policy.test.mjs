@@ -85,6 +85,8 @@ beforeEach(() => {
     trip: async () => trip,
     memberships: async () => [membership],
     activeForMember: async () => row,
+    conflictFor: async () => false,
+    awaitingDropoff: async () => 0,
     find: async () => row,
     notify: async (kind, recipients, id) => {
       calls.push(['notice', kind, recipients, id]);
@@ -131,10 +133,13 @@ beforeEach(() => {
       return row;
     },
   };
-  service = new ReservationsService({
-    withTripLock: async (_id, operation) => operation(unit),
-    tripForRequest: async () => trip.id,
-  });
+  service = new ReservationsService(
+    {
+      withTripLock: async (_id, operation) => operation(unit),
+      tripForRequest: async () => trip.id,
+    },
+    { TRIP_EXPIRATION_GRACE_MINUTES: 30 },
+  );
   unit.fixture = view;
 });
 
@@ -224,16 +229,16 @@ test('retirar pendiente histórico no lo promueve ni cambia ocupación', async (
     ['status', 'CANCELLED'],
   ]);
 });
-test('no retira participación ajena, pasada o abordada', async () => {
+test('no retira participación ajena, iniciada o abordada', async () => {
   row = unit.fixture();
   await expect(service.cancel('other', row.id)).rejects.toMatchObject({
     status: 403,
   });
-  trip.departureAt = hours(-1);
+  trip.status = 'EN_CURSO';
   await expect(service.cancel(actor, row.id)).rejects.toMatchObject({
     status: 409,
   });
-  trip.departureAt = hours(1);
+  trip.status = 'PROGRAMADO';
   row.boardedAt = now();
   await expect(service.cancel(actor, row.id)).rejects.toMatchObject({
     status: 409,

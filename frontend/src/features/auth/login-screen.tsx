@@ -89,13 +89,14 @@ export function AccountFeedback({
   );
 }
 
-export function LoginScreen() {
+export function LoginScreen({ reason }: { reason?: string }) {
   const session = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const action = useAccountAction();
   return (
     <AccountPage title="Iniciar sesión">
+      {reason && <Text style={s.text}>{reason}</Text>}
       <AccountField
         label="Correo institucional"
         autoCapitalize="none"

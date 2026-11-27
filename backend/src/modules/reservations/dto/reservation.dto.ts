@@ -40,4 +40,8 @@ export class TripTransitionDto extends CancellationDto {
   @IsOptional()
   @Equals(true)
   confirmedSafe?: true;
+  @ApiPropertyOptional({ enum: [true] })
+  @IsOptional()
+  @Equals(true)
+  confirmMissingDropoffs?: true;
 }

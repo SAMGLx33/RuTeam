@@ -752,3 +752,14 @@ RF-021 y RF-025 siguen en definición de Producto. Consulta las [reglas vigentes
 ## Alcance actualizado de la evolución
 
 RF-019 incluye estimaciones reproducibles de operación, atribución y contraste voluntario de movilidad. RF-014 usa chat persistente con actualización SSE y recuperación HTTP. RF-015 suma una vista operativa por rol. RF-023 conserva la independencia de fechas en agenda y permite revisar una publicación como plantilla. RNF-032 distingue señales de primer plano de push remoto y mantiene pendiente la comprobación de entrega física. Las fichas anteriores conservan la transcripción original.
+
+## Interpretación vigente de la operación
+
+RF-003 y RF-004 incorporan edición versionada y preservación de condiciones.
+RF-005 incorpora preferencias privadas, guardados y filtros de aportes. RF-006
+impide solapar confirmaciones individuales y grupales. RF-012 y RF-015 proyectan
+abordaje y descenso y preservan publicaciones vencidas. RF-018 distingue precisión
+y caducidad del punto compartido. RF-019 añade procedencia del descenso dentro
+de la estimación de tramos. RF-023 comparte validación temporal con publicaciones
+manuales. RNF-032 conserva la bandeja y SSE con entrega push condicionada a un
+dispositivo y proveedor configurados. Consultar [cobertura](TRACEABILITY.md#operación-del-viaje-y-movilidad-cotidiana).

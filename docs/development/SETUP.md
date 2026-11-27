@@ -235,3 +235,13 @@ La bandeja trabaja con la API. El uso de push remoto con SDK 54 requiere develop
 ## Configuración de evolución
 
 Aplica las migraciones aditivas ambientales, de SSE y preferencias con la configuración PostgreSQL designada. Para pruebas usa una base nueva `_test` y ejecuta regresión y exportaciones de manera secuencial. Los flujos en tiempo real usan la conexión existente a PostgreSQL y necesitan que el proxy respete SSE. `EXPO_PUSH_ENABLED` vale `false` por defecto y `EXPO_PUSH_ACCESS_TOKEN` es opcional para entornos configurados. Los archivos locales de entorno permanecen fuera de Git.
+
+## Validación aislada de operación
+
+Para probar el incremento usa `TEST_DATABASE_URL` en proceso con una base
+propia cuyo nombre termine en `_test`. Ejecuta `npm run db:generate`,
+`npm run db:test:setup`, `npm test` y `npm run test:e2e` en secuencia.
+`TRIP_EXPIRATION_GRACE_MINUTES` admite 0 a 180 y predetermina 30.
+Mantén `EXPO_PUSH_ENABLED=false` durante las pruebas locales. La guía de
+[seguridad y notificaciones móviles](MOBILE_TESTING.md) contiene pasos
+separados para Expo Go y para development build.

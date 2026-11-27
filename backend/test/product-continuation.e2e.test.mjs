@@ -184,6 +184,7 @@ function join(actor, trip) {
 const transition = (actor, trip, action, fields = {}) =>
   call(actor, 'post', `/trips/${trip.id}/transition`).send({
     action,
+    confirmMissingDropoffs: action === 'FINISH' ? true : undefined,
     ...fields,
   });
 

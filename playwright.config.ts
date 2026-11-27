@@ -55,10 +55,11 @@ export default defineConfig({
       },
     },
     {
-      // Serve the same Expo web export evaluated by QA, with the test API baked in.
-      command: 'npm run build:web && node scripts/serve-playwright-web.mjs',
+      // Rebuild Expo's manifest so the test API overrides a previous export's URL.
+      command:
+        'npm run export:web -w @ruteam/client -- --clear --max-workers 2 && node scripts/serve-playwright-web.mjs',
       url: 'http://localhost:8082',
-      timeout: 120000,
+      timeout: 240000,
       reuseExistingServer: false,
       env: {
         CI: '1',

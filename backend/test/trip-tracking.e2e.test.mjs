@@ -82,6 +82,7 @@ test('una ubicación voluntaria sólo se consulta en viaje activo, vence y se bo
     latitude: 3.40391,
     longitude: -76.54879,
     capturedAt: new Date().toISOString(),
+    accuracyMeters: 23.5,
   };
   await call('diego', 'post', path).send(sample).expect(404);
   const { body: participation } = await call(
@@ -117,6 +118,9 @@ test('una ubicación voluntaria sólo se consulta en viaje activo, vence y se bo
   await call('diego', 'post', path)
     .send({ ...sample, capturedAt: '2000-01-01T00:00:00.000Z' })
     .expect(400);
+  await call('diego', 'post', path)
+    .send({ ...sample, accuracyMeters: -1 })
+    .expect(400);
   await call('diego', 'post', path).send(sample).expect(204);
   const viewed = await call('ana', 'get', path).expect(200);
   expect(viewed.body).toMatchObject({
@@ -137,17 +141,29 @@ test('una ubicación voluntaria sólo se consulta en viaje activo, vence y se bo
   });
   await call('diego', 'post', path).send(sample).expect(429);
   await call('ana', 'delete', path).expect(404);
-  await call('diego', 'delete', path).expect(204);
+  await call('diego', 'delete', path)
+    .send({ throughCapturedAt: sample.capturedAt })
+    .expect(204);
   await call('diego', 'delete', path).expect(204);
   expect((await call('ana', 'get', path).expect(200)).body.sample).toBeNull();
+  await call('diego', 'post', path).send(sample).expect(409);
 
-  await call('diego', 'post', path).send(sample).expect(204);
+  const resumed = {
+    latitude: sample.latitude,
+    longitude: sample.longitude,
+    capturedAt: new Date().toISOString(),
+  };
+  await call('diego', 'post', path).send(resumed).expect(204);
+  expect((await call('ana', 'get', path).expect(200)).body.sample).toEqual({
+    ...resumed,
+    sharedAt: expect.any(String),
+  });
   await db.tripDriverPosition.update({
     where: { tripId },
     data: { sharedAt: new Date(Date.now() - 121000) },
   });
   expect((await call('ana', 'get', path).expect(200)).body.sample).toBeNull();
-  await call('diego', 'post', path).send(sample).expect(204);
+  await call('diego', 'post', path).send(resumed).expect(204);
   await call(
     'diego',
     'post',
@@ -155,7 +171,7 @@ test('una ubicación voluntaria sólo se consulta en viaje activo, vence y se bo
   ).expect(200);
   await call('ana', 'get', path).expect(404);
   await call('diego', 'post', `/trips/${tripId}/transition`)
-    .send({ action: 'FINISH' })
+    .send({ action: 'FINISH', confirmMissingDropoffs: true })
     .expect(200);
   expect((await call('diego', 'get', path).expect(200)).body).toMatchObject({
     state: 'ENDED',
