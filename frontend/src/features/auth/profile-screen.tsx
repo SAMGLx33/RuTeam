@@ -1,3 +1,4 @@
+import { EmergencyContactSettings } from '../safety/emergency-contacts';
 import { Link } from 'expo-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Text, View } from 'react-native';
@@ -59,6 +60,12 @@ function ProfileSettings({ user }: { user: Account }) {
       </View>
       <View style={s.section}>
         <Text style={s.title}>Movilidad</Text>
+        <Link href="/economic-history" style={s.link}>
+          Historial económico
+        </Link>
+        <Link href="/mobility-statistics" style={s.link}>
+          Estadísticas de movilidad
+        </Link>
         <Link href="/mobility" style={s.link}>
           Preferencias de movilidad
         </Link>
@@ -123,6 +130,12 @@ function ProfileSettings({ user }: { user: Account }) {
         <Link href="/ratings" style={s.link}>
           Mi reputación y calificaciones
         </Link>
+        <Link href="/incidents" style={s.link}>
+          Mis incidencias
+        </Link>
+        <Link href="/account-settings" style={s.link}>
+          Configuración · Cuenta y privacidad
+        </Link>
         <Link href="/privacy" style={s.link}>
           Privacidad y condiciones de uso
         </Link>
@@ -145,6 +158,9 @@ export function ProfileScreen() {
   return (
     <ProtectedPage title="Perfil">
       {user && <ProfileSettings key={user.id} user={user} />}
+      {user?.capabilities.passenger && (
+        <EmergencyContactSettings key={user.id} userId={user.id} />
+      )}
     </ProtectedPage>
   );
 }

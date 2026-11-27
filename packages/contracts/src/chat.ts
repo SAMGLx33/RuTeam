@@ -3,9 +3,10 @@ export interface ChatConversation {
   originLabel: string;
   destinationLabel: string;
   departureAt: string;
-  status: 'PROGRAMADO' | 'EN_CURSO' | 'COMPLETADO';
+  status: 'PROGRAMADO' | 'EN_CURSO' | 'COMPLETADO' | 'INTERRUMPIDO';
   canSend: boolean;
   hasUnread: boolean;
+  unreadCount?: number;
 }
 
 export interface ChatMessage {

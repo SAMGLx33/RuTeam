@@ -245,3 +245,11 @@ intacto.
 El derivado privado de esta revisión identifica cada relación con esos
 modelos y los flujos correspondientes. Su alcance se enumera en
 [ediciones académicas](ACADEMIC_REDEFINITION_CHANGES.md#diagramas-derivados-de-consolidación).
+
+## Derivado de cierre del 26/11/2026
+
+Las observaciones de las pestañas originales siguen siendo antecedentes.
+RF-008 y RF-009 adoptan la división por plazas ofertadas más conductor y la
+declaración individual posviaje. RF-011 añade contactos propios e incidencias
+privadas. Revisar el [derivado UML](RELEASE_UML.md) junto con la
+[migración y el modelo](../architecture/DATA_MODEL.md).

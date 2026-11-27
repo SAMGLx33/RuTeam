@@ -79,3 +79,18 @@ El promedio se deriva de las filas por capacidad histórica. Una invitación
 consentida sólo crea reservas al confirmar en bloque. QR y abordaje manual
 comparten política. La posición publicada es voluntaria, efímera y por recurso.
 La estimación de COP es privada y guarda unidades enteras.
+
+En el cierre del 26/11, Nest recalcula el aporte exacto al publicar y separa
+gastos privados de condiciones públicas. Las mutaciones de compensación y
+seguridad sensibles usan autorización por recurso. El evento de dominio y su
+aviso interno comparten transacción. Conservar el índice por destinatario,
+viaje, tipo y clave de evento y la agregación por conversación para chat.
+Consultar [reglas de cierre](../docs/development/API.md#cierre-funcional-de-economía-y-seguridad).
+
+## Continuidad del producto
+
+Trips orquesta la publicación de ocurrencias y del viaje manual en la misma unidad de publicación. Adquiere el bloqueo de participación antes de los bloqueos de viajes cuando una operación de cuenta afecta cupos. Usa la unidad de Reservations para cerrar viajes y avisar a afectados. Mobility y Expenses proyectan sus historiales desde PostgreSQL. Safety limita el historial y el resumen de cada incidencia al autor. Consulta [modelo](../docs/architecture/DATA_MODEL.md) y [contratos](../docs/development/API.md).
+
+## Evolución ambiental y comunicación
+
+Las funciones de emisiones viven en Mobility/domain. Publicar congela el factor y cerrar registra el reparto en la misma transacción. Preserva las 24 migraciones de continuidad y las nuevas migraciones aditivas. Para tiempo real, los triggers emiten claves mínimas y Nest revisa sesión y recurso. Los recibos del proveedor push se distinguen de tickets y de la recepción física.

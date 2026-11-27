@@ -1,3 +1,4 @@
+import { suppressedNotices } from '../../notifications/notification-preferences.js';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ENVIRONMENT,
@@ -234,10 +235,15 @@ export class MobilityRepository {
     ]);
     return !!member || !!notification;
   }
-  notifications(recipientId: string, cursor?: TripCursor) {
+  async notifications(recipientId: string, cursor?: TripCursor) {
+    const user = await this.db.user.findUnique({
+      where: { id: recipientId },
+      select: { notificationPreferences: true },
+    });
     return this.db.tripNotification.findMany({
       where: {
         recipientId,
+        kind: { notIn: suppressedNotices(user?.notificationPreferences) },
         ...(cursor && {
           OR: [
             { createdAt: { lt: cursor.departureAt } },

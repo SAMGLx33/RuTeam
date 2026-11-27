@@ -92,7 +92,10 @@ const ordinaryAccount = {
   vehicles: [{ type: 'CAR', document: declared }],
 };
 const accountService = (user, environment = fixtureEnv) => {
-  const repository = { findUser: async () => user };
+  const repository = {
+    findUser: async () => user,
+    observeEligibility: async () => {},
+  };
   const provider = { verify: async () => true };
   const auth = new AuthService(repository, provider, environment);
   return new AccountService(

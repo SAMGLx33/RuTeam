@@ -413,7 +413,7 @@ test('proximidad a geometría produce potencial sin pickup ni plaza; preferencia
   ).toBe(0);
 });
 
-test('publicación llena antes de procesar no notifica; retiro reevalúa sin duplicar y expirado no ofrece match', async () => {
+test('publicación llena antes de procesar no avisa coincidencias; retiro reevalúa sin duplicar y expirado no ofrece match', async () => {
   const full = await publish(768);
   const [pickup, dropoff] = full.itinerary.stops;
   const reserved = (
@@ -422,16 +422,27 @@ test('publicación llena antes de procesar no notifica; retiro reevalúa sin dup
       .expect(201)
   ).body;
   await drain(full.id);
-  expect(await db.tripNotification.count({ where: { tripId: full.id } })).toBe(
-    0,
-  );
+  expect(
+    await db.tripNotification.count({
+      where: { tripId: full.id, kind: 'TRIP_MATCH' },
+    }),
+  ).toBe(0);
+  expect(
+    await db.tripNotification.count({
+      where: {
+        tripId: full.id,
+        kind: 'PARTICIPATION_CONFIRMED',
+        recipientId: users.sara,
+      },
+    }),
+  ).toBe(1);
   await call('post', `/participations/${reserved.id}/cancel`, 'sara').expect(
     200,
   );
   await drain(full.id);
   expect(
     await db.tripNotification.count({
-      where: { tripId: full.id, recipientId: users.ana },
+      where: { tripId: full.id, recipientId: users.ana, kind: 'TRIP_MATCH' },
     }),
   ).toBe(1);
   const expired = await publish(800);

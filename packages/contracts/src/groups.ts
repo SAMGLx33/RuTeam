@@ -1,3 +1,4 @@
+import type { TripEconomicTerms } from './expenses.js';
 import type { TripRule } from './index.js';
 
 export interface CreateTripGroupInput {
@@ -16,6 +17,7 @@ export interface TripGroupPreview {
   driverName: string | null;
   rules: TripRule[];
   providesHelmet: boolean | null;
+  economics: TripEconomicTerms | null;
 }
 
 export type TripGroupStatus =

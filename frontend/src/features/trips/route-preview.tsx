@@ -16,6 +16,7 @@ export const tripStatusLabel: Record<TripSummary['status'], string> = {
   EN_CURSO: 'en curso',
   COMPLETADO: 'completado',
   CANCELADO: 'cancelado',
+  INTERRUMPIDO: 'interrumpido',
 };
 
 export const accessLabel: Record<StopAccess, string> = {

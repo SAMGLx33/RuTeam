@@ -29,6 +29,7 @@ test('seguridad del viaje activo comparte contexto, resuelve ubicación voluntar
     adapter: new PrismaPg({ connectionString: database }),
   });
   let tripId: string | undefined;
+  let contactId: string | undefined;
   const errors: string[] = [];
   const locationWrites: string[] = [];
   const tileRequests: string[] = [];
@@ -57,6 +58,23 @@ test('seguridad del viaje activo comparte contexto, resuelve ubicación voluntar
     await expect(
       page.getByRole('heading', { name: 'Inicio', exact: true }),
     ).toBeVisible();
+
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Añadir contacto' }).click();
+    await page
+      .getByLabel('Nombre o alias', { exact: true })
+      .fill('Contacto sintético QA');
+    await page.getByLabel('Teléfono', { exact: true }).fill('+573000000001');
+    const contact = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/me/emergency-contacts') &&
+        response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: 'Guardar contacto' }).click();
+    const savedContact = await contact;
+    expect(savedContact.status()).toBe(201);
+    contactId = (await savedContact.json()).id as string;
+    await expect(page.getByText(/Contacto sintético QA ·/)).toBeVisible();
 
     const vehicle = await db.vehicle.findUniqueOrThrow({
       where: { plate: 'STU123' },
@@ -185,9 +203,43 @@ test('seguridad del viaje activo comparte contexto, resuelve ubicación voluntar
     ).toBeVisible();
     await expect(locationMap).toHaveCount(0);
 
+    await page
+      .getByRole('button', { name: 'Contactar a Contacto sintético QA' })
+      .click();
+    await expect(
+      page.getByRole('button', { name: 'Confirmar y abrir marcador' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Volver a mis contactos' }).click();
+    await page
+      .getByRole('link', { name: 'Registrar incidencia privada' })
+      .click();
+    await page.getByRole('radio', { name: 'Seguridad vial' }).click();
+    await page
+      .getByLabel('Descripción de la incidencia')
+      .fill('Incidencia privada sintética de navegación');
+    await page
+      .getByRole('button', { name: 'Guardar registro privado' })
+      .click();
+    await expect(
+      page.getByText('Incidencia guardada en tu historial privado.'),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByText('Incidencia privada sintética de navegación'),
+    ).toBeVisible();
+    await page.screenshot({
+      path: join(evidence, 'private-incident.jpg'),
+      fullPage: true,
+    });
+
     expect(errors).toEqual([]);
   } finally {
-    if (tripId) await db.trip.delete({ where: { id: tripId } });
+    if (contactId)
+      await db.emergencyContact.deleteMany({ where: { id: contactId } });
+    if (tripId) {
+      await db.tripIncident.deleteMany({ where: { tripId } });
+      await db.trip.delete({ where: { id: tripId } });
+    }
     await db.$disconnect();
   }
 });

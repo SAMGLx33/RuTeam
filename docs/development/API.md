@@ -279,3 +279,75 @@ El feed, búsqueda y detalle muestran la reputación del conductor. El listado
 autorizado de participantes añade reputación de pasajero en participaciones
 individuales confirmadas sin ausencia. La bandeja conserva tipos persistentes
 `TRIP_MATCH`, `CHAT_MESSAGE`, `RATING_AVAILABLE` y `GROUP_CONFIRMED`.
+
+## Cierre funcional de economía y seguridad
+
+Las rutas de abajo son relativas a `/api/v1`. Requieren sesión válida y estudiante
+vigente. Las respuestas privadas usan `Cache-Control: private, no-store`.
+
+| Operación                                          | Entrada y salida                                                                                                 | Autorización                                                                                          |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `POST /trips/economics-preview`                    | `{ offeredSeats, economics: { estimate?, compensationMethods } }` → estimación, fuente declarada, total y aporte | Conducción habilitada                                                                                 |
+| `POST /trips`                                      | `economics?` con el mismo objeto. Omisión publica viaje gratuito. El servidor recalcula al guardar               | Conductor propietario de vehículo elegible                                                            |
+| `GET/POST /trips/:tripId/expense-estimate`         | Desglose privado. Escritura antes del inicio con aporte cero o histórico                                         | Conductor propietario                                                                                 |
+| `GET /participations/:id/compensation`             | Condiciones, registro, permiso de declaración y acciones                                                         | Titular individual y conductor propietario                                                            |
+| `POST /participations/:id/compensation`            | `{ method }` con un método publicado. Importe del viaje, estado `DECLARED`                                       | Titular confirmado y abordado, viaje completado                                                       |
+| `POST /participations/:id/compensation/resolution` | `{ action }` con `ACKNOWLEDGE`, `DISPUTE` o `CANCEL`                                                             | Conductor para reconocer o discrepar. Titular para cancelar                                           |
+| `GET/POST /me/emergency-contacts`                  | Listado o formulario `{ name, phone, relationship?, available }`                                                 | Cuenta propietaria                                                                                    |
+| `PUT/DELETE /me/emergency-contacts/:id`            | Sustitución o eliminación del contacto. DELETE responde 204                                                      | Cuenta propietaria                                                                                    |
+| `GET /trips/:tripId/incidents`                     | `{ canCreate, records }`, hasta 50 registros propios recientes                                                   | Actor autorizado en el viaje o autor con historial                                                    |
+| `POST /trips/:tripId/incidents`                    | `{ kind, description }`, tipo `ROAD_SAFETY`, `CONDUCT` o `OTHER` y texto entre 5 y 1.000 caracteres              | En curso, conductor o participante confirmado sin ausencia. Completado, conductor o pasajero abordado |
+| `GET /trips/:tripId/location`                      | `state` `AVAILABLE`, `STALE`, `NOT_SHARED` o `ENDED`. Sólo disponible trae coordenadas y vencimiento             | Contexto de viaje activo, conductor o participante. Para cierre, propietario o pasajero abordado      |
+
+`economics` se devuelve en detalle, feed, vistas de viaje, participación y
+consentimiento grupal. Incluye importe público y métodos. `null` describe un
+viaje publicado antes de persistir condiciones económicas. Los componentes de
+gastos se devuelven sólo al conductor en estimación y revisión previa.
+
+Los eventos internos se distinguen por tipo y clave estable por participación,
+propuesta, recogida o grupo. Inicio, finalización y cancelación usan una clave
+por viaje. Chat mantiene un aviso agregado actualizable por conversación y
+destinatario. El commit del registro de compensación incluye su aviso.
+Los endpoints de recursos conservan sus propios controles al navegar desde avisos.
+
+## Endpoints de continuidad
+
+Rutas bajo `/api/v1`. Las consultas usan la cuenta de la sesión. Las respuestas privadas usan `Cache-Control: no-store`.
+
+| Método y ruta                                                 | Entrada y comportamiento                                                                                                                                                                                                |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /trip-schedules`, `GET /trip-schedules/:id`              | Plantillas propias con hasta 40 fechas recientes y próximas, resultados de generación y vínculos a viajes.                                                                                                              |
+| `POST /trip-schedules`, `PUT /trip-schedules/:id`             | `RecurringTripInput` con nombre, fechas locales ISO, hora de Colombia, días 1–7 (lunes a domingo) y plantilla de publicación. El PUT conserva viajes ya publicados.                                                     |
+| `POST /trip-schedules/:id/action`                             | `PAUSE`, `RESUME`, `RETRY`, `CANCEL` o `CANCEL_FUTURE`. La última cancela también viajes futuros programados sin abordaje.                                                                                              |
+| `POST /trips/:id/duplicate`                                   | `departureAt` ISO con zona. Reutiliza el itinerario validado del conductor y publica un viaje nuevo sujeto a requisitos actuales.                                                                                       |
+| `GET /auth/lifecycle`                                         | `AccountSettings`. Sesiones activas y viajes, participaciones y recurrencias afectados.                                                                                                                                 |
+| `POST /auth/lifecycle/sessions/:id/revoke`                    | Contraseña actual. Revoca una sesión propia.                                                                                                                                                                            |
+| `POST /auth/lifecycle/close`                                  | Contraseña, `confirmed: true` y `DEACTIVATE` o `REQUEST_DELETION`. Devuelve `AccountLifecycleStatus`.                                                                                                                   |
+| `POST /auth/lifecycle/status`, `POST /auth/lifecycle/recover` | Correo y contraseña. La recuperación requiere `confirmed: true` y `WITHDRAW_DELETION` o `REACTIVATE`. Tiene límite de frecuencia propio.                                                                                |
+| `GET /mobility/statistics?months=12`                          | `MobilityStatistics` agregadas de 1 a 36 meses. Los campos de distancia pueden ser nulos. `environmental.status=METHODOLOGY_PENDING`.                                                                                   |
+| `GET /economics/history`                                      | `EconomicHistory` con `role` (PASSENGER/DRIVER), `filter` (FREE, SUGGESTED, DECLARED, ACKNOWLEDGED, DISPUTED, CANCELLED), `month` (AAAA-MM), `tripId` opcional y `offset`. Totales del filtro completo y páginas de 20. |
+| `POST /trips/:id/transition`                                  | `CANCEL` acepta motivo opcional. `INTERRUPT` requiere `reason` y `confirmedSafe: true`. Devuelve `INTERRUMPIDO` y conserva abordajes.                                                                                   |
+| `POST /participations/:id/cancel`                             | El titular puede enviar `reason` en retiros permitidos.                                                                                                                                                                 |
+| `GET /me/incidents`, `GET /me/incidents/trips`                | Historial propio y viajes elegibles, con `offset` y páginas de 20.                                                                                                                                                      |
+| `GET /me/incidents/:id/export`                                | `IncidentExport` con el registro del autor y el contexto del viaje. El cliente prepara la acción de compartir.                                                                                                          |
+
+Las nuevas clases DTO aparecen en Swagger bajo `recurring-trips`, `account-lifecycle`, `mobility-statistics`, `economic-history` y `private-safety`. La bandeja `GET /notifications` sigue unificada. Los avisos de cuenta pueden tener `tripId: null`.
+
+## Endpoints de evolución ambiental y comunicación
+
+| Método y ruta                                               | Contrato y regla                                                                                                                                                                       |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUT /vehicles/:id/energy`                                  | Propietario. `{profile: {propulsion, source, average?, unit?}}` o `{profile:null}`. Afecta publicaciones nuevas. El registro `POST /vehicles` también acepta `energyProfile` opcional. |
+| `GET /mobility/statistics?months=12`                        | Agrega emisiones de operación y atribución por rol, mes y alcance. Indica faltantes por causa.                                                                                         |
+| `GET /mobility/environment/trips/:id`                       | Conductor del viaje completado o pasajero que abordó. Factor, atribución y disponibilidad de contraste.                                                                                |
+| `PUT /mobility/environment/trips/:id/alternative`           | Participación individual propia y abordada. `{mode, energy?}`. `UNSPECIFIED` retira la declaración.                                                                                    |
+| `GET /realtime` · `GET /realtime/trips/:id`                 | SSE autorizado `RealtimeSignal`. Consultar [protocolo](REALTIME.md).                                                                                                                   |
+| `GET /trips/:id/operation`                                  | `TripOperation`. Titular o miembro. Sólo titular ve ocupación y conteos del grupo operativo.                                                                                           |
+| `GET /mobility/activity`                                    | `PendingActivity[]`. Proyección de acciones y recordatorios propios.                                                                                                                   |
+| `GET /mobility/agenda?start=AAAA-MM-DD&days=7`              | `MobilityAgenda`. Ventana de 7 o 28 días en Colombia.                                                                                                                                  |
+| `GET /trips/:id/reuse`                                      | Plantilla editada por el conductor titular. Ruta legítima validada con firma nueva cuando se dispone de tiempos completos.                                                             |
+| `GET /notification-settings` · `PUT /notification-settings` | `NotificationSettings` y cinco controles booleanos de avisos opcionales.                                                                                                               |
+| `POST /notification-settings/devices`                       | Registro configurado por sesión con token Expo, secreto de instalación, plataforma y consentimiento.                                                                                   |
+| `DELETE /notification-settings/devices/:id`                 | Revoca el dispositivo de la cuenta titular.                                                                                                                                            |
+
+El marco y las unidades del cálculo están en [Estimaciones ambientales](ENVIRONMENTAL_METHOD.md). Registro, reintentos y recibos están en [Preferencias de avisos y push](NOTIFICATION_SETTINGS.md).

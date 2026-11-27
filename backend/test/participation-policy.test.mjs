@@ -70,6 +70,8 @@ beforeEach(() => {
     trip: {
       status: trip.status,
       departureAt: trip.departureAt,
+      suggestedContributionCop: null,
+      compensationMethods: [],
       driver: { profile: { displayName: 'Conductor' } },
       vehicle: { type: 'CAR', brand: 'Marca', color: 'GRIS' },
     },
@@ -84,6 +86,12 @@ beforeEach(() => {
     memberships: async () => [membership],
     activeForMember: async () => row,
     find: async () => row,
+    notify: async (kind, recipients, id) => {
+      calls.push(['notice', kind, recipients, id]);
+    },
+    revokePass: async (id) => {
+      calls.push(['revoke-pass', id]);
+    },
     create: async (...args) => {
       calls.push(['create', ...args]);
       row = view();
@@ -142,6 +150,8 @@ test('confirmación directa crea una plaza confirmada para el actor y replay no 
   expect(calls).toEqual([
     ['seats', 1],
     ['create', actor, input.pickupId, input.dropoffId, expect.any(Date)],
+    ['notice', 'PARTICIPATION_CONFIRMED', [actor], confirmed.id],
+    ['notice', 'PASSENGER_JOINED', ['driver'], confirmed.id],
   ]);
   const replay = await service.confirm(actor, trip.id, input);
   expect(replay.id).toBe(confirmed.id);
@@ -201,13 +211,18 @@ test('retiro futuro libera exactamente una plaza y conserva replay e historial',
   expect(trip.occupiedSeats).toBe(0);
   expect(calls).toEqual([
     ['seats', -1],
+    ['notice', 'PASSENGER_WITHDREW', ['driver'], row.id],
+    ['revoke-pass', row.id],
     ['status', 'CANCELLED'],
   ]);
 });
 test('retirar pendiente histórico no lo promueve ni cambia ocupación', async () => {
   row = unit.fixture('PENDING');
   expect((await service.cancel(actor, row.id)).status).toBe('CANCELLED');
-  expect(calls).toEqual([['status', 'CANCELLED']]);
+  expect(calls).toEqual([
+    ['revoke-pass', row.id],
+    ['status', 'CANCELLED'],
+  ]);
 });
 test('no retira participación ajena, pasada o abordada', async () => {
   row = unit.fixture();
@@ -238,7 +253,7 @@ test('abordaje sólo por conductor en ventana y sin ocupar una segunda plaza', a
   const boarded = await service.board('driver', row.id);
   expect(boarded.boardedAt).toEqual(expect.any(String));
   await service.board('driver', row.id);
-  expect(calls).toEqual([['board']]);
+  expect(calls).toEqual([['revoke-pass', row.id], ['board']]);
   expect(trip.occupiedSeats).toBe(1);
 });
 test('abordaje rechaza pendiente, viaje cancelado, finalizado o sin llegada registrada', async () => {

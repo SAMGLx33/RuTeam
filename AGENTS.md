@@ -61,7 +61,7 @@ recorrido E2E/visual son parte del DoD, no basta endpoint o prueba aislada.
   propias al encuentro interior ni inventarlas. UI sin latitud/longitud/GeoJSON/UUID manuales.
 - Grupos requieren identidad y consentimiento explícito de cada integrante; un lote
   conjunto es atómico. Invitaciones temporales pendientes no retienen plazas.
-  Priorizar confirmación individual segura mientras no exista ese mecanismo.
+  La confirmación individual y la grupal usan la misma capacidad transaccional.
 - Estado del viaje, disponibilidad, participación y abordaje son distintos. Abordar
   requiere participación confirmada y no consume otra plaza. Cancelar conserva historial;
   retiro futuro permitido libera plazas. Sin cambios esenciales silenciosos ni multas.
@@ -128,3 +128,22 @@ y sólo el lote completo ocupa plazas. QR RuTeam complementa el registro manual.
 La ubicación voluntaria se limita al conductor activo y su última muestra.
 Costos privados en COP son una estimación. Para reglas de reparto, incidencias,
 fuente USC y promoción consulta las decisiones y el handoff.
+
+## Cierre académico del 26/11/2026
+
+Usar [RELEASE_READINESS](docs/reviews/RELEASE_READINESS.md) para el estado y
+la evidencia de la entrega. El aporte en COP divide los tres gastos declarados
+por plazas ofertadas más conductor, con piso al peso entero. El importe y los
+métodos publicados se mantienen tras confirmar. Un ausente queda fuera de
+calificaciones y compensaciones. Incidencias y contactos pertenecen a su autor.
+Avisos internos críticos se escriben junto con el evento de origen. El cierre
+respeta el estado de propuestas, grupos, pases y ubicación. La integración
+institucional y la aceptación física permanecen como controles separados.
+
+## Continuidad del 26 de noviembre
+
+La rama local de continuidad amplía recurrencias, cuenta, estadísticas, economía y cierre seguro. Usa los [relevos por incremento](docs/handoffs/README.md#continuidad-del-producto) y la [preparación de entrega](docs/reviews/RELEASE_READINESS.md). Un cambio de plantilla conserva cada viaje publicado. La cuenta y el acceso a historiales se validan en NestJS. Las decisiones sobre conservación, emisiones y servicios externos están en [decisiones abiertas](docs/decisions/OPEN_DECISIONS.md).
+
+## Evolución ambiental y comunicación
+
+Conservar los factores y datos energéticos con los que se publicó cada viaje. Separar CO₂ de combustión y CO₂e eléctrico. Aplicar a SSE la misma sesión y autorización que a los recursos HTTP. Los eventos son señales posteriores al commit. Usar las proyecciones de agenda y actividad sin crear tablas de duplicación. Consulta los [relevos](docs/handoffs/README.md#evolución-ambiental-y-comunicación).

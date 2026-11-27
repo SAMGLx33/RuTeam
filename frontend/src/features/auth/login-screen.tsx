@@ -126,6 +126,9 @@ export function LoginScreen() {
         <Link href="/register" replace style={s.link}>
           Crear cuenta
         </Link>
+        <Link href="/account-status" style={s.link}>
+          Consultar o reactivar mi cuenta
+        </Link>
         <Link href="/recover-access" style={s.link}>
           Recuperar acceso
         </Link>

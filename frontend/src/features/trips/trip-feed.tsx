@@ -1,3 +1,4 @@
+import { pesos } from '../expenses/economic-terms';
 import { ReputationLabel } from '../ratings/reputation-label';
 import { useState } from 'react';
 import { Link } from 'expo-router';
@@ -80,6 +81,13 @@ function TripCard({ trip }: { trip: TripFeedCard }) {
         {trip.driverName ?? 'Conductor'} · {trip.vehicle.brand}{' '}
         {trip.vehicle.color.toLowerCase()}
       </Text>
+      {trip.economics && (
+        <Text style={s.text}>
+          {trip.economics.suggestedContributionCop
+            ? `Aporte sugerido · ${pesos(trip.economics.suggestedContributionCop)} COP`
+            : 'Viaje gratuito'}
+        </Text>
+      )}
       <ReputationLabel summary={trip.driverReputation} />
       <Text style={s.text}>{trip.meetingLabel}</Text>
       {trip.rules.length > 0 && (

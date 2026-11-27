@@ -10,10 +10,15 @@ import {
   SessionGuard,
   SessionRevocationGuard,
 } from '../../common/guards/session.guard.js';
+import { AccountLifecycleController } from './controllers/account-lifecycle.controller.js';
+import { AccountLifecycleService } from './application/account-lifecycle.service.js';
+import { AccountLifecycleRepository } from './infrastructure/repositories/account-lifecycle.repository.js';
 @Module({
-  controllers: [AuthController, AccountController],
+  controllers: [AuthController, AccountController, AccountLifecycleController],
   providers: [
     AuthService,
+    AccountLifecycleService,
+    AccountLifecycleRepository,
     AuthRepository,
     AccountService,
     AccountSessionGuard,

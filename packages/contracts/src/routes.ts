@@ -1,3 +1,4 @@
+import type { TripEconomicTerms } from './expenses.js';
 import type { ReputationSummary } from './ratings.js';
 import type { TripPoint, TripRule, VehicleType } from './index.js';
 
@@ -83,6 +84,7 @@ export interface AvailableTrip {
   estimatedDurationMinutes: number;
   availableSeats: number;
   providesHelmet: boolean | null;
+  economics: TripEconomicTerms | null;
   itinerary: TripItinerary;
   rules: TripRule[];
   match: StopMatch;
@@ -94,7 +96,14 @@ export interface TripSearchPage {
 
 export type ReservationStatus =
   'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED';
-export type TripAction = 'START' | 'FINISH' | 'CANCEL';
+export type TripAction = 'START' | 'FINISH' | 'CANCEL' | 'INTERRUPT';
+export type CancellationReason =
+  | 'DRIVER_UNAVAILABLE'
+  | 'VEHICLE_ISSUE'
+  | 'SAFETY'
+  | 'CHANGE_OF_PLANS'
+  | 'ACCOUNT_CLOSED'
+  | 'OTHER';
 export interface ConfirmParticipationInput {
   pickupId: string;
   dropoffId: string;
@@ -113,7 +122,8 @@ export interface ReservationView {
   isRequester: boolean;
   quantity: number;
   status: ReservationStatus;
-  tripStatus: 'PROGRAMADO' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
+  economics: TripEconomicTerms | null;
+  tripStatus: import('./index.js').TripSummary['status'];
   pickup: ReservedMeetingPoint;
   dropoff: ReservedMeetingPoint;
   departureAt: string;
@@ -121,6 +131,7 @@ export interface ReservationView {
   confirmedAt: string | null;
   boardedAt: string | null;
   noShowAt?: string | null;
+  withdrawalReason?: CancellationReason | null;
   canCancel: boolean;
 }
 

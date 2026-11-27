@@ -7,7 +7,9 @@ export interface TripDriverLocationInput {
 }
 
 export interface TripTrackingView {
+  state: 'AVAILABLE' | 'STALE' | 'NOT_SHARED' | 'ENDED';
   canShare: boolean;
+  expiresAt?: string;
   sample: (TripDriverLocationInput & { sharedAt: string }) | null;
   route: {
     geometry: RouteGeometry | null;

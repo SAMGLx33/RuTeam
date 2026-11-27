@@ -17,7 +17,9 @@ export class TripTransitionGuard extends SessionGuard {
       .switchToHttp()
       .getRequest<{ body?: { action?: unknown } }>();
     // Closing a trip still requires its owner and a valid session.
-    return body?.action === 'FINISH' || body?.action === 'CANCEL'
+    return body?.action === 'FINISH' ||
+      body?.action === 'CANCEL' ||
+      body?.action === 'INTERRUPT'
       ? this.accountSession.canActivate(context)
       : super.canActivate(context);
   }

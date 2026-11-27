@@ -234,6 +234,24 @@ export function TripRatingsScreen() {
   });
   return (
     <ProtectedPage title="Calificaciones del viaje">
+      {query.data && (
+        <Link
+          href={{
+            pathname: '/economic-history',
+            params: {
+              tripId,
+              role: query.data.targets.some(
+                ({ capacity }) => capacity === 'PASSENGER',
+              )
+                ? 'DRIVER'
+                : 'PASSENGER',
+            },
+          }}
+          style={s.link}
+        >
+          Consultar compensaciones del viaje
+        </Link>
+      )}
       <Link href="/ratings" style={s.link}>
         Mis calificaciones
       </Link>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Link, useLocalSearchParams } from 'expo-router';
 import {
   useInfiniteQuery,
@@ -6,7 +6,13 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  type ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import type {
   ChatConversationPage,
   ChatHistoryPage,
@@ -78,7 +84,7 @@ export function ConversationsScreen() {
             </Text>
             <Text style={s.text}>
               {tripDate(item.departureAt)}
-              {item.hasUnread ? ' · Mensajes nuevos' : ''}
+              {item.hasUnread ? ` · ${item.unreadCount ?? 1} sin leer` : ''}
             </Text>
             <Link
               href={{
@@ -105,7 +111,15 @@ export function ConversationsScreen() {
   );
 }
 
-function ChatRoom({ tripId, userId }: { tripId: string; userId: string }) {
+function ChatRoom({
+  tripId,
+  userId,
+  scrollRef,
+}: {
+  tripId: string;
+  userId: string;
+  scrollRef: RefObject<ScrollView | null>;
+}) {
   const client = useQueryClient();
   const historyKey = ['chat', userId, tripId];
   const endpoint = `/trips/${encodeURIComponent(tripId)}/chat`;
@@ -148,6 +162,14 @@ function ChatRoom({ tripId, userId }: { tripId: string; userId: string }) {
     },
   });
   const current = history.data;
+  const newest = current?.messages[0]?.id;
+  useEffect(() => {
+    if (!newest) return;
+    const frame = requestAnimationFrame(() =>
+      scrollRef.current?.scrollToEnd({ animated: true }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [newest, scrollRef]);
   if (history.error)
     return (
       <Text accessibilityRole="alert" style={s.error}>
@@ -171,8 +193,8 @@ function ChatRoom({ tripId, userId }: { tripId: string; userId: string }) {
       </Text>
       {!current.conversation.canSend && (
         <Text style={s.text}>
-          Viaje completado. Puedes consultar la conversación durante las 24
-          horas posteriores.
+          Viaje cerrado. Puedes consultar la conversación durante las 24 horas
+          posteriores.
         </Text>
       )}
       {!messages.length && (
@@ -228,7 +250,13 @@ function ChatRoom({ tripId, userId }: { tripId: string; userId: string }) {
             style={styles.input}
           />
           <Button
-            title={send.isPending ? 'Enviando…' : 'Enviar mensaje'}
+            title={
+              send.isPending
+                ? 'Enviando…'
+                : send.error && lastAttempt?.body === body.trim()
+                  ? 'Reintentar envío'
+                  : 'Enviar mensaje'
+            }
             disabled={!body.trim() || send.isPending}
             onPress={() => {
               const text = body.trim();
@@ -249,13 +277,19 @@ function ChatRoom({ tripId, userId }: { tripId: string; userId: string }) {
 export function ChatScreen() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const { user } = useSession();
+  const scrollRef = useRef<ScrollView>(null);
   return (
-    <ProtectedPage title="Chat del viaje">
+    <ProtectedPage title="Chat del viaje" scrollRef={scrollRef}>
       <Link href="/chat" style={s.link}>
         Volver a mensajes
       </Link>
       {!!tripId && !!user?.capabilities.passenger && (
-        <ChatRoom key={tripId} tripId={tripId} userId={user.id} />
+        <ChatRoom
+          key={tripId}
+          tripId={tripId}
+          userId={user.id}
+          scrollRef={scrollRef}
+        />
       )}
     </ProtectedPage>
   );

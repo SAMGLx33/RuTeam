@@ -76,3 +76,19 @@ Personas POR_ASIGNAR. La revisión técnica está en
 | Datos e integración | Restauración, matriz de migraciones, revisión de dependencias y promoción | POR_ASIGNAR |
 
 El integrador actualiza el estado compartido sólo tras validar la integración.
+
+## Cierre del 26/11 en revisión
+
+Publicación y economía comparten contrato de condiciones. Seguridad custodia
+contactos, incidencias y ubicación. Participaciones conserva el lock conductor
+→ viaje y emite los avisos de su ciclo. Movilidad mantiene la bandeja
+persistente. QA coteja autorización, navegador, restauración y Expo Go.
+Las personas responsables quedan POR_ASIGNAR. [Handoff](../handoffs/2026-11-26_release-readiness.md).
+
+## Continuidad local del producto
+
+Trips entrega plantillas y ocurrencias. Auth coordina el cierre con Reservations, Groups y Trips. Mobility y Expenses mantienen sus consultas privadas sobre registros existentes. Reservations y Safety revisan transiciones e incidencias conjuntamente. Frontend integra los recorridos y Validación registra evidencia de PostgreSQL y Chromium. Los [relevos](../handoffs/README.md#continuidad-del-producto) enlazan contratos e impacto por frente.
+
+## Evolución local
+
+Movilidad coordina estimación, agenda, actividad y preferencias. Viajes y Reservas integran la instantánea ambiental al publicar y finalizar. Tiempo real gestiona sesiones SSE y señales transaccionales. Safety y Frontend mantienen la operación y la experiencia posviaje. El integrador conserva la responsabilidad sobre CURRENT_STATUS.

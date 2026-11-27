@@ -43,3 +43,18 @@ anteriores están [archivados](../history/2026-11-24-guides.md).
 La entrega local, la integración Git, la aceptación PO, las fuentes institucionales y
 Expo Go físico son hitos distintos. No afirmar ninguno por completar documentación,
 exportar un bundle o ejecutar un viewport móvil.
+
+## Criterios del cierre económico y de seguridad
+
+- El conductor revisa gastos, plazas y aporte antes de publicar. Un viaje
+  con 10.001 COP y tres plazas ofrece 2.500 COP por pasajero, incluso con
+  ocupación parcial. El pasajero puede revisar los métodos y condiciones
+  antes de confirmar o consentir un grupo.
+- En viaje completado, sólo el titular que abordó puede declarar un aporte
+  por reserva. El conductor reconoce o registra discrepancia. Una declaración
+  repetida conserva el registro. Los ausentes y retirados no pueden declarar.
+- El estudiante consulta y modifica sólo sus contactos. El viaje autorizado
+  permite registrar una incidencia privada y recuperarla bajo la misma sesión.
+  La persona que viaja distingue ubicación reciente, caducada, retirada y término.
+- El cambio de estado y su aviso se guardan juntos. Lecturas de terceros y
+  reintentos concurrentes se comprueban a través de Nest y PostgreSQL.

@@ -142,3 +142,20 @@ seguridad, ubicación voluntaria en viaje activo y una estimación privada de
 costos. El ensayo PostgreSQL restauró en una base nueva el respaldo histórico.
 Los resultados, el flujo completo y los asuntos pendientes están en la
 [revisión del corte](../reviews/PRODUCT_CONSOLIDATION.md).
+
+## Cierre funcional local, 26/11/2026
+
+La revisión partió de `f7013ea` en una copia de trabajo aislada. Incluye
+RF-008/009, contactos e incidencias privadas, estado de seguimiento y efectos
+del ciclo de vida. La migración aditiva conserva las 18 anteriores.
+Resultados, pruebas visuales y bloqueos vigentes están en
+[RELEASE_READINESS](../reviews/RELEASE_READINESS.md). La promoción requiere la
+revisión habitual del equipo.
+
+## Continuidad del producto del 26/11/2026
+
+En `task/release-readiness` sobre `f7013ea` se añadieron siete incrementos de trabajo técnico. Las recurrencias reutilizan la publicación, la cuenta resuelve cupos y sesiones y los historiales consultan PostgreSQL. Cierre seguro, incidencias y bandeja se integran en las pantallas operativas. Evidencia y decisiones en los [relevos por incremento](../handoffs/README.md#continuidad-del-producto) y [preparación de entrega](../reviews/RELEASE_READINESS.md).
+
+## Evolución del 26/11/2026
+
+RF-019 pasó de infraestructura a cálculo de operación y atribución. Se incorporaron SSE, seguimiento, contexto posviaje, agenda, actividad, reutilización y preferencias de notificación. Los [relevos por incremento](../handoffs/README.md#evolución-ambiental-y-comunicación) registran implementación y evidencia. La entrega en dispositivo y proveedores reales sigue una validación separada.

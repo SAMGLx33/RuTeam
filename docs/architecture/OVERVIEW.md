@@ -78,3 +78,11 @@ Expo presenta DTOs mediante servicios HTTP y usa la cámara o la ubicación sól
 cuando el usuario activa el control. El selector de compartir del dispositivo
 se mantiene fuera del backend. Ver [matriz](AUTHORIZATION_MATRIX.md),
 [modelo de datos](DATA_MODEL.md) y [revisión integrada](../reviews/PRODUCT_CONSOLIDATION.md).
+
+## Cierre funcional
+
+Los controllers económicos y de seguridad reciben DTO y actor. La aplicación
+determina autorización de escritura y reglas de negocio. Prisma aplica
+restricciones, ownership y transacciones. Los avisos de operaciones críticas
+usan el mismo cliente transaccional que el cambio. La vista Expo consume los
+contratos compartidos. Revisar [hallazgos MVC y privacidad](../reviews/RELEASE_AUDIT.md).

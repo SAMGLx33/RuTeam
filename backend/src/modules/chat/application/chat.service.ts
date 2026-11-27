@@ -63,7 +63,7 @@ function conversation(row: ChatTripRow): ChatConversation {
     destinationLabel: row.stops[0]?.label ?? 'Destino',
     departureAt: row.departureAt.toISOString(),
     status: row.status,
-    canSend: row.status !== 'COMPLETADO',
+    canSend: row.status !== 'COMPLETADO' && row.status !== 'INTERRUMPIDO',
     hasUnread:
       !!message &&
       (!read ||
@@ -111,8 +111,15 @@ export class ChatService {
       at: departureAt,
       id,
     }));
+    const unread = await this.repository.unread(
+      actorId,
+      result.items.map(({ id }) => id),
+    );
     return {
-      items: result.items.map(conversation),
+      items: result.items.map((row) => ({
+        ...conversation(row),
+        unreadCount: unread.get(row.id) ?? 0,
+      })),
       nextCursor: result.nextCursor,
     };
   }

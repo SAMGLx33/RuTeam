@@ -16,17 +16,7 @@ import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
 import { colors } from '../../theme/tokens';
 
-const concepts = [
-  ['fuelCop', 'Combustible'],
-  ['tollsCop', 'Peajes'],
-  ['parkingCop', 'Estacionamiento'],
-] as const;
-const pesos = (n: number) =>
-  n.toLocaleString('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    maximumFractionDigits: 0,
-  });
+import { expenseConcepts, pesos } from './economic-terms';
 
 function ExpenseForm({
   tripId,
@@ -66,7 +56,7 @@ function ExpenseForm({
       <Text style={s.text}>
         Estimación privada del conductor en pesos colombianos.
       </Text>
-      {concepts.map(([name, label]) => (
+      {expenseConcepts.map(([name, label]) => (
         <View key={name} style={styles.field}>
           <Text style={s.text}>{label}</Text>
           {editable ? (

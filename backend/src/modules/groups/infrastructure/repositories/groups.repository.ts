@@ -1,3 +1,5 @@
+import { publicEconomicTerms } from '../../../expenses/domain/expense-policy.js';
+import { recordTripNotice } from '../../../mobility/infrastructure/trip-notices.js';
 import { Injectable } from '@nestjs/common';
 import type { TripGroupPreview, TripGroupView } from '@ruteam/contracts';
 import type { Prisma } from '../../../../generated/prisma/client.js';
@@ -18,8 +20,11 @@ const groupInclude = {
   trip: {
     select: {
       status: true,
+      driverId: true,
       departureAt: true,
       providesHelmet: true,
+      suggestedContributionCop: true,
+      compensationMethods: true,
       driver: { select: { profile: { select: { displayName: true } } } },
       rules: {
         select: {
@@ -45,6 +50,7 @@ export function groupPreview(group: Group): TripGroupPreview {
     driverName: group.trip.driver.profile?.displayName ?? null,
     rules: group.trip.rules.map(({ rule }) => rule),
     providesHelmet: group.trip.providesHelmet,
+    economics: publicEconomicTerms(group.trip),
   };
 }
 
@@ -146,14 +152,14 @@ export function groupsInTrip(tx: Prisma.TransactionClient, tripId: string) {
         data: { confirmedAt: at },
         include: groupInclude,
       });
-      for (const recipientId of recipients) {
-        const kind = 'GROUP_CONFIRMED';
-        await tx.tripNotification.upsert({
-          where: { recipientId_tripId_kind: { recipientId, tripId, kind } },
-          create: { recipientId, tripId, kind, createdAt: at },
-          update: { createdAt: at, readAt: null },
-        });
-      }
+      await recordTripNotice(tx, tripId, 'GROUP_CONFIRMED', recipients, id);
+      await recordTripNotice(
+        tx,
+        tripId,
+        'PASSENGER_JOINED',
+        [saved.trip.driverId],
+        id,
+      );
       return saved;
     },
   };

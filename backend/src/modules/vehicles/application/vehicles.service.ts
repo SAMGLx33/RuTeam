@@ -5,6 +5,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type {
+  VehicleEnergyInput,
+  VehicleEnergyProfile,
+} from '@ruteam/contracts';
+import { normalizeEnergy } from '../../mobility/domain/emissions.js';
 import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import { VehiculoRepository } from '../infrastructure/repositories/vehicles.repository.js';
 import {
@@ -47,7 +52,12 @@ export class VehiculoService {
       throw new BadRequestException('Marca inválida');
     try {
       return this.present(
-        await this.repository.registrar(userId, data, this.env.demo),
+        await this.repository.registrar(
+          userId,
+          data,
+          this.env.demo,
+          data.energyProfile ? normalizeEnergy(data.energyProfile) : undefined,
+        ),
       );
     } catch (error) {
       if (
@@ -59,6 +69,19 @@ export class VehiculoService {
         throw new ConflictException('La placa ya está registrada');
       throw error;
     }
+  }
+  async updateEnergy(
+    ownerId: string,
+    id: string,
+    input: VehicleEnergyInput | null,
+  ) {
+    const vehicle = await this.repository.updateEnergy(
+      ownerId,
+      id,
+      input === null ? null : normalizeEnergy(input),
+    );
+    if (!vehicle) throw new NotFoundException('Vehículo propio no encontrado');
+    return this.present(vehicle);
   }
   async actualizarSoat(userId: string, vehicleId: string, expiresAt: string) {
     const vehicle = await this.repository.actualizarSoat(
@@ -100,6 +123,8 @@ export class VehiculoService {
   ) {
     return {
       id: vehicle.id,
+      energyProfile:
+        vehicle.energyProfile as unknown as VehicleEnergyProfile | null,
       plate: vehicle.plate,
       type: vehicle.type,
       passengerCapacity: vehicle.passengerCapacity,

@@ -40,5 +40,13 @@
     "@types/node": "^22.19.0",
     "dotenv": "^17.2.3",
     "pg": "^8.16.3"
+  },
+  "overrides": {
+    "@expo/metro-config": {
+      "postcss": "8.5.23"
+    },
+    "@prisma/config": {
+      "effect": "3.22.1"
+    }
   }
 }

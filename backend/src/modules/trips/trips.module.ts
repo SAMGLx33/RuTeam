@@ -8,11 +8,22 @@ import { OsrmRoutingProvider } from './infrastructure/routing/osrm-routing.provi
 import { PickupProposalsController } from './controllers/pickup-proposals.controller.js';
 import { PickupProposalsService } from './application/pickup-proposals.service.js';
 import { PickupProposalsRepository } from './infrastructure/repositories/pickup-proposals.repository.js';
+import { RecurringTripsController } from './controllers/recurring-trips.controller.js';
+import { RecurringTripsService } from './application/recurring-trips.service.js';
+import { RecurringTripsWorker } from './application/recurring-trips.worker.js';
+import { RecurringTripsRepository } from './infrastructure/repositories/recurring-trips.repository.js';
 @Module({
   imports: [AuthModule],
-  controllers: [ViajeController, PickupProposalsController],
+  controllers: [
+    ViajeController,
+    PickupProposalsController,
+    RecurringTripsController,
+  ],
   providers: [
     ViajeService,
+    RecurringTripsService,
+    RecurringTripsRepository,
+    RecurringTripsWorker,
     RoutingSelections,
     ViajeRepository,
     OsrmRoutingProvider,

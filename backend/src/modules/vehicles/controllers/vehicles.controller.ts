@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import {
   SessionGuard,
   type AuthenticatedRequest,
 } from '../../../common/guards/session.guard.js';
+import { VehicleEnergyUpdateDto } from '../../mobility/dto/energy.dto.js';
 import { VehiculoService } from '../application/vehicles.service.js';
 import {
   RegisterLicenseDto,
@@ -38,6 +40,13 @@ export class VehiculoController {
     @Body() data: RegisterVehicleDto,
   ) {
     return this.service.registrarVehiculo(req.principal.userId, data);
+  }
+  @Put('vehicles/:id/energy') energy(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() data: VehicleEnergyUpdateDto,
+  ) {
+    return this.service.updateEnergy(req.principal.userId, id, data.profile);
   }
   @Get('driver-eligibility') licencia(@Req() req: AuthenticatedRequest) {
     return this.service.licencia(req.principal.userId);

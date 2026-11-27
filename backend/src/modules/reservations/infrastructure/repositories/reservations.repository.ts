@@ -1,11 +1,19 @@
+import { recordEmissions } from '../../../mobility/infrastructure/record-emissions.js';
+import { publicEconomicTerms } from '../../../expenses/domain/expense-policy.js';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { ReservationView, ReservationStatus } from '@ruteam/contracts';
+import type {
+  ReservationView,
+  ReservationStatus,
+  CancellationReason,
+} from '@ruteam/contracts';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 import type { Prisma } from '../../../../generated/prisma/client.js';
 import {
   emptyReputation,
   reputationsByRole,
 } from '../../../ratings/infrastructure/reputation.read.js';
+import { lockParticipationChanges } from '../participation-lock.js';
+import { recordTripNotice } from '../../../mobility/infrastructure/trip-notices.js';
 import { requeueRecommendation } from '../../../mobility/infrastructure/repositories/requeue-recommendation.js';
 
 const pointSelect = {
@@ -23,6 +31,8 @@ const viewInclude = {
     select: {
       status: true,
       departureAt: true,
+      suggestedContributionCop: true,
+      compensationMethods: true,
       driver: { select: { profile: { select: { displayName: true } } } },
       vehicle: { select: { type: true, brand: true, color: true } },
     },
@@ -54,12 +64,14 @@ export function reservationView(
     quantity: row.quantity,
     status: row.status,
     tripStatus: row.trip.status,
+    economics: publicEconomicTerms(row.trip),
     pickup: meetingPointView(row.pickup),
     dropoff: meetingPointView(row.dropoff),
     departureAt: row.trip.departureAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     confirmedAt: row.confirmedAt?.toISOString() ?? null,
     boardedAt: row.boardedAt?.toISOString() ?? null,
+    withdrawalReason: row.withdrawalReason,
     noShowAt: row.noShowAt?.toISOString() ?? null,
     canCancel:
       row.requesterId === actorId &&
@@ -70,8 +82,48 @@ export function reservationView(
   };
 }
 
-function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
+export function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
+  async function upcoming(stopId: string) {
+    const next = await tx.tripStop.findFirst({
+      where: { tripId, reachedAt: null },
+      orderBy: { position: 'asc' },
+      select: { id: true },
+    });
+    const pickups = [stopId, ...(next ? [next.id] : [])];
+    const rows = await tx.reservationMember.findMany({
+      where: {
+        reservation: {
+          tripId,
+          pickupId: { in: pickups },
+          status: 'CONFIRMED',
+          boardedAt: null,
+          noShowAt: null,
+        },
+      },
+      select: { userId: true, reservation: { select: { pickupId: true } } },
+    });
+    for (const pickupId of new Set(
+      rows.map(({ reservation }) => reservation.pickupId),
+    ))
+      await recordTripNotice(
+        tx,
+        tripId,
+        'PICKUP_NEXT',
+        rows
+          .filter(({ reservation }) => reservation.pickupId === pickupId)
+          .map(({ userId }) => userId),
+        pickupId,
+      );
+  }
+
   return {
+    notify: (
+      kind: Parameters<typeof recordTripNotice>[2],
+      recipients: string[],
+      eventKey: string,
+    ) => recordTripNotice(tx, tripId, kind, recipients, eventKey),
+    revokePass: (id: string) =>
+      tx.reservationBoardingPass.deleteMany({ where: { reservationId: id } }),
     trip: () =>
       tx.trip.findUniqueOrThrow({
         where: { id: tripId },
@@ -117,10 +169,15 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
         },
         include: viewInclude,
       }),
-    changeStatus: (id: string, status: ReservationStatus, confirmedAt?: Date) =>
+    changeStatus: (
+      id: string,
+      status: ReservationStatus,
+      confirmedAt?: Date,
+      withdrawalReason?: CancellationReason,
+    ) =>
       tx.reservation.update({
         where: { id },
-        data: { status, confirmedAt },
+        data: { status, confirmedAt, withdrawalReason },
         include: viewInclude,
       }),
     boardingPass: (tokenHash: string) =>
@@ -160,6 +217,9 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
         data: { noShowAt },
         include: viewInclude,
       });
+      await tx.reservationBoardingPass.deleteMany({
+        where: { reservationId: id },
+      });
       await tx.tripEvent.create({
         data: { tripId, actorId, type: 'PASSENGER_NO_SHOW' },
       });
@@ -173,6 +233,7 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
       await tx.tripEvent.create({
         data: { tripId, actorId, type: 'STOP_REACHED' },
       });
+      await upcoming(stopId);
     },
     addOccupiedSeats: async (quantity: number) => {
       await tx.trip.update({
@@ -186,16 +247,42 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
     },
     transition: async (
       actorId: string,
-      status: 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO',
+      status: 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO' | 'INTERRUMPIDO',
       at: Date,
       originId?: string,
+      reason?: CancellationReason,
     ) => {
+      const members = await tx.reservationMember.findMany({
+        where: { reservation: { tripId, status: 'CONFIRMED' } },
+        select: { userId: true },
+      });
+      const recipients = members.map(({ userId }) => userId);
+      await tx.pickupProposal.updateMany({
+        where: { tripId, status: 'PENDING' },
+        data: { status: 'EXPIRED', decidedAt: at },
+      });
+      await tx.tripGroup.updateMany({
+        where: {
+          tripId,
+          confirmedAt: null,
+          revokedAt: null,
+          expiresAt: { gt: at },
+        },
+        data: { revokedAt: at },
+      });
+      if (status !== 'EN_CURSO')
+        await tx.reservationBoardingPass.deleteMany({
+          where: { reservation: { tripId } },
+        });
+
       if (status === 'CANCELADO') {
+        await recordTripNotice(tx, tripId, 'TRIP_CANCELLED', recipients);
         await tx.reservation.updateMany({
           where: { tripId, status: { in: ['PENDING', 'CONFIRMED'] } },
           data: { status: 'CANCELLED' },
         });
       } else if (status === 'EN_CURSO') {
+        await recordTripNotice(tx, tripId, 'TRIP_STARTED', recipients);
         await tx.reservation.updateMany({
           where: { tripId, status: 'PENDING' },
           data: { status: 'REJECTED' },
@@ -205,7 +292,25 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
             where: { tripId_id: { tripId, id: originId } },
             data: { reachedAt: at },
           });
+          await upcoming(originId);
         }
+      }
+      let interruptedSeats: number | undefined;
+      if (status === 'INTERRUMPIDO') {
+        await recordTripNotice(tx, tripId, 'TRIP_INTERRUPTED', recipients);
+        await tx.reservation.updateMany({
+          where: {
+            tripId,
+            status: { in: ['PENDING', 'CONFIRMED'] },
+            boardedAt: null,
+          },
+          data: { status: 'CANCELLED' },
+        });
+        const boarded = await tx.reservation.aggregate({
+          where: { tripId, status: 'CONFIRMED', boardedAt: { not: null } },
+          _sum: { quantity: true },
+        });
+        interruptedSeats = boarded._sum.quantity ?? 0;
       }
       const updated = await tx.trip.update({
         where: { id: tripId },
@@ -213,8 +318,13 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
           status,
           version: { increment: 1 },
           ...(status === 'CANCELADO' && { occupiedSeats: 0 }),
+          ...(status === 'INTERRUMPIDO' && { occupiedSeats: interruptedSeats }),
+          terminationReason: reason,
           ...(status === 'EN_CURSO' && { startedAt: at }),
-          ...(status === 'COMPLETADO' && { finishedAt: at }),
+          ...((status === 'COMPLETADO' || status === 'INTERRUMPIDO') && {
+            finishedAt: at,
+          }),
+          ...(status !== 'EN_CURSO' && { trackingSharedAt: null }),
           events: { create: { actorId, type: status } },
         },
         select: {
@@ -226,6 +336,20 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
         },
       });
       if (status === 'COMPLETADO') {
+        await recordTripNotice(tx, tripId, 'TRIP_FINISHED', [
+          actorId,
+          ...recipients,
+        ]);
+        await tx.reservation.updateMany({
+          where: {
+            tripId,
+            status: 'CONFIRMED',
+            boardedAt: null,
+            noShowAt: null,
+          },
+          data: { noShowAt: at },
+        });
+        await recordEmissions(tx, tripId, at);
         const travelers = await tx.reservation.findMany({
           where: {
             tripId,
@@ -236,19 +360,11 @@ function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
           },
           select: { requesterId: true },
         });
-        if (travelers.length) {
-          await tx.tripNotification.createMany({
-            data: [
-              actorId,
-              ...travelers.map(({ requesterId }) => requesterId),
-            ].map((recipientId) => ({
-              recipientId,
-              tripId,
-              kind: 'RATING_AVAILABLE',
-            })),
-            skipDuplicates: true,
-          });
-        }
+        if (travelers.length)
+          await recordTripNotice(tx, tripId, 'RATING_AVAILABLE', [
+            actorId,
+            ...travelers.map(({ requesterId }) => requesterId),
+          ]);
       }
       return updated;
     },
@@ -268,6 +384,7 @@ export class ReservationsRepository {
     ) => Promise<T>,
   ): Promise<T> {
     return this.db.$transaction(async (tx) => {
+      await lockParticipationChanges(tx);
       const trip = await tx.trip.findUnique({
         where: { id: tripId },
         select: { driverId: true },

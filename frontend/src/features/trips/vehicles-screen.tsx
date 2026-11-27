@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import type { VehicleEnergyInput } from '@ruteam/contracts';
+import { EnergyFields, VehicleEnergyEditor } from '../mobility/vehicle-energy';
 import { useSession } from '../../providers/session-provider';
 import { Pressable, Text, View } from 'react-native';
 import { useForm, useWatch } from 'react-hook-form';
@@ -86,12 +89,14 @@ function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
           void form.handleSubmit((values) => save.mutate(values))();
         }}
       />
+      <VehicleEnergyEditor vehicle={vehicle} />
     </View>
   );
 }
 export function VehiclesScreen() {
   const { user } = useSession();
   const client = useQueryClient();
+  const [energy, setEnergy] = useState<VehicleEnergyInput>();
   const vehicles = useQuery({
     queryKey: ['vehicles'],
     queryFn: () => api<VehicleSummary[]>('/vehicles'),
@@ -130,12 +135,17 @@ export function VehiclesScreen() {
         method: 'POST',
         body: {
           ...values,
+          energyProfile: energy && {
+            ...energy,
+            unit: energy.average === undefined ? undefined : energy.unit,
+          },
           passengerCapacity: Number(values.passengerCapacity),
           modelYear: Number(values.modelYear),
           soatExpiresAt: `${values.soatExpiresAt}T23:59:59-05:00`,
         },
       }),
     onSuccess: () => {
+      setEnergy(undefined);
       void client.invalidateQueries({ queryKey: ['vehicles'] });
       void client.invalidateQueries({ queryKey: ['me'] });
     },
@@ -227,6 +237,24 @@ export function VehiclesScreen() {
           name="soatExpiresAt"
           label="Vencimiento SOAT (AAAA-MM-DD)"
         />
+        {energy ? (
+          <>
+            <EnergyFields value={energy} change={setEnergy} />
+            <Button
+              secondary
+              title="Continuar sin declarar energía"
+              onPress={() => setEnergy(undefined)}
+            />
+          </>
+        ) : (
+          <Button
+            secondary
+            title="Añadir datos energéticos (opcional)"
+            onPress={() =>
+              setEnergy({ propulsion: 'COMBUSTION', source: 'OTHER' })
+            }
+          />
+        )}
         {save.error && (
           <Text accessibilityRole="alert" style={s.error}>
             {save.error.message}
@@ -240,7 +268,13 @@ export function VehiclesScreen() {
         )}
         <Button
           title={save.isPending ? 'Registrando…' : 'Registrar vehículo'}
-          disabled={save.isPending}
+          disabled={
+            save.isPending ||
+            (energy?.average !== undefined &&
+              (!Number.isFinite(energy.average) ||
+                energy.average < 0.01 ||
+                energy.average > 300))
+          }
           onPress={() => {
             void form.handleSubmit((values) => save.mutate(values))();
           }}

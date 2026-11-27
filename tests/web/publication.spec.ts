@@ -268,6 +268,11 @@ test('publicación, feed automático, aviso persistente y participación directa
       .slice(0, 16)
       .replace('T', ' ');
     await page.getByLabel('Salida Colombia (AAAA-MM-DD HH:mm)').fill(date);
+    await page
+      .getByRole('radio', { name: 'Calcular aporte con gastos declarados' })
+      .click();
+    await page.getByLabel('Combustible en COP').fill('10001');
+    await page.getByRole('checkbox', { name: 'Nequi', exact: true }).click();
     for (const index of [1, 2]) {
       await page.getByRole('button', { name: 'Añadir parada' }).click();
       await page
@@ -511,6 +516,13 @@ test('publicación, feed automático, aviso persistente y participación directa
     await expect(
       passenger.getByText('1 plaza disponible', { exact: true }),
     ).toBeVisible();
+    await expect(
+      passenger.getByText(/Aporte sugerido por pasajero/),
+    ).toContainText('5.000');
+    await expect(passenger.getByText(/Métodos disponibles/)).toContainText(
+      'Nequi',
+    );
+    await expect(passenger.getByText(/Costo total estimado/)).toHaveCount(0);
     await capture(passenger, testInfo, 'trip-detail');
     const confirmation = passenger.waitForResponse(
       (result) =>
@@ -533,7 +545,7 @@ test('publicación, feed automático, aviso persistente y participación directa
     await capture(passenger, testInfo, 'confirmed-detail');
     expect(
       await db.tripNotification.count({
-        where: { tripId, recipientId: passengerId },
+        where: { tripId, recipientId: passengerId, kind: 'TRIP_MATCH' },
       }),
     ).toBe(1);
 
@@ -595,13 +607,16 @@ test('publicación, feed automático, aviso persistente y participación directa
       (await db.trip.findUniqueOrThrow({ where: { id: tripId } }))
         .occupiedSeats,
     ).toBe(1);
-    await page
+    const publishedCard = page.getByTestId(`driver-trip-${tripId}`);
+    await publishedCard
       .getByRole('button', { name: 'Ver recorrido y participantes' })
       .click();
     await expect(
-      page.getByRole('button', { name: 'Aceptar solicitud' }),
+      publishedCard.getByRole('button', { name: 'Aceptar solicitud' }),
     ).toHaveCount(0);
-    await expect(page.getByText('Confirmada · Viaje programado')).toBeVisible();
+    await expect(
+      publishedCard.getByText('Confirmada · Viaje programado', { exact: true }),
+    ).toBeVisible();
     await passenger.goto('http://localhost:8082/my-reservations');
     await expect(
       passenger.getByText('Confirmada · Viaje programado'),
@@ -609,6 +624,7 @@ test('publicación, feed automático, aviso persistente y participación directa
     await passenger
       .getByRole('button', { name: 'Cancelar participación' })
       .click();
+    await passenger.getByRole('button', { name: 'Confirmar retiro' }).click();
     await expect(
       passenger.getByText('Cancelada · Viaje programado'),
     ).toBeVisible();

@@ -71,3 +71,18 @@ tramo válido y distinguir consentir de confirmar. El escáner QR va en
 nativo y el abordaje manual sigue disponible. Solicitar ubicación en primer
 plano por acción explícita. El usuario confirma antes de abrir el selector o
 teléfono. Conservar las guías de QA en MOBILE_TESTING.
+
+La revisión de publicación obtiene del servidor el total, plazas y aporte.
+Mostrar condiciones públicas antes de confirmar una plaza o consentimiento
+grupal. Usar el estado del servidor en compensaciones e incidencias. En
+seguridad, confirmar antes de abrir marcador o selector y ocultar la muestra
+GPS al vencer o perder autorización. Las pantallas de perfil y seguridad
+manejan contactos propios con claves de consulta por cuenta.
+
+## Continuidad del producto
+
+Usa las pantallas secundarias de Perfil e Inicio y los componentes compartidos de publicación para las recurrencias. Pide confirmación en cuenta, retiro, cancelación e interrupción. Separa el permiso de centrar el mapa de la elección de un punto público. El resumen de una incidencia se previsualiza antes de compartir. La bandeja de avisos usa la API y funciona en web y Expo Go.
+
+## Evolución ambiental y comunicación
+
+Presentar los resultados y la cobertura ambiental de la API por rol y alcance. El flujo SSE invalida las consultas HTTP y mantiene su sondeo. Usar los componentes de abordaje, seguridad, localización y gestión existentes dentro del resumen de viaje. Los controles de preferencias deben guardar cambios reales. El registro push requiere un cliente nativo configurado con consentimiento.

@@ -41,3 +41,36 @@ sin credenciales en `restore-validation.log` y `restore-row-content.log`.
 Para ejecutar el cotejo de sólo lectura de nuevo, usa
 `node --env-file=.env RUTA_PRIVADA/restore-row-content.mjs` desde el
 monorepo. La restauración se diseñó para rechazar un destino que ya exista.
+
+## Ensayo representativo del cierre del 26/11/2026
+
+Fuente sintética `ruteam_cierre_restore_source_test`, destino nuevo
+`ruteam_cierre_restored_test` y PostgreSQL del contenedor RuTeam en loopback.
+Se aplicaron 21 migraciones en la fuente y se sembraron las identidades
+sintéticas. NestJS publicó un viaje programado y otro con consentimiento
+grupal, chat, dos abordajes, calificaciones mutuas, un registro privado y
+una compensación reconocida. Se confirmó que la posición y los pases ya
+habían quedado retirados al finalizar.
+
+Se generó un respaldo de formato custom con `pg_dump` y modo 600, de 109.640
+bytes. SHA-256
+`396a587ec567834e5b5d3ca7b9cc4c990b14d8c117828fd95bb2148aa2cdefa2`.
+El destino se creó con `template0` y se restauró con `pg_restore
+--exit-on-error --single-transaction`. Los conteos completos y las consultas
+de relación coincidieron antes de iniciar la API restaurada.
+
+| Verificación             | Resultado                                                                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identidades y vehículo   | 4 usuarios, 1 vehículo y sus relaciones de titularidad                                                                                          |
+| Viajes y geometría       | 2 viajes, uno programado y otro completado. 4 paradas, 2 geometrías                                                                             |
+| Reservas y grupo         | 2 participaciones y 2 abordajes. 1 grupo, 2 consentimientos enlazados                                                                           |
+| Comunicación             | 1 mensaje de grupo y 17 avisos. Se conservó la marca de lectura comprobada                                                                      |
+| Economía y reputación    | 1 estimación, 1 compensación reconocida, 2 calificaciones                                                                                       |
+| Seguridad                | 1 contacto, 1 incidencia propia, pases y posición retirados al cierre                                                                           |
+| Integridad               | 340 restricciones validadas, ninguna pendiente. 21/21 checksums idénticos a SQL                                                                 |
+| NestJS contra el destino | HTTP 200 en health, login normal, bandeja con lectura persistida, historial, aporte, compensación, incidencia, contacto y seguimiento terminado |
+
+Se dejó el dump y la evidencia privada fuera del repositorio en
+`RuTeam-cierre-evidencia/restauracion`. El ensayo acredita la recuperación
+del modelo actual y el arranque de Nest en una copia. RTO/RPO operativos
+requieren política e infraestructura de producción.

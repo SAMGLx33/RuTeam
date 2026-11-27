@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import type { StudentEligibilityStatus } from '@ruteam/contracts';
+import { recordInboxNotice } from '../../../mobility/infrastructure/trip-notices.js';
 import { Injectable } from '@nestjs/common';
 import { ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
@@ -11,6 +14,44 @@ const userInclude = {
 @Injectable()
 export class AuthRepository {
   constructor(private readonly db: PrismaService) {}
+  observeEligibility(user: SessionUser, status: StudentEligibilityStatus) {
+    if (
+      user.observedEligibility === status ||
+      status === 'PENDING_VERIFICATION'
+    )
+      return;
+    return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id}::uuid FOR NO KEY UPDATE`;
+      const current = await tx.user.findUnique({
+        where: { id: user.id },
+        select: {
+          disabledAt: true,
+          observedEligibility: true,
+          membership: { select: { updatedAt: true } },
+        },
+      });
+      if (
+        !current ||
+        current.disabledAt ||
+        current.observedEligibility === status ||
+        current.observedEligibility !== user.observedEligibility ||
+        current.membership?.updatedAt.getTime() !==
+          user.membership?.updatedAt.getTime()
+      )
+        return;
+      await tx.user.update({
+        where: { id: user.id },
+        data: { observedEligibility: status },
+      });
+      if (current.observedEligibility)
+        await recordInboxNotice(
+          tx,
+          user.id,
+          'ELIGIBILITY_CHANGED',
+          randomUUID(),
+        );
+    });
+  }
   findIdentity(identity: string) {
     return this.db.user.findUnique({
       where: { demoIdentity: identity },

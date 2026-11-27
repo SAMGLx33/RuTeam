@@ -74,3 +74,15 @@ La planificación no registra ceremonias realizadas ni decisiones de aceptación
 La distribución económica, la acreditación institucional, el catálogo de embarque
 certificado y el canal externo de incidentes siguen en el backlog. Ninguna ventana
 registra una ceremonia o una aceptación ya realizada.
+
+## Ventana propuesta de cierre y revisión
+
+El 26–27/11 se propone revisar economía, seguridad, ciclo de vida y evidencia.
+El 28/11 queda como fecha de entrega académica, con una ventana de un día
+para validación humana y presentación. Cada ventana conserva el límite de dos
+días. La aceptación y los responsables siguen pendientes de registro humano.
+Consulta el [backlog y registro derivado](../requirements/RELEASE_ACADEMIC.md).
+
+## Incremento de continuidad del 26/11/2026
+
+Trabajo funcional para la entrega del 28 de noviembre. Se incorpora generación recurrente, ciclo de vida de cuenta, estadísticas, historial económico, cierre seguro, incidencias, cartografía y avisos. La regresión y el traspaso se registran en los [relevos](../handoffs/README.md#continuidad-del-producto). Conservación irreversible, metodología ambiental, operación institucional y push remoto tienen dependencias explícitas en [Decisiones](../decisions/OPEN_DECISIONS.md#dependencias-para-la-siguiente-entrega).

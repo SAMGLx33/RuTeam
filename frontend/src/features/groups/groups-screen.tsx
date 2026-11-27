@@ -1,3 +1,4 @@
+import { EconomicTerms } from '../expenses/economic-terms';
 import { useState } from 'react';
 import { Link } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -42,6 +43,7 @@ function Conditions({ group }: { group: TripGroupPreview }) {
           {description}
         </Text>
       ))}
+      <EconomicTerms terms={group.economics} />
       {group.providesHelmet !== null && (
         <Text style={s.text}>
           {group.providesHelmet

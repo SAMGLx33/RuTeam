@@ -146,6 +146,11 @@ Sección: 3.2.7. Prioridad literal de matriz: **Media/Deseado**.
 - Relaciones entradas/salidas: Delta tiempo < 30 → Generacion de deuda en “wallets”.
 - BD: Wallets: debt(Float).
 
+La [decisión económica](../development/COMPENSACIONES_COP.md) del 26/11/2026
+preserva las fichas RF-008 y RF-009 siguientes como fuente histórica. El producto
+usa gastos enteros, participación del conductor, condiciones publicadas y
+declaraciones personales. [Definición vigente](PRODUCT_DEFINITION.md).
+
 <a id="rf-008"></a>
 
 ## RF-008 — Cálculo de división de costos
@@ -187,6 +192,10 @@ Sección: 3.2.10. Prioridad literal de matriz: **Alta/Esencial**.
 - Generación de salidas: Nuevo promedio de calificaciones en el perfil.
 - Relaciones entradas/salidas: Formula (average_reviews + stars) ÷ total_reviews.
 - BD: Ratings: stars (Int), comment(String).
+
+La aplicación vigente de RF-011 usa contactos propios, acciones nativas
+confirmadas y registros de incidencia de autor. La ficha siguiente conserva la
+secuencia del original. [Definición vigente](PRODUCT_DEFINITION.md#seguridad-y-módulos-complementarios).
 
 <a id="rf-011"></a>
 
@@ -726,3 +735,20 @@ La evaluación exige la pareja conductor y pasajero con abordaje, y una clave
 única de viaje, evaluador y evaluado. Los estados de implementación de grupos,
 QR, estimaciones privadas, seguimiento, seguridad y RF-010 se registran en
 [trazabilidad](TRACEABILITY.md#consolidación-funcional-26112026).
+
+## Implementación de continuidad del 26/11/2026
+
+| ID histórico | Alcance vigente                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RF-019       | Estadísticas de movilidad por rol, mes y alcance. Estimaciones con factores versionados y contraste voluntario.                                  |
+| RF-020       | Gestión de sesiones, desactivación, registro de solicitud, consulta y recuperación. Ejecución del borrado sujeta a política de conservación.     |
+| RF-023       | Recurrencias independientes de los viajes de cada fecha, generación durable y edición con alcance futuro.                                        |
+| RF-026       | Historial de gastos propios, condiciones de viaje y compensaciones voluntarias en COP.                                                           |
+| RF-028       | Retiro con motivo opcional, cancelación programada, cancelación de fechas recurrentes e interrupción segura. Gestión de apoyo externo pendiente. |
+| RF-030       | Categorías operativas, historial privado del autor y exportación voluntaria. Canal institucional pendiente.                                      |
+
+RF-021 y RF-025 siguen en definición de Producto. Consulta las [reglas vigentes](PRODUCT_DEFINITION.md#continuidad-funcional-del-26112026).
+
+## Alcance actualizado de la evolución
+
+RF-019 incluye estimaciones reproducibles de operación, atribución y contraste voluntario de movilidad. RF-014 usa chat persistente con actualización SSE y recuperación HTTP. RF-015 suma una vista operativa por rol. RF-023 conserva la independencia de fechas en agenda y permite revisar una publicación como plantilla. RNF-032 distingue señales de primer plano de push remoto y mantiene pendiente la comprobación de entrega física. Las fichas anteriores conservan la transcripción original.

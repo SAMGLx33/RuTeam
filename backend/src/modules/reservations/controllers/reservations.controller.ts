@@ -19,6 +19,7 @@ import {
 import { ReservationsService } from '../application/reservations.service.js';
 import { TripTransitionGuard } from './trip-transition.guard.js';
 import {
+  CancellationDto,
   ConfirmParticipationDto,
   TripTransitionDto,
 } from '../dto/reservation.dto.js';
@@ -63,8 +64,9 @@ export class ReservationsController {
   cancel(
     @Req() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() body?: CancellationDto,
   ) {
-    return this.service.cancel(req.principal.userId, id);
+    return this.service.cancel(req.principal.userId, id, body?.reason);
   }
 
   @Post('participations/:id/board')
@@ -134,6 +136,12 @@ export class ReservationsController {
     @Param('tripId', ParseUUIDPipe) tripId: string,
     @Body() body: TripTransitionDto,
   ) {
-    return this.service.transition(req.principal.userId, tripId, body.action);
+    return this.service.transition(
+      req.principal.userId,
+      tripId,
+      body.action,
+      body.reason,
+      body.confirmedSafe,
+    );
   }
 }

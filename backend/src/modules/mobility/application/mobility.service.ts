@@ -1,3 +1,4 @@
+import { publicEconomicTerms } from '../../expenses/domain/expense-policy.js';
 import { emptyReputation } from '../../ratings/infrastructure/reputation.read.js';
 import {
   BadRequestException,
@@ -11,6 +12,8 @@ import type {
   MobilityPreferenceView,
   NotificationPage,
   TripNotificationView,
+  AccountNoticeKind,
+  TripNoticeKind,
   TripFeedPage,
   TripFeedCard,
   TripDetail,
@@ -181,6 +184,7 @@ function feedCard(
     estimatedDurationMinutes: trip.estimatedDurationMinutes,
     availableSeats: trip.offeredSeats - trip.occupiedSeats,
     providesHelmet: trip.providesHelmet,
+    economics: publicEconomicTerms(trip),
     rules: trip.rules.map(({ rule }) => ({
       id: rule.id,
       code: rule.code,
@@ -323,6 +327,7 @@ export class MobilityService {
       acceptsParticipation,
       acceptsPickupProposal,
       status: trip.status,
+      terminationReason: trip.terminationReason,
       expectedEndAt: trip.expectedEndAt.toISOString(),
       offeredSeats: trip.offeredSeats,
       occupiedSeats: trip.occupiedSeats,
@@ -334,9 +339,20 @@ export class MobilityService {
     profiles: StoredPreference[],
     actorId: string,
   ): TripNotificationView {
+    if (!row.tripId || !row.trip)
+      return {
+        id: row.id,
+        tripId: null,
+        kind: row.kind as AccountNoticeKind,
+        matchType: null,
+        createdAt: row.createdAt.toISOString(),
+        readAt: row.readAt?.toISOString() ?? null,
+        available: true,
+      };
     if (row.kind === 'CHAT_MESSAGE') {
       const owner = row.trip.driverId === actorId;
-      const completed = row.trip.status === 'COMPLETADO';
+      const completed =
+        row.trip.status === 'COMPLETADO' || row.trip.status === 'INTERRUMPIDO';
       const mayRead = completed
         ? row.trip.finishedAt !== null &&
           row.trip.finishedAt.getTime() > Date.now() - 86400000 &&
@@ -371,6 +387,32 @@ export class MobilityService {
           (rating
             ? row.trip.status === 'COMPLETADO'
             : row.trip.status !== 'CANCELADO'),
+      };
+    }
+    if (row.kind !== 'TRIP_MATCH') {
+      const kind = row.kind as Exclude<TripNoticeKind, 'TRIP_MATCH'>;
+      const owner = row.trip.driverId === actorId;
+      const participant = row.trip.reservations.length > 0;
+      const operating = row.trip.status === 'EN_CURSO';
+      const completed = row.trip.status === 'COMPLETADO';
+      const available =
+        kind === 'COMPENSATION_DECLARED'
+          ? owner && completed
+          : kind === 'COMPENSATION_ACKNOWLEDGED'
+            ? participant && completed
+            : kind === 'PICKUP_NEXT' || kind === 'TRIP_STARTED'
+              ? operating && participant
+              : kind === 'PICKUP_ACCEPTED' || kind === 'PICKUP_REJECTED'
+                ? row.trip.status === 'PROGRAMADO'
+                : true;
+      return {
+        id: row.id,
+        tripId: row.tripId,
+        kind,
+        matchType: null,
+        createdAt: row.createdAt.toISOString(),
+        readAt: row.readAt?.toISOString() ?? null,
+        available,
       };
     }
     const current =

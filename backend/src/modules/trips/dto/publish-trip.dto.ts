@@ -13,8 +13,10 @@ import {
   Max,
   Min,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TripEconomicsDto } from '../../expenses/dto/expense.dto.js';
 import { ItineraryDto } from './itinerary.dto.js';
 export class PublishTripDto {
   @ApiProperty() @IsUUID() vehicleId!: string;
@@ -47,6 +49,13 @@ export class PublishTripDto {
   @ValidateNested()
   @Type(() => ItineraryDto)
   itinerary!: ItineraryDto;
+  @ApiPropertyOptional({ type: TripEconomicsDto })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsObject()
+  @ValidateNested()
+  @Type(() => TripEconomicsDto)
+  economics?: TripEconomicsDto;
+
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
   @IsBoolean()

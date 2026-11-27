@@ -213,3 +213,25 @@ manual. `expo-location` comparte una lectura voluntaria del conductor en
 primer plano. En navegador, el permiso de ubicación requiere contexto seguro
 como localhost en pruebas o HTTPS. La precisión final depende del dispositivo.
 Para Android/iOS y NAT de VirtualBox, sigue la [prueba física](MOBILE_TESTING.md).
+
+## Regresión del cierre
+
+En una base `_test` aislada, exporta `DEMO_MODE=true`, `VERIFICATION_PROVIDER=demo`
+y una `AUTH_FIXTURE_PASSWORD` exclusiva para las cuentas sintéticas antes de
+`npm run db:test:setup`. Usa esa misma contraseña al ejecutar Playwright y smoke.
+Las pruebas de Nest con autenticación de fixtures también reciben el proveedor
+sintético mediante variables de proceso. No reutilices estas variables en
+producción. La regresión integra 21 migraciones. Para Expo Go, confirma
+dirección LAN del anfitrión y consulta [Mobile Testing](MOBILE_TESTING.md).
+
+## Ejecución de la continuidad
+
+`RECURRING_TRIP_HORIZON_DAYS` es opcional. Admite un entero 1–28 y su valor por defecto es 7. El horizonte incluye el día actual de Colombia. NestJS consulta recurrencias pendientes cada 15 segundos. En Jest el trabajador se inicia explícitamente por prueba.
+
+Ejecuta `npm run db:generate` y aplica las migraciones con `npm run db:migrate` al entorno designado. Define una `TEST_DATABASE_URL` independiente con sufijo `_test` para `npm run db:test:setup`. Verifica el host y puerto configurados localmente antes de migrar. Las pruebas web usan Chromium con dispositivos de escritorio y vista móvil.
+
+La bandeja trabaja con la API. El uso de push remoto con SDK 54 requiere development build y credenciales en Android e iOS. El permiso de ubicación se solicita al centrar el mapa o compartir en un viaje.
+
+## Configuración de evolución
+
+Aplica las migraciones aditivas ambientales, de SSE y preferencias con la configuración PostgreSQL designada. Para pruebas usa una base nueva `_test` y ejecuta regresión y exportaciones de manera secuencial. Los flujos en tiempo real usan la conexión existente a PostgreSQL y necesitan que el proxy respete SSE. `EXPO_PUSH_ENABLED` vale `false` por defecto y `EXPO_PUSH_ACCESS_TOKEN` es opcional para entornos configurados. Los archivos locales de entorno permanecen fuera de Git.

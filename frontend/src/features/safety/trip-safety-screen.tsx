@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Linking, Platform, Share, Text, View } from 'react-native';
 import type { TripSafetyContext } from '@ruteam/contracts';
@@ -10,6 +10,7 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
+import { TripEmergencyContacts } from './emergency-contacts';
 import { TripLocation } from './trip-location';
 import { travelTime } from '../trips/route-preview';
 
@@ -22,7 +23,18 @@ function shareableSummary(context: TripSafetyContext) {
   const direction = context.direction
     ? ` ${directionLabel[context.direction]}`
     : '';
-  return `Viaje RuTeam en curso${direction}. Salida prevista ${travelTime(context.departureAt)}.`;
+  const started = context.startedAt
+    ? travelTime(context.startedAt)
+    : 'sin registro';
+  const last = context.reachedStop
+    ? travelTime(context.reachedStop.reachedAt)
+    : 'sin registro';
+  const next = context.nextStop
+    ? context.nextStop.estimatedAt
+      ? travelTime(context.nextStop.estimatedAt)
+      : 'hora desconocida'
+    : 'sin información';
+  return `Viaje RuTeam en curso${direction}. Salida prevista: ${travelTime(context.departureAt)}. Inicio: ${started}. Última parada registrada: ${last}. Próxima parada: ${next}.`;
 }
 
 function ShareTripSummary({ context }: { context: TripSafetyContext }) {
@@ -205,6 +217,13 @@ export function TripSafetyScreen() {
           </View>
           {user && <TripLocation userId={user.id} tripId={tripId} />}
           <ShareTripSummary context={context} />
+          {user && <TripEmergencyContacts userId={user.id} />}
+          <Link
+            href={{ pathname: '/incidents/[tripId]', params: { tripId } }}
+            style={s.link}
+          >
+            Registrar incidencia privada
+          </Link>
         </>
       )}
       <EmergencyDialer />

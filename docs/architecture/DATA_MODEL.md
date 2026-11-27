@@ -52,3 +52,34 @@ y [modelo anterior](../history/2026-11-24-guides.md).
   como estimación privada. La suma se calcula con los tres importes guardados.
 - `TripNotification` guarda disponibilidad de evaluación y confirmación de grupo
   junto a avisos de coincidencia y chat.
+
+## Migración de cierre
+
+`20261126130000_release_economics_safety_events` añade condiciones públicas a
+`Trip`, separadas de `TripExpenseEstimate`. Viajes históricos conservan importe
+nulo. `TripCompensation` tiene la reserva como PK y un estado con fecha de
+resolución. `EmergencyContact` tiene propietario único por fila.
+`TripIncident` relaciona un viaje y su autor. `eventKey` amplía la restricción
+de avisos. `20261126131000_trip_notification_lifecycle` actualiza el CHECK de tipos
+conservando los avisos existentes. `20261126132000_pickup_proposal_expiration`
+actualiza la restricción de propuestas. Las propuestas pendientes pasan a `EXPIRED` al cerrar la operación.
+La última marca de GPS activa distingue caducidad incluso después de purgar
+coordenadas y se borra al terminar o retirar la muestra.
+
+## Migraciones de continuidad del 26/11/2026
+
+| Migración                                        | Datos                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `20261126140000_recurring_trips`                 | `RecurringTrip` guarda calendario, próxima revisión y las instantáneas de la plantilla y ruta. `RecurringOccurrence` tiene clave única por plantilla y fecha de Colombia y referencia única a `Trip`. Registra también el fallo de una fecha pendiente. `TripNotification` admite avisos sin viaje con una restricción de deduplicación. |
+| `20261126141000_account_lifecycle`               | `User.selfDeactivatedAt` distingue cierre voluntario. `User.observedEligibility` registra la última elegibilidad comunicable. `AccountDeletionRequest` mantiene fecha de solicitud y retiro, con una abierta como máximo por cuenta.                                                                                                     |
+| `20261126142000_safe_trip_closure_and_incidents` | `Trip.status=INTERRUMPIDO`, causa en `Trip.terminationReason` sin mezclarla con `Reservation.withdrawalReason`, restricciones para estados coherentes e índice de incidencias por autor y fecha. Amplía categorías sin alterar registros existentes.                                                                                     |
+
+Las estadísticas y la economía son proyecciones de lectura sobre las relaciones ya existentes. Las estadísticas usan finalización en Colombia y abordaje real. Sólo se atribuye la distancia total a un pasajero cuando su tramo coincide con el trayecto publicado. El historial económico filtra por mes de salida. Una desactivación revoca sesiones y enlaces y conserva el historial. El inventario para una política futura está en [Decisiones abiertas](../decisions/OPEN_DECISIONS.md#dependencias-para-la-siguiente-entrega).
+
+## Migraciones de evolución
+
+- `20261126210000_trip_environment` agrega datos opcionales de energía en Vehicle, huella de entradas congeladas y resultado final en Trip y alternativa propia en Reservation. Las versiones, consumos, unidades, distancias y ocupación admiten reproducir el cálculo.
+- `20261126211000_realtime_signals` agrega disparadores asíncronos de PostgreSQL para mutaciones de viaje, paradas, plazas, chat, ubicación, bandeja y sesiones.
+- `20261126212000_notification_preferences` agrega preferencias privadas, PushDevice y PushDelivery. La relación sesión-dispositivo permite revocar envíos. La clave de aviso y dispositivo deduplica la cola internamente.
+
+Agenda y actividades se calculan desde tablas actuales. Los recorridos previos conservan sus estados y la ausencia de factores históricos.

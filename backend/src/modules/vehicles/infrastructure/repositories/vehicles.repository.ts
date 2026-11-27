@@ -1,3 +1,5 @@
+import type { VehicleEnergyProfile } from '@ruteam/contracts';
+import { Prisma } from '../../../../generated/prisma/client.js';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 import type {
@@ -20,12 +22,18 @@ export class VehiculoRepository {
       include: { document: true },
     });
   }
-  registrar(ownerId: string, data: RegisterVehicleDto, demo: boolean) {
+  registrar(
+    ownerId: string,
+    data: RegisterVehicleDto,
+    demo: boolean,
+    energy?: VehicleEnergyProfile,
+  ) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${ownerId}::uuid FOR UPDATE`;
       return tx.vehicle.create({
         data: {
           ownerId,
+          energyProfile: energy ? { ...energy } : undefined,
           plate: data.plate,
           type: data.type,
           passengerCapacity: data.passengerCapacity,
@@ -70,6 +78,22 @@ export class VehiculoRepository {
           revision: { increment: 1 },
         },
       });
+    });
+  }
+  updateEnergy(
+    ownerId: string,
+    id: string,
+    profile: VehicleEnergyProfile | null,
+  ) {
+    return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${ownerId}::uuid FOR NO KEY UPDATE`;
+      const updated = await tx.vehicle.updateMany({
+        where: { id, ownerId },
+        data: { energyProfile: profile ? { ...profile } : Prisma.DbNull },
+      });
+      return updated.count
+        ? tx.vehicle.findUnique({ where: { id }, include: { document: true } })
+        : null;
     });
   }
   actualizarSoat(

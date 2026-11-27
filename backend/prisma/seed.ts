@@ -43,6 +43,29 @@ try {
       status: 'INACTIVE',
     },
   ] as const;
+  // Keep scrypt outside the interactive transaction. Recheck the observed hash
+  // before replacing it so concurrent fixture provisioning can be retried safely.
+  const fixtureHashes = new Map<
+    string,
+    { previous: string | null; next: string | undefined }
+  >();
+  if (fixturePassword) {
+    const users = await db.user.findMany({
+      where: { demoIdentity: { in: identities.map(({ key }) => key) } },
+      select: { demoIdentity: true, passwordHash: true },
+    });
+    for (const { key } of identities) {
+      const previous =
+        users.find(({ demoIdentity }) => demoIdentity === key)?.passwordHash ??
+        null;
+      fixtureHashes.set(key, {
+        previous,
+        next: (await verifyPassword(fixturePassword, previous))
+          ? undefined
+          : await hashPassword(fixturePassword),
+      });
+    }
+  }
   await db.$transaction(async (tx) => {
     for (const identity of identities) {
       const email = `${identity.key}@student-fixtures.ruteam.invalid`;
@@ -65,11 +88,12 @@ try {
         onboardingStep: 4,
         onboardingCompletedAt: user.onboardingCompletedAt ?? new Date(),
       } as const;
-      const passwordHash =
-        fixturePassword &&
-        !(await verifyPassword(fixturePassword, user.passwordHash))
-          ? await hashPassword(fixturePassword)
-          : undefined;
+      const fixture = fixtureHashes.get(identity.key);
+      if (fixture && fixture.previous !== user.passwordHash)
+        throw new Error(
+          'La cuenta sintética cambió durante el seed. Reintenta.',
+        );
+      const passwordHash = fixture?.next;
       if (
         !user.emailVerifiedAt ||
         !user.onboardingCompletedAt ||

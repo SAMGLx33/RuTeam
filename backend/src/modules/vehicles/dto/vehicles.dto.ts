@@ -1,14 +1,18 @@
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsDateString,
   IsIn,
   IsInt,
+  IsOptional,
+  IsObject,
+  ValidateNested,
   IsString,
   Length,
   Max,
   Min,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { VehicleEnergyDto } from '../../mobility/dto/energy.dto.js';
 import { VEHICLE_COLORS } from '../domain/policies/vehiculo.policy.js';
 export class RegisterVehicleDto {
   @ApiProperty({ example: 'DEM123' })
@@ -36,6 +40,13 @@ export class RegisterVehicleDto {
   @ApiProperty({ format: 'date-time' })
   @IsDateString({ strict: true })
   soatExpiresAt!: string;
+
+  @ApiPropertyOptional({ type: VehicleEnergyDto })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => VehicleEnergyDto)
+  energyProfile?: VehicleEnergyDto;
 }
 export class RegisterLicenseDto {
   @ApiProperty({ enum: ['CAR', 'MOTORCYCLE', 'BOTH'] })

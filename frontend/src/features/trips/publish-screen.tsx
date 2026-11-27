@@ -1,13 +1,18 @@
+import type { RecurringTripTemplate } from '@ruteam/contracts';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CampusMeetingPoint,
+  CompensationMethod,
+  TripEconomicsPreview,
   MeetingPointInput,
   PublishTripInput,
   RouteOption,
+  RecurrenceInput,
+  RecurringTripView,
   RouteOptionsInput,
   StopAccess,
   TripPoint,
@@ -31,6 +36,12 @@ import {
   StopAccessEditor,
   type PublishFormValues,
 } from './itinerary-form';
+import {
+  EconomicTerms,
+  EconomicsPreview,
+  expenseConcepts,
+  methodLabel,
+} from '../expenses/economic-terms';
 import { RoutePreview } from './route-preview';
 
 type Draft = PublishTripInput;
@@ -72,29 +83,162 @@ function routePoints(values: PublishFormValues): RouteOptionsInput {
   };
 }
 
+const weekdays = [
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+  'Domingo',
+];
+
+function formPoint(point: MeetingPointInput): PublishFormValues['origin'] {
+  if ('campusPointId' in point)
+    return {
+      campusPointId: point.campusPointId,
+      label: point.label ?? '',
+      instructions: point.instructions ?? '',
+    };
+  return {
+    campusPointId: '',
+    label: point.label,
+    coordinates: { latitude: point.latitude, longitude: point.longitude },
+    instructions: point.instructions ?? '',
+  };
+}
+
 export function PublishScreen() {
+  const { scheduleId, sourceTripId } = useLocalSearchParams<{
+    scheduleId: string;
+    sourceTripId: string;
+  }>();
+  const { user } = useSession();
+  const schedule = useQuery({
+    queryKey: ['trip-schedules', user?.id, scheduleId],
+    queryFn: () =>
+      api<RecurringTripView>(
+        '/trip-schedules/' + encodeURIComponent(scheduleId),
+      ),
+    enabled: !!scheduleId && !!user?.capabilities.driver,
+  });
+  const source = useQuery({
+    queryKey: ['trip-reuse', user?.id, sourceTripId],
+    queryFn: () =>
+      api<RecurringTripTemplate>(
+        '/trips/' + encodeURIComponent(sourceTripId) + '/reuse',
+      ),
+    enabled: !scheduleId && !!sourceTripId && !!user?.capabilities.driver,
+    staleTime: 0,
+  });
+  if (!scheduleId && sourceTripId && !source.data)
+    return (
+      <ProtectedPage title="Reutilizar publicación" requires="driver">
+        <Text accessibilityRole={source.error ? 'alert' : undefined}>
+          {source.error?.message ?? 'Cargando recorrido anterior…'}
+        </Text>
+      </ProtectedPage>
+    );
+  if (scheduleId && !schedule.data)
+    return (
+      <ProtectedPage title="Editar recurrencia" requires="driver">
+        <Text accessibilityRole={schedule.error ? 'alert' : undefined}>
+          {schedule.error?.message ?? 'Cargando plantilla…'}
+        </Text>
+      </ProtectedPage>
+    );
+  return (
+    <PublishForm
+      key={scheduleId ?? sourceTripId ?? 'new'}
+      schedule={schedule.data}
+      prior={source.data}
+    />
+  );
+}
+
+function PublishForm({
+  schedule,
+  prior,
+}: {
+  schedule?: RecurringTripView;
+  prior?: RecurringTripTemplate;
+}) {
   const { user } = useSession();
   const client = useQueryClient();
-  const [selectedRoute, setSelectedRoute] = useState<{
-    key: string;
-    option: RouteOption;
-  }>();
-  const [vehicleId, setVehicleId] = useState('');
-  const [ruleIds, setRuleIds] = useState<string[]>([]);
-  const [helmet, setHelmet] = useState(false);
-  const [preview, setPreview] = useState<{
-    draft: Draft;
-    stops: (ReturnType<typeof previewPoint> & { access: StopAccess })[];
-  }>();
-  const [confirmedPublic, setConfirmedPublic] = useState(false);
-  const [routingConsent, setRoutingConsent] = useState(false);
-  const [inputError, setInputError] = useState('');
+  const template = schedule?.template ?? prior;
   const [tomorrow] = useState(() =>
     new Date(Date.now() + 86400000 - 5 * 3600000)
       .toISOString()
       .slice(0, 16)
       .replace('T', ' '),
   );
+  const form = useForm<PublishFormValues>({
+    defaultValues: {
+      origin: template ? formPoint(template.itinerary.origin) : emptyPoint,
+      destination: template
+        ? formPoint(template.itinerary.destination)
+        : emptyPoint,
+      stops:
+        template?.itinerary.stops.map((point) => ({
+          ...formPoint(point),
+          access: point.access,
+        })) ?? [],
+      departureAt: tomorrow,
+      estimatedDurationMinutes: String(
+        template?.estimatedDurationMinutes ?? 45,
+      ),
+      offeredSeats: String(template?.offeredSeats ?? 1),
+      description: template?.itinerary.description ?? '',
+      fuelCop: String(template?.economics?.estimate?.fuelCop ?? 0),
+      tollsCop: String(template?.economics?.estimate?.tollsCop ?? 0),
+      parkingCop: String(template?.economics?.estimate?.parkingCop ?? 0),
+      direction: template?.itinerary.direction ?? 'DESDE_USC',
+      recurrenceName: schedule?.name ?? '',
+      startsOn: schedule?.startsOn ?? tomorrow.slice(0, 10),
+      endsOn: schedule?.endsOn ?? '',
+      time: schedule?.time ?? tomorrow.slice(11),
+    },
+  });
+  const [selectedRoute, setSelectedRoute] = useState<
+    | {
+        key: string;
+        option: Pick<RouteOption, 'geometry' | 'durationMinutes'> &
+          Partial<Pick<RouteOption, 'routingSelection'>>;
+      }
+    | undefined
+  >(
+    () =>
+      template?.itinerary.geometry && {
+        key: JSON.stringify(routePoints(form.getValues())),
+        option: {
+          geometry: template.itinerary.geometry,
+          routingSelection: template.itinerary.routingSelection,
+          durationMinutes: template.estimatedDurationMinutes,
+        },
+      },
+  );
+  const [isRecurring, setIsRecurring] = useState(!!schedule);
+  const [selectedDays, setSelectedDays] = useState<number[]>(
+    schedule?.weekdays ?? [],
+  );
+  const [withContribution, setWithContribution] = useState(
+    !!template?.economics?.estimate,
+  );
+  const [methods, setMethods] = useState<CompensationMethod[]>(
+    template?.economics?.compensationMethods ?? [],
+  );
+  const [vehicleId, setVehicleId] = useState(template?.vehicleId ?? '');
+  const [ruleIds, setRuleIds] = useState<string[]>(template?.ruleIds ?? []);
+  const [helmet, setHelmet] = useState(template?.providesHelmet ?? false);
+  const [preview, setPreview] = useState<{
+    draft: Draft;
+    recurrence?: RecurrenceInput;
+    economics: TripEconomicsPreview;
+    stops: (ReturnType<typeof previewPoint> & { access: StopAccess })[];
+  }>();
+  const [confirmedPublic, setConfirmedPublic] = useState(false);
+  const [routingConsent, setRoutingConsent] = useState(false);
+  const [inputError, setInputError] = useState('');
   const vehicles = useQuery({
     queryKey: ['vehicles', user?.id],
     queryFn: () => api<VehicleSummary[]>('/vehicles'),
@@ -114,28 +258,51 @@ export function PublishScreen() {
   const selected =
     vehicles.data?.find((item) => item.id === vehicleId) ??
     vehicles.data?.find((item) => item.eligibleNow);
-  const form = useForm<PublishFormValues>({
-    defaultValues: {
-      origin: emptyPoint,
-      destination: emptyPoint,
-      stops: [],
-      departureAt: tomorrow,
-      estimatedDurationMinutes: '45',
-      offeredSeats: '1',
-      description: '',
-      direction: 'DESDE_USC',
-    },
-  });
   const direction = useWatch({ control: form.control, name: 'direction' });
   const stops = useFieldArray({ control: form.control, name: 'stops' });
   const save = useMutation({
-    mutationFn: (body: Draft) =>
-      api<TripSummary>('/trips', { method: 'POST', body }),
+    mutationFn: async ({
+      draft,
+      recurrence,
+    }: {
+      draft: Draft;
+      recurrence?: RecurrenceInput;
+    }) => {
+      if (!recurrence)
+        return {
+          trip: await api<TripSummary>('/trips', {
+            method: 'POST',
+            body: draft,
+          }),
+        };
+      const { departureAt, ...tripTemplate } = draft;
+      void departureAt;
+      return {
+        schedule: await api<RecurringTripView>(
+          schedule ? '/trip-schedules/' + schedule.id : '/trip-schedules',
+          {
+            method: schedule ? 'PUT' : 'POST',
+            body: { ...recurrence, template: tripTemplate },
+          },
+        ),
+      };
+    },
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['my-trips'] });
+      void client.invalidateQueries({ queryKey: ['trip-schedules'] });
       void client.invalidateQueries({ queryKey: ['available-trips'] });
       void client.invalidateQueries({ queryKey: ['trip-feed'] });
     },
+  });
+  const economicsPreview = useMutation({
+    mutationFn: (body: {
+      offeredSeats: number;
+      economics: NonNullable<Draft['economics']>;
+    }) =>
+      api<TripEconomicsPreview>('/trips/economics-preview', {
+        method: 'POST',
+        body,
+      }),
   });
   const options = useMutation({
     mutationFn: (body: RouteOptionsInput) =>
@@ -178,7 +345,7 @@ export function PublishScreen() {
     }
   }
 
-  const review = form.handleSubmit((values) => {
+  const review = form.handleSubmit(async (values) => {
     if (!selected) return;
     setInputError('');
     save.reset();
@@ -199,17 +366,71 @@ export function PublishScreen() {
           access: 'DROPOFF' as const,
         },
       ];
-      if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(values.departureAt))
+      if (
+        !isRecurring &&
+        !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(values.departureAt)
+      )
         throw new Error('Indica la salida como AAAA-MM-DD HH:mm.');
       if (values.description.trim().length < 2)
         throw new Error('Describe las vías o referencias del recorrido.');
+      const offeredSeats = Number(values.offeredSeats);
+      if (
+        !Number.isInteger(offeredSeats) ||
+        offeredSeats < 1 ||
+        offeredSeats > selected.passengerCapacity
+      )
+        throw new Error(
+          'Elige de una plaza al máximo permitido por el vehículo.',
+        );
+      if (
+        withContribution &&
+        expenseConcepts.some(([key]) => !/^\d+$/.test(values[key]))
+      )
+        throw new Error('Indica los gastos como pesos colombianos enteros.');
+      const economics = {
+        estimate: withContribution
+          ? {
+              fuelCop: Number(values.fuelCop),
+              tollsCop: Number(values.tollsCop),
+              parkingCop: Number(values.parkingCop),
+            }
+          : undefined,
+        compensationMethods: withContribution ? methods : [],
+      };
+      const calculated = await economicsPreview.mutateAsync({
+        offeredSeats,
+        economics,
+      });
+      const recurrence = isRecurring
+        ? {
+            name: values.recurrenceName.trim(),
+            startsOn: values.startsOn.trim(),
+            endsOn: values.endsOn.trim(),
+            time: values.time.trim(),
+            weekdays: selectedDays.slice().sort((a, b) => a - b),
+          }
+        : undefined;
+      if (
+        recurrence &&
+        (!recurrence.name ||
+          !recurrence.startsOn ||
+          !recurrence.endsOn ||
+          !recurrence.time ||
+          !selectedDays.length)
+      )
+        throw new Error(
+          'Completa el nombre, las fechas, la hora y al menos un día de la recurrencia.',
+        );
       setConfirmedPublic(false);
       setPreview({
+        recurrence,
+        economics: calculated,
         stops: previewStops,
         draft: {
           vehicleId: selected.id,
           departureAt: `${values.departureAt.replace(' ', 'T')}:00-05:00`,
-          offeredSeats: Number(values.offeredSeats),
+          offeredSeats,
+          economics,
           estimatedDurationMinutes: chosen?.routingSelection
             ? chosen.durationMinutes
             : Number(values.estimatedDurationMinutes),
@@ -231,7 +452,10 @@ export function PublishScreen() {
   });
   const draft = preview?.draft;
   return (
-    <ProtectedPage title="Publicar viaje" requires="driver">
+    <ProtectedPage
+      title={schedule ? 'Editar recurrencia' : 'Publicar viaje'}
+      requires="driver"
+    >
       <Link href="/vehicles" style={s.link}>
         Gestionar vehículos y licencia
       </Link>
@@ -251,8 +475,22 @@ export function PublishScreen() {
           <Text style={s.title}>Resumen para publicar</Text>
           <Text style={s.text}>
             {selected?.plate} · {draft.offeredSeats} plazas · duración declarada{' '}
-            {draft.estimatedDurationMinutes} min · {draft.departureAt}
+            {draft.estimatedDurationMinutes} min ·{' '}
+            {preview.recurrence
+              ? preview.recurrence.startsOn +
+                ' a ' +
+                preview.recurrence.endsOn +
+                ' · ' +
+                preview.recurrence.time +
+                ' Colombia'
+              : draft.departureAt}
           </Text>
+          {preview && !save.data && (
+            <EconomicsPreview preview={preview.economics} />
+          )}
+          {save.data?.trip && (
+            <EconomicTerms terms={save.data.trip.economics} />
+          )}
           {selected?.type === 'MOTORCYCLE' && (
             <Text style={s.text}>
               {draft.providesHelmet
@@ -277,7 +515,9 @@ export function PublishScreen() {
           />
           {save.isSuccess ? (
             <Text accessibilityLiveRegion="polite">
-              Viaje publicado. Ya aparece en Mis viajes.
+              {save.data?.schedule
+                ? 'Recurrencia guardada. Consulta las fechas generadas en Viajes recurrentes.'
+                : 'Viaje publicado. Ya aparece en Mis viajes.'}
             </Text>
           ) : (
             <>
@@ -288,9 +528,15 @@ export function PublishScreen() {
                 onPress={() => setConfirmedPublic(!confirmedPublic)}
               />
               <Button
-                title={save.isPending ? 'Publicando…' : 'Confirmar publicación'}
+                title={
+                  save.isPending
+                    ? 'Guardando…'
+                    : preview.recurrence
+                      ? 'Guardar recurrencia'
+                      : 'Confirmar publicación'
+                }
                 disabled={!confirmedPublic || save.isPending}
-                onPress={() => save.mutate(draft)}
+                onPress={() => save.mutate(preview)}
               />
               <Button
                 title="Editar antes de publicar"
@@ -369,11 +615,68 @@ export function PublishScreen() {
             control={form.control}
             catalog={catalog}
           />
-          <Field
-            control={form.control}
-            name="departureAt"
-            label="Salida Colombia (AAAA-MM-DD HH:mm)"
-          />
+          {!schedule && (
+            <View style={s.section}>
+              <Choice
+                label="Viaje individual"
+                checked={!isRecurring}
+                onPress={() => setIsRecurring(false)}
+              />
+              <Choice
+                label="Viaje recurrente"
+                checked={isRecurring}
+                onPress={() => setIsRecurring(true)}
+              />
+            </View>
+          )}
+          {isRecurring ? (
+            <View style={s.section}>
+              <Field
+                control={form.control}
+                name="recurrenceName"
+                label="Nombre de la recurrencia"
+              />
+              <Field
+                control={form.control}
+                name="startsOn"
+                label="Fecha inicial (AAAA-MM-DD)"
+              />
+              <Field
+                control={form.control}
+                name="endsOn"
+                label="Fecha final (AAAA-MM-DD)"
+              />
+              <Field
+                control={form.control}
+                name="time"
+                label="Hora Colombia (HH:mm)"
+              />
+              {weekdays.map((name, index) => {
+                const day = index + 1;
+                return (
+                  <Choice
+                    key={day}
+                    label={name}
+                    checkbox
+                    checked={selectedDays.includes(day)}
+                    onPress={() =>
+                      setSelectedDays((days) =>
+                        days.includes(day)
+                          ? days.filter((item) => item !== day)
+                          : [...days, day],
+                      )
+                    }
+                  />
+                );
+              })}
+            </View>
+          ) : (
+            <Field
+              control={form.control}
+              name="departureAt"
+              label="Salida Colombia (AAAA-MM-DD HH:mm)"
+            />
+          )}
           <Field
             control={form.control}
             name="estimatedDurationMinutes"
@@ -439,6 +742,53 @@ export function PublishScreen() {
             }
           />
           <View style={s.section}>
+            <Text style={s.title}>Aporte del viaje</Text>
+            <Choice
+              label="Viaje gratuito"
+              checked={!withContribution}
+              onPress={() => setWithContribution(false)}
+            />
+            <Choice
+              label="Calcular aporte con gastos declarados"
+              checked={withContribution}
+              onPress={() => setWithContribution(true)}
+            />
+            {withContribution && (
+              <>
+                {expenseConcepts.map(([name, label]) => (
+                  <Field
+                    key={name}
+                    control={form.control}
+                    name={name}
+                    label={`${label} en COP`}
+                  />
+                ))}
+                <Text style={s.text}>
+                  Selecciona hasta dos métodos si el cálculo produce un aporte.
+                </Text>
+                {(Object.keys(methodLabel) as CompensationMethod[]).map(
+                  (method) => (
+                    <Choice
+                      key={method}
+                      label={methodLabel[method]}
+                      checkbox
+                      checked={methods.includes(method)}
+                      onPress={() =>
+                        setMethods((before) =>
+                          before.includes(method)
+                            ? before.filter((item) => item !== method)
+                            : before.length < 2
+                              ? [...before, method]
+                              : before,
+                        )
+                      }
+                    />
+                  ),
+                )}
+              </>
+            )}
+          </View>
+          <View style={s.section}>
             <Text style={s.title}>Reglas de convivencia</Text>
             {rules.data
               ?.filter(({ code }) => code !== 'DEFAULT')
@@ -502,8 +852,13 @@ export function PublishScreen() {
             </View>
           ))}
           <Button
-            title="Revisar viaje"
-            disabled={!selected?.eligibleNow || !rules.data || !points.data}
+            title={economicsPreview.isPending ? 'Calculando…' : 'Revisar viaje'}
+            disabled={
+              !selected?.eligibleNow ||
+              !rules.data ||
+              !points.data ||
+              economicsPreview.isPending
+            }
             onPress={() => {
               void review();
             }}
@@ -515,6 +870,9 @@ export function PublishScreen() {
           {inputError || save.error?.message}
         </Text>
       )}
+      <Link href="/recurring-trips" style={s.link}>
+        Viajes recurrentes
+      </Link>
       <Link href="/my-trips" style={s.link}>
         Ver mis viajes publicados
       </Link>

@@ -172,3 +172,12 @@ voluntaria de corta visibilidad y despacho o soporte institucional pendiente.
 Los originales conservan sus hashes. El derivado se validó como XML con
 referencias íntegras. Su revisión visual y su aprobación académica quedan
 pendientes.
+
+### Cierre del 26/11/2026
+
+RF-008 actualiza fórmula, unidad, redondeo y conducta al fallar cartografía.
+RF-009 conserva los tres métodos y añade el registro voluntario por reserva
+abordada. RF-011 cambia la acción externa automática por acciones confirmadas
+del dispositivo y contactos propios. RF-030 incorpora el registro personal,
+con canal institucional pendiente. La [matriz actual](../reviews/RELEASE_READINESS.md)
+y el [derivado UML](RELEASE_UML.md) aplican estas decisiones y preservan los IDs.

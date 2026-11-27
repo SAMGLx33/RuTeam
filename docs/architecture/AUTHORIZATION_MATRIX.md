@@ -89,3 +89,37 @@ viajes se entregan a estudiantes autorizados a ver el viaje.
 | Abordaje QR                        | Titular emite en contexto válido. El conductor del viaje usa el código en la parada vigente. Canje transaccional y de uso único |
 | Seguridad y posición               | Propietario o participante confirmado sin ausencia, viaje en curso. Compartir/retirar posición está reservado al conductor      |
 | Estimación COP                     | Sólo propietario. Edición en PROGRAMADO y consulta posterior del registro propio                                                |
+
+## Economía y seguridad del cierre
+
+| Recurso                       | Actor y condición                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Desglose y revisión económica | Conductor habilitado para revisión. Titular para desglose de viaje persistido.                                                                   |
+| Condiciones económicas        | Mismas reglas de acceso que detalle publicado, reserva o invitación.                                                                             |
+| Compensación por reserva      | Titular y propietario leen. Titular confirmado y abordado declara después del cierre. Conductor reconoce/discrepa. Titular cancela sin resolver. |
+| Contactos                     | Cuenta propietaria. Se requiere estudiante vigente en la API del perfil protegido.                                                               |
+| Incidencia                    | Durante el viaje, propietario o confirmado sin ausencia. Después, propietario o abordado. Historial del autor con sesión y elegibilidad.         |
+| Ubicación                     | Propietario escribe durante viaje activo. Participantes autorizados leen. El estado final carece de coordenadas.                                 |
+
+## Permisos de continuidad
+
+| Operación                                            | Permiso y condición                                                                                                                                                                                |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Crear, editar, duplicar o generar viajes recurrentes | Conductor titular. Publicación sujeta a afiliación, documentos, vehículo, capacidad, ruta vigente y horario compatible. Las acciones de pausa y cierre de plantilla siguen disponibles al titular. |
+| Desactivar, solicitar eliminación o revocar sesiones | Cuenta propia con sesión y contraseña actual. El cierre se serializa frente a operaciones de participación. Un viaje con participación activa impide el cierre.                                    |
+| Consultar estado y recuperar                         | Titular con credenciales de RuTeam. Reactivación voluntaria disponible tras retirar toda solicitud abierta. La elegibilidad de estudiante se evalúa aparte.                                        |
+| Consultar movilidad e historial económico            | Estudiante vigente. Movilidad propia. El conductor ve sus gastos y agregados de sus viajes. El pasajero ve sólo sus participaciones y sus declaraciones.                                           |
+| Interrumpir viaje activo                             | Conductor titular con motivo y confirmación de cierre seguro. Mantiene el acceso de cierre previsto al caducar documentos.                                                                         |
+| Retirar una plaza o revocar una invitación           | Titular de la participación o del consentimiento individual. El organizador puede revocar la invitación sin retirar reservas existentes.                                                           |
+| Consultar o exportar incidencia                      | Autor del registro. Guardar exige contexto de viaje activo o historial de conducción/abordaje según el estado. Compartir exige decisión explícita en el cliente.                                   |
+
+## Autorización de la evolución
+
+| Recurso                                            | Permiso                                                                                                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Energía de vehículo y reutilización de publicación | Dueño. Se verifica el campus, las paradas y geometría persistidos antes de confiar en los tiempos originales.                                                             |
+| Resultado ambiental y alternativa                  | Conductor titular del viaje completado o pasajero abordado. Sólo el pasajero con reserva individual puede indicar su alternativa. Los datos de atribución son personales. |
+| SSE                                                | Sesión y elegibilidad vigente. Antes de emitir chat, viaje o ubicación se verifica la relación con el recurso. La revocación cierra el flujo.                             |
+| Operación del viaje                                | Conductor o miembro de una participación propia. El manifiesto y sus conteos son del conductor.                                                                           |
+| Actividades y agenda                               | Sólo registros vinculados a la cuenta autenticada. Una previsión de plantilla no equivale a oferta.                                                                       |
+| Preferencias y registros push                      | Titular con sesión vigente. El registro exige consentimiento y secreto de instalación. Logout, cambio de sesión y desactivación invalidan entregas de la sesión anterior. |

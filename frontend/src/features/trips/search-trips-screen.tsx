@@ -1,4 +1,5 @@
 import { ReputationLabel } from '../ratings/reputation-label';
+import { EconomicTerms } from '../expenses/economic-terms';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Link } from 'expo-router';
@@ -426,6 +427,7 @@ export function SearchTripsScreen() {
                       : 'Trae tu propio casco'}
                   </Text>
                 )}
+                <EconomicTerms terms={trip.economics} />
                 {user && (
                   <ReserveTrip
                     trip={trip}

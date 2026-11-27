@@ -1,27 +1,44 @@
-# Estimación privada y decisión de compensaciones
+# Costos y compensaciones en COP
 
-26/11/2026, America/Bogota. Producto y Economía, POR_ASIGNAR. RF-008/009.
-El registro de conductor suma combustible, peajes y estacionamiento en COP
-enteros. La cifra es un total estimado privado, editable antes de iniciar.
-La operación se guarda con el viaje en PostgreSQL. Las personas que consultan
-o confirman plazas continúan viendo las condiciones ya aceptadas.
+Producto autorizó el cambio de RF-008 y RF-009 en el encargo del 26/11/2026.
+El [requisito literal](../requirements/ERS_CATALOG.md#rf-008) y las alternativas
+evaluadas en el [corte anterior](../reviews/PRODUCT_CONSOLIDATION.md) son antecedentes.
 
-El RF-008 literal divide un costo derivado de kilómetros entre cupos ofertados.
-La definición vigente aún requiere decidir la base y distribución definitiva.
-La diferencia entre cupos ofertados y quienes efectivamente abordaron cambia
-quién asume plazas vacías. Los métodos RF-009 pertenecen a la siguiente
-decisión de visibilidad y confirmación.
+## Publicación
 
-| Alternativa para Producto                      | Cálculo candidato                                                                       | Asunto por resolver                                                        |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Equitativa entre pasajeros efectivos           | Gasto elegible dividido por participantes abordados                                     | Caso cero pasajeros, parte del conductor y ajuste al finalizar             |
-| Equitativa entre quienes compartieron el viaje | Gasto elegible dividido por participantes abordados más conductor                       | Cuándo aplicar estacionamiento y costos de un tramo particular             |
-| Proporcional por tramos                        | Cada tramo reparte sus costos entre ocupantes efectivos de ese tramo; sumar por persona | Fuente del costo por tramo, peajes únicos, ausencia y redondeo de residuos |
+- El conductor puede elegir viaje gratuito o declarar combustible, peajes y estacionamiento.
+  Cada importe se expresa en COP enteros de 0 a 100.000.000.
+- Nest calcula el total sumando los tres gastos y el aporte por pasajero dividiendo
+  el total por las plazas ofertadas más uno para incluir al conductor. Redondea el
+  cociente hacia abajo al peso entero. Por ejemplo, 10.001 COP y tres plazas
+  resultan en 2.500 COP por persona.
+- La revisión previa muestra los tres gastos, total, plazas, importe y procedencia
+  declarada por el conductor. La cartografía suministra datos del recorrido.
+  La publicación económica funciona con el itinerario descrito y gastos declarados
+  cuando el motor vial está indisponible.
+- Con aporte positivo se ofrecen uno o dos métodos distintos de Nequi, DaviPlata y
+  efectivo. Con importe cero se publica como gratuito, sin métodos.
+- El detalle del pasajero y la vista previa grupal muestran el importe y métodos.
+  PostgreSQL preserva ambos como parte inmutable del viaje. Un viaje histórico
+  anterior al corte conserva el valor desconocido. Las plazas vacías y el residuo
+  quedan a cargo del conductor. El importe publicado acompaña el historial.
+- El desglose es privado. La estimación que produjo un aporte positivo queda fija.
+  La estimación privada de un viaje gratuito o histórico se puede guardar antes
+  de iniciar para llevar un registro sin cambiar sus condiciones publicadas.
 
-Para una futura política se propone que el backend congele la versión de
-condiciones aceptadas, mantenga estimación previa separada de cierre definitivo
-y distinga declaración de compensación de confirmación entre participantes.
-Cualquier residual de reparto debe conservar la suma exacta en COP. La política
-pendiente debe resolver cancelación, gastos admisibles y asignación de residuos.
-Referencias en [ERS](../requirements/ERS_CATALOG.md#rf-008) y
+## Registro posterior al viaje
+
+El titular de una participación individual que abordó puede declarar el importe
+sugerido usando un método publicado después de que el viaje se complete. Una
+participación grupal confirmada cumple el mismo criterio por su registro individual.
+El conductor puede reconocer la recepción o registrar discrepancia. El pasajero
+puede cancelar una declaración aún sin resolver. El registro conserva estados y
+fechas con acceso de las dos partes. La base garantiza una sola declaración por
+participación, las decisiones terminales conservan el historial y los reintentos
+idénticos devuelven el registro existente.
+
+El aporte es voluntario. El dinero se gestiona fuera de RuTeam y la recepción
+reconocida es una declaración del conductor. El registro carece de credenciales,
+integración bancaria, multas, ajuste por ocupación y obligación por ausencia.
+Consultar [API](API.md), [trazabilidad](../requirements/TRACEABILITY.md) y
 [decisiones](../decisions/OPEN_DECISIONS.md).

@@ -24,6 +24,7 @@ export class TripTrackingRepository {
       where: activeTripVisibleTo(tripId, actorId),
       select: {
         driverId: true,
+        trackingSharedAt: true,
         driverPosition: {
           select: {
             latitude: true,
@@ -38,6 +39,28 @@ export class TripTrackingRepository {
           select: { latitude: true, longitude: true },
         },
       },
+    });
+  }
+
+  endedForParticipant(tripId: string, actorId: string) {
+    return this.db.trip.findFirst({
+      where: {
+        id: tripId,
+        status: { in: ['COMPLETADO', 'INTERRUMPIDO'] },
+        OR: [
+          { driverId: actorId },
+          {
+            reservations: {
+              some: {
+                status: 'CONFIRMED',
+                boardedAt: { not: null },
+                members: { some: { userId: actorId } },
+              },
+            },
+          },
+        ],
+      },
+      select: { id: true },
     });
   }
 
@@ -76,9 +99,17 @@ export class TripTrackingRepository {
             create: { tripId, ...data },
             update: data,
           });
+          await tx.trip.update({
+            where: { id: tripId },
+            data: { trackingSharedAt: data.sharedAt },
+          });
         },
         clear: async () => {
           await tx.tripDriverPosition.deleteMany({ where: { tripId } });
+          await tx.trip.update({
+            where: { id: tripId },
+            data: { trackingSharedAt: null },
+          });
         },
       });
     });

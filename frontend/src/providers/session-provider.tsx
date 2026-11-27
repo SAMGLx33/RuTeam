@@ -1,3 +1,4 @@
+import { useLiveUpdates } from '../services/api/live-updates';
 import {
   createContext,
   useContext,
@@ -64,6 +65,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     },
     refetchInterval: 60000,
   });
+
+  useLiveUpdates(account.data?.id, !!account.data?.capabilities.passenger);
 
   async function signIn(input: LoginInput) {
     const session = await api<AccountSessionResponse>('/auth/login', {

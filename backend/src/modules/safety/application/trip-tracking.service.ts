@@ -14,6 +14,7 @@ import type {
 import {
   canShareCapturedPosition,
   positionIsVisible,
+  positionLifetimeMs,
   positionMinimumIntervalMs,
 } from '../domain/trip-tracking.policy.js';
 import { TripTrackingRepository } from '../infrastructure/repositories/trip-tracking.repository.js';
@@ -24,14 +25,22 @@ export class TripTrackingService {
 
   async view(tripId: string, actorId: string): Promise<TripTrackingView> {
     const trip = await this.repository.forActiveParticipant(tripId, actorId);
-    if (!trip)
+    if (!trip) {
+      if (await this.repository.endedForParticipant(tripId, actorId))
+        return { state: 'ENDED', canShare: false, sample: null, route: null };
       throw new NotFoundException(
         'No tienes acceso a un viaje en curso con ese identificador',
       );
+    }
     const canShare = trip.driverId === actorId;
     const position = trip.driverPosition;
     if (!position || !positionIsVisible(new Date(), position))
-      return { canShare, sample: null, route: null };
+      return {
+        state: trip.trackingSharedAt ? 'STALE' : 'NOT_SHARED',
+        canShare,
+        sample: null,
+        route: null,
+      };
     const coordinates = (
       point: typeof position | (typeof trip.stops)[number],
     ) => ({
@@ -39,6 +48,11 @@ export class TripTrackingService {
       longitude: Number(point.longitude),
     });
     return {
+      state: 'AVAILABLE',
+      expiresAt: new Date(
+        Math.min(position.capturedAt.getTime(), position.sharedAt.getTime()) +
+          positionLifetimeMs,
+      ).toISOString(),
       canShare,
       sample: {
         ...coordinates(position),

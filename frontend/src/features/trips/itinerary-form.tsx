@@ -1,3 +1,9 @@
+import {
+  Accuracy,
+  getCurrentPositionAsync,
+  requestForegroundPermissionsAsync,
+} from 'expo-location';
+import { Button } from '../../components/ui/button';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useController, type Control } from 'react-hook-form';
@@ -24,8 +30,15 @@ export interface PublishFormValues {
   destination: PointValue;
   stops: (PointValue & { access: StopAccess })[];
   departureAt: string;
+  recurrenceName: string;
+  startsOn: string;
+  endsOn: string;
+  time: string;
   estimatedDurationMinutes: string;
   offeredSeats: string;
+  fuelCop: string;
+  tollsCop: string;
+  parkingCop: string;
   description: string;
   direction: TripDirection;
 }
@@ -51,6 +64,7 @@ export function Choice({
       accessibilityRole={checkbox ? 'checkbox' : 'radio'}
       accessibilityLabel={label}
       accessibilityState={{ checked }}
+      aria-checked={checked}
       onPress={onPress}
       style={[s.choice, checked && s.selected]}
     >
@@ -85,6 +99,34 @@ export function PointEditor({
     name: `${name}.label`,
   });
   const [searchFocus, setSearchFocus] = useState<Coordinates>();
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  async function centerOnCurrentLocation() {
+    setLocating(true);
+    setLocationError('');
+    try {
+      const permission = await requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        setLocationError(
+          'Autoriza la ubicación para centrar el mapa o busca un lugar.',
+        );
+        return;
+      }
+      const { coords } = await getCurrentPositionAsync({
+        accuracy: Accuracy.Balanced,
+      });
+      setSearchFocus({
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      });
+    } catch {
+      setLocationError(
+        'No se pudo consultar tu ubicación. Busca un lugar o elige un marcador.',
+      );
+    } finally {
+      setLocating(false);
+    }
+  }
   const selected = catalog.find(({ id }) => id === point.value);
   const external =
     institutional === false || (institutional === undefined && !selected);
@@ -160,6 +202,24 @@ export function PointEditor({
       />
       {external && (
         <>
+          <Button
+            title={
+              locating
+                ? 'Consultando ubicación…'
+                : 'Centrar en mi ubicación · ' + title
+            }
+            secondary
+            disabled={locating}
+            onPress={() => void centerOnCurrentLocation()}
+          />
+          <Text style={s.text}>
+            La ubicación centra el mapa. Elige por separado un punto público.
+          </Text>
+          {!!locationError && (
+            <Text accessibilityRole="alert" style={s.error}>
+              {locationError}
+            </Text>
+          )}
           <PlaceSearch
             title={title}
             onSelect={({ latitude, longitude, label: name }) => {

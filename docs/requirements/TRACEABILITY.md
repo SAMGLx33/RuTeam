@@ -204,3 +204,39 @@ sintética con API y PostgreSQL real.
 El cálculo de costos acordados, el envío SOS delegado y la verificación
 institucional no se infieren de pruebas locales. Consultar el [plan de Expo
 Go](../development/MOBILE_TESTING.md) y las [decisiones](../decisions/OPEN_DECISIONS.md).
+
+## Corte local de cierre del 26/11/2026
+
+La matriz histórica de arriba conserva las interpretaciones de sus cortes.
+Consultar el [estado actual por requisito](../reviews/RELEASE_READINESS.md).
+
+| Requisito                                | Implementación y criterio                                                                                                                                                                                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-008 y RF-009                          | `expenses`, publicación Nest, `Trip`, `TripExpenseEstimate`, `TripCompensation`, Expo. Revisión previa, piso en COP, inmutabilidad con plazas vacías, autorización y un registro por reserva abordada. `expenses-policy`, `release-economics-safety` y `publication.spec`. |
+| RF-011 y RF-030                          | `safety`, `EmergencyContact` y `TripIncident`. Edición y consulta propias, consentimiento para compartir, contexto de incidencia y caducidad GPS. `trip-safety`, `trip-tracking`, `release-economics-safety`, `safety.spec`. Canal institucional pendiente.                |
+| RF-006, RF-012, RF-015, RF-027 y RNF-032 | Participaciones/QR y cierre transaccional con estados históricos y avisos por evento. Consentimiento grupal ligado a condiciones inmutables y retiro individual. `groups`, `driver-routes`, `boarding-qr`, `chat`, `mobility`. Push pendiente.                             |
+
+## Continuidad de producto del 26/11/2026
+
+| Requisito | Evidencia implementada                                                                                                                        |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-023    | `Trips`, `RecurringTrip`, `RecurringOccurrence`, `/trip-schedules`, `/recurring-trips`. Integración con publicación, recomendación y bandeja. |
+| RF-020    | `Auth`, `AccountDeletionRequest`, `/auth/lifecycle`, `/account-settings` y `/account-status`.                                                 |
+| RF-019    | `Mobility`, consulta mensual sobre viajes y participaciones abordadas, `/mobility/statistics`, `/mobility-statistics`.                        |
+| RF-026    | `Expenses`, `/economics/history`, `/economic-history` y accesos posviaje.                                                                     |
+| RF-028    | `Reservations`, `INTERRUPT`, motivos, confirmación explícita y cierre de la actividad en vivo.                                                |
+| RF-030    | `Safety`, página `/incidents`, `GET /me/incidents` y exportación contextual.                                                                  |
+
+Criterios y comandos de prueba en el [plan](../development/TEST_PLAN.md#pruebas-de-continuidad-del-producto). Estado de integración en [preparación de entrega](../reviews/RELEASE_READINESS.md).
+
+## Evolución ambiental y comunicación
+
+| Requisito                   | Implementación                                                                                                                                             |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-019                      | Consumo, catálogo FECOC/SIN, tramos y cierre reproducible en Mobility. `/vehicles/:id/energy`, `/mobility/environment/trips/:id` y estadísticas mensuales. |
+| RF-014/RNF-032              | SSE sobre sesiones vigentes, PostgreSQL LISTEN/NOTIFY, indicadores de lectura del chat y reconexión.                                                       |
+| RF-012/RF-015/RF-027        | `/trips/:id/operation`, seguimiento por rol y reutilización de pases QR en viaje activo.                                                                   |
+| RF-023                      | `/mobility/agenda`, fechas previstas y resultado de ocurrencias, reutilización mediante `/trips/:id/reuse`.                                                |
+| RF-008/RF-009/RF-010/RF-030 | Centro de actividades y resumen posviaje con enlaces autorizados a compensaciones, notas e incidencias.                                                    |
+
+Pruebas y límites en [preparación de entrega](../reviews/RELEASE_READINESS.md#evolución-ambiental-y-comunicación).

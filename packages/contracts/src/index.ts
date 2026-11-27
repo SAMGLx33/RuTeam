@@ -1,3 +1,4 @@
+import type { TripEconomicTerms, TripEconomicsInput } from './expenses.js';
 import type { ItineraryInput, TripItinerary } from './routes.js';
 export type * from './routes.js';
 export type * from './accounts.js';
@@ -51,6 +52,8 @@ export interface DemoLicense {
   demo: boolean;
 }
 export interface VehicleSummary {
+  energyProfile?:
+    import('./mobility-statistics.js').VehicleEnergyProfile | null;
   revision: number;
   id: string;
   plate: string;
@@ -91,15 +94,19 @@ export interface TripSummary {
   offeredSeats: number;
   occupiedSeats: number;
   availableSeats: number;
-  status: 'PROGRAMADO' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
+  status:
+    'PROGRAMADO' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO' | 'INTERRUMPIDO';
+  terminationReason?: import('./routes.js').CancellationReason | null;
   occupancy: 'DISPONIBLE' | 'LLENO';
   locationMode: string;
   providesHelmet: boolean | null;
+  economics: TripEconomicTerms | null;
   stops: (TripPoint & { position: number })[];
   rules: TripRule[];
 }
 
 export interface RegisterVehicleInput {
+  energyProfile?: import('./mobility-statistics.js').VehicleEnergyInput;
   plate: string;
   type: VehicleType;
   passengerCapacity: number;
@@ -120,15 +127,20 @@ export interface PublishTripInput {
   ruleIds: string[];
   providesHelmet?: boolean;
   itinerary: ItineraryInput;
+  economics?: TripEconomicsInput;
 }
 
 export * from './ratings.js';
-export type { TripSafetyContext } from './trip-safety.js';
-export type {
-  TripExpenseDetails,
-  TripExpenseEstimate,
-  TripExpenseInput,
-} from './expenses.js';
+export type * from './trip-safety.js';
+export type * from './expenses.js';
 export type * from './groups.js';
 export type * from './trip-tracking.js';
 export type * from './boarding.js';
+
+export type * from './recurring-trips.js';
+
+export type * from './mobility-statistics.js';
+export type * from './realtime.js';
+export type * from './trip-operation.js';
+export type * from './daily-mobility.js';
+export type * from './notification-preferences.js';

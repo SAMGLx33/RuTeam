@@ -7,6 +7,17 @@ const schema = z.object({
   VERIFICATION_PROVIDER: z.enum(['demo', 'official']).default('official'),
   DATABASE_URL: z.url(),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  EXPO_PUSH_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+  EXPO_PUSH_ACCESS_TOKEN: z.string().min(20).optional(),
+  RECURRING_TRIP_HORIZON_DAYS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(28)
+    .default(7),
   SESSION_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(3600),
   AUTH_TOKEN_SECRET: z.string().min(32).optional(),
   AUTH_PUBLIC_URL: z.url().optional(),

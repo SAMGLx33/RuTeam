@@ -1,8 +1,15 @@
+import { useState } from 'react';
+import { cancellationLabel, CancellationReasons } from './cancellation-reasons';
 import { Text, View } from 'react-native';
+import { EconomicTerms } from '../expenses/economic-terms';
 import { TripSafetyLink } from '../safety/trip-safety-link';
 import { Link } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ReservationStatus, ReservationView } from '@ruteam/contracts';
+import type {
+  CancellationReason,
+  ReservationStatus,
+  ReservationView,
+} from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';
 import {
   ProtectedPage,
@@ -61,17 +68,24 @@ export function ReservationSummary({ item }: { item: ReservationView }) {
 export function ReservationsScreen() {
   const { user } = useSession();
   const client = useQueryClient();
+  const [withdrawing, setWithdrawing] = useState<string>();
+  const [reason, setReason] =
+    useState<Exclude<CancellationReason, 'ACCOUNT_CLOSED'>>();
   const list = useQuery({
     queryKey: ['my-reservations', user?.id],
     queryFn: () => api<ReservationView[]>('/reservations/my'),
     enabled: !!user?.capabilities.passenger,
+    refetchInterval: 30000,
   });
   const cancel = useMutation({
     mutationFn: (id: string) =>
       api<ReservationView>(`/participations/${id}/cancel`, {
         method: 'POST',
+        body: { reason },
       }),
     onSuccess: (item) => {
+      setWithdrawing(undefined);
+      setReason(undefined);
       void client.invalidateQueries({ queryKey: ['my-reservations'] });
       void client.invalidateQueries({ queryKey: ['available-trips'] });
       void client.invalidateQueries({ queryKey: ['trip-feed'] });
@@ -80,6 +94,9 @@ export function ReservationsScreen() {
   });
   return (
     <ProtectedPage title="Mis participaciones">
+      <Link href="/economic-history" style={s.link}>
+        Historial económico de mis participaciones
+      </Link>
       <Link href="/search-trips" style={s.link}>
         Buscar viajes
       </Link>
@@ -106,6 +123,50 @@ export function ReservationsScreen() {
       {list.data?.map((item) => (
         <View key={item.id} style={s.section}>
           <ReservationSummary item={item} />
+          <Link
+            href={{
+              pathname: '/trip-operation/[tripId]',
+              params: { tripId: item.tripId },
+            }}
+            style={s.link}
+          >
+            Seguimiento y resumen
+          </Link>
+          {item.withdrawalReason && (
+            <Text style={s.text}>
+              Motivo · {cancellationLabel[item.withdrawalReason]}
+            </Text>
+          )}
+          <EconomicTerms terms={item.economics} />
+          {(item.tripStatus === 'COMPLETADO' ||
+            item.tripStatus === 'INTERRUMPIDO') &&
+            item.boardedAt &&
+            !item.noShowAt && (
+              <>
+                <Link
+                  href={{
+                    pathname: '/incidents/[tripId]',
+                    params: { tripId: item.tripId },
+                  }}
+                  style={s.link}
+                >
+                  Incidencias privadas
+                </Link>
+                {!!item.economics?.suggestedContributionCop &&
+                  item.isRequester &&
+                  item.quantity === 1 && (
+                    <Link
+                      href={{
+                        pathname: '/compensations/[id]',
+                        params: { id: item.id },
+                      }}
+                      style={s.link}
+                    >
+                      Ver compensación
+                    </Link>
+                  )}
+              </>
+            )}
           {item.tripStatus === 'EN_CURSO' &&
             item.status === 'CONFIRMED' &&
             !item.noShowAt && <TripSafetyLink tripId={item.tripId} />}
@@ -132,18 +193,40 @@ export function ReservationsScreen() {
               item.tripStatus === 'EN_CURSO') && (
               <PassengerBoardingPass reservationId={item.id} />
             )}
-          {item.canCancel && (
-            <Button
-              title={
-                item.status === 'PENDING'
-                  ? 'Retirar solicitud histórica'
-                  : 'Cancelar participación'
-              }
-              secondary
-              disabled={cancel.isPending}
-              onPress={() => cancel.mutate(item.id)}
-            />
-          )}
+          {item.canCancel &&
+            (withdrawing === item.id ? (
+              <>
+                <CancellationReasons reason={reason} choose={setReason} />
+                <Button
+                  title="Confirmar retiro"
+                  disabled={cancel.isPending}
+                  onPress={() => cancel.mutate(item.id)}
+                />
+                <Button
+                  title="Conservar mi plaza"
+                  secondary
+                  disabled={cancel.isPending}
+                  onPress={() => {
+                    setWithdrawing(undefined);
+                    setReason(undefined);
+                  }}
+                />
+              </>
+            ) : (
+              <Button
+                title={
+                  item.status === 'PENDING'
+                    ? 'Retirar solicitud histórica'
+                    : 'Cancelar participación'
+                }
+                secondary
+                disabled={cancel.isPending}
+                onPress={() => {
+                  setWithdrawing(item.id);
+                  setReason(undefined);
+                }}
+              />
+            ))}
         </View>
       ))}
     </ProtectedPage>

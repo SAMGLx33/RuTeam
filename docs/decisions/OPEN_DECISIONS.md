@@ -28,7 +28,6 @@ Las tablas del 13/24 se conservan en [historia](../history/2026-11-24-guides.md)
 | D03 catálogo                | Campus/entradas/ubicaciones certificados; catálogo sintético no acredita inventario ni precisión. Mantener FK/campus y texto libre sin inventar lugares oficiales                  | USC, Viajes, PO           |
 | D04 moto/género             | Validación jurídica/consentimiento sobre RF-021/025; no activar discriminación automática por aparecer en fuentes                                                                  | PO/asesoría institucional |
 | D05 penalidades             | Resolver contradicción >30/<30 de RF-007 y fuerza mayor/soporte RF-028. Sin multas, deudas o cobros automáticos                                                                    | PO                        |
-| D06 costos                  | Ratificar fórmula RF-008 por cupos frente a propuesta por tramos y tratamiento de participantes/abordaje/cancelación; sin cambiar fórmula aprobada ni inventar tarifa plana        | PO, Economía              |
 | D07/D08 plataforma          | Excepción iOS14 frente a SDK 54/iOS15.1+, dispositivo/versión Expo Go y red real; medir en hardware                                                                                | QA, PO                    |
 | D11 dependencias            | Auditoría vigente por paquete y fixes compatibles; no inferir resolución desde conteos históricos ni aplicar force                                                                 | Integrador, QA            |
 | D12 privacidad/soporte      | Retención, consentimiento, cifrado, eliminación/anonimización, backups y canal legítimo de incidentes sin ADMIN. No recopilar PII real para una demo                               | Equipo, PO/asesoría       |
@@ -92,11 +91,47 @@ corte todavía se consolida por el integrador. CURRENT_STATUS no cambia por esta
   completa la confirmación atómica y cada integrante obtiene su propia
   participación. Mantener la validación física y la aceptación del equipo
   separadas de las pruebas locales.
-- **D06 sigue abierto.** Existe una estimación privada de combustible, peajes
-  y estacionamiento en COP enteros. El equipo debe elegir fórmula, reglas de
-  reparto y medios o registros de compensación antes de ofrecerlos al pasajero.
-- **Seguridad y seguimiento.** La posición compartida voluntariamente conserva
-  un único punto visible durante dos minutos. El panel de seguridad entrega
-  acciones al selector y marcador del dispositivo. Permanecen abiertos los
-  responsables y tratamiento de incidentes, soporte operativo, contacto
-  institucional y retención. Las acciones nativas requieren prueba física.
+- **D06 resuelto por el encargo de Producto del 26/11/2026.** RF-008 divide el
+  total de gastos declarados por plazas ofertadas más conductor, con piso en COP.
+  Los costos privados y las condiciones públicas tienen persistencia diferenciada.
+  RF-009 ofrece Nequi, DaviPlata y efectivo y admite un registro personal después
+  de completar un viaje con abordaje. El [requisito original](../requirements/ERS_CATALOG.md#rf-008)
+  queda como antecedente. [Regla y ejemplos](../development/COMPENSACIONES_COP.md).
+- **RF-011 e incidencias privadas autorizados.** Se guardan contactos personales y
+  registros del propio viaje para su autor, con texto limitado y sin adjuntos.
+  El selector y el marcador quedan bajo control del usuario. Permanecen abiertos
+  traslado a la USC, responsables, soporte, plazos de conservación y aceptación física.
+- **Cierre y grupos.** Los términos publicados y las paradas elegidas se mantienen
+  estables. El grupo confirma las mismas condiciones de cada consentimiento.
+  Inicio o cancelación cierran invitaciones pendientes y propuestas abiertas.
+  El cierre registra ausencias, retira pases y elimina posición. La cancelación
+  operativa continúa limitada al viaje programado. Tras confirmar, cada integrante
+  retira sólo su participación. Chat sigue con lectura de 24 h para quienes viajaron
+  y purga separada. La revisión de privacidad definirá el plazo definitivo.
+- **Entrega.** El estado académico y los bloqueos de producción se consultan en
+  [preparación de entrega](../reviews/RELEASE_READINESS.md).
+
+## Dependencias para la siguiente entrega
+
+| Decisión                   | Capacidad disponible                                                                                            | Pendiente                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Conservación y eliminación | Desactivación, revocación, solicitud, retiro y recuperación.                                                    | Definir plazo, base de conservación y responsables. Revisar eliminación o anonimización de perfil, preferencias, contacto, vehículo y documentos. Evaluar por separado pseudonimización de viajes, reservas, grupos, mensajes, valoraciones, compensaciones e incidencias, integridad de cada vínculo y tratamiento de copias.                                                         |
+| Metodología ambiental      | Agregados reales de movilidad y contrato para factor, unidad, vehículo, distancia, ocupación, fuente y versión. | La metodología de operación ya está aplicada. Ampliar factores de transporte público y mezclas cuando exista una fuente pertinente.                                                                                                                                                                                                                                                    |
+| Atención de incidencias    | Registro operativo privado y resumen voluntario del autor.                                                      | Canal USC autorizado y política de acceso, conservación y escalación.                                                                                                                                                                                                                                                                                                                  |
+| Push remoto                | Bandeja web y móvil en PostgreSQL.                                                                              | Android y iOS requieren development build para push remoto con SDK 54. Configurar credenciales FCM/APNs, registro consentido de dispositivos y pruebas de entrega. Web requiere un mecanismo independiente con Service Worker. [Expo FAQ](https://docs.expo.dev/push-notifications/faq/) · [Configuración de Expo](https://docs.expo.dev/push-notifications/push-notifications-setup/) |
+| RF-021 y RF-025            | Permanecen en backlog de Producto.                                                                              | Política autorizada.                                                                                                                                                                                                                                                                                                                                                                   |
+
+### Inventario técnico para conservación
+
+| Datos                            | Relación y tratamiento por decidir                                                                                                                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identidad, perfil y contacto     | `User` es la referencia de identidad. `Profile`, correo y contactos de emergencia pueden evaluarse para supresión o anonimización. Los contextos históricos siguen necesitando una referencia estable.                 |
+| Sesiones, enlaces y preferencias | Auth revoca sesiones y consume enlaces al cerrar. Las rutinas incluyen ubicación privada y deben tener un criterio de supresión propio. Los plazos se definen junto con las copias de datos.                           |
+| Vehículo y documentación         | SOAT y licencia forman parte de las condiciones de vigencia. `Trip` referencia el vehículo. Evaluar retiro de datos identificables de documentos y conservación de atributos mínimos de viaje.                         |
+| Viajes, participaciones y grupos | El viaje referencia al conductor. Las reservas, sus miembros y los grupos conectan la historia del recorrido y su consentimiento. Evaluar pseudonimización sin cambiar abordajes, cupos históricos ni consentimiento.  |
+| Mensajes y calificaciones        | Los mensajes mantienen su ventana operativa. Las calificaciones enlazan al autor, al destinatario y al viaje. La conservación o retirada de identidades requiere una decisión separada de los agregados de reputación. |
+| Compensaciones e incidencias     | La compensación referencia la participación. La incidencia contiene una descripción privada y referencia a su autor y viaje. Cada dato exige una finalidad de conservación y una regla de acceso diferenciadas.        |
+
+## Decisiones y dependencias de evolución
+
+La [metodología ambiental](../development/ENVIRONMENTAL_METHOD.md) habilita estimaciones operativas con factores identificados. Transporte público y mezclas sin factor aplicable conservan datos faltantes. La reconexión en tiempo real reconsulta PostgreSQL. La entrega push física depende de development build con integración cliente, credenciales y pruebas. Los controles de bandeja y registro de dispositivos pueden usarse desde la configuración actual. Otras decisiones de Producto conservan su alcance.

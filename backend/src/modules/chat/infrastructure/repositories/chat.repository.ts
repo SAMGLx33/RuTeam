@@ -1,8 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '../../../../generated/prisma/client.js';
+import { Prisma } from '../../../../generated/prisma/client.js';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 import { chatRetentionMs, type ChatMarker } from '../../domain/chat.policy.js';
 
+async function unreadCounts(
+  db: Prisma.TransactionClient,
+  actorId: string,
+  tripIds: string[],
+) {
+  if (!tripIds.length) return new Map<string, number>();
+  const rows = await db.$queryRaw<{ tripId: string; count: number }[]>`
+    SELECT m."tripId", count(*)::int AS count
+    FROM "TripChatMessage" m
+    LEFT JOIN "TripChatRead" r ON r."tripId" = m."tripId" AND r."userId" = ${actorId}::uuid
+    WHERE m."authorId" <> ${actorId}::uuid AND m."tripId" IN (${Prisma.join(tripIds.map((id) => Prisma.sql`${id}::uuid`))})
+      AND (r."userId" IS NULL OR (m."createdAt", m.id) > (r."lastReadAt", r."lastReadMessageId"))
+    GROUP BY m."tripId"
+  `;
+  return new Map(rows.map(({ tripId, count }) => [tripId, count]));
+}
 export const chatPageSize = 20;
 
 const activeStatuses = ['PROGRAMADO', 'EN_CURSO'] as const;
@@ -140,7 +156,8 @@ function createChatUnit(
       for (const { id: recipientId } of users)
         await tx.tripNotification.upsert({
           where: {
-            recipientId_tripId_kind: {
+            recipientId_tripId_kind_eventKey: {
+              eventKey: '',
               recipientId,
               tripId,
               kind: 'CHAT_MESSAGE',
@@ -188,6 +205,9 @@ export type ChatMessageRow = Prisma.TripChatMessageGetPayload<{
 @Injectable()
 export class ChatRepository {
   constructor(private readonly db: PrismaService) {}
+  unread(actorId: string, tripIds: string[]) {
+    return unreadCounts(this.db, actorId, tripIds);
+  }
 
   conversations(actorId: string, now: Date, cursor?: ChatMarker) {
     const membership = confirmedPassenger(actorId);
@@ -205,7 +225,7 @@ export class ChatRepository {
                 ],
               },
               {
-                status: 'COMPLETADO',
+                status: { in: ['COMPLETADO', 'INTERRUMPIDO'] },
                 finishedAt: { gt: new Date(now.getTime() - chatRetentionMs) },
                 OR: [
                   { driverId: actorId },
@@ -254,7 +274,10 @@ export class ChatRepository {
       const expired = {
         OR: [
           { status: 'CANCELADO' },
-          { status: 'COMPLETADO', finishedAt: { lte: cutoff } },
+          {
+            status: { in: ['COMPLETADO', 'INTERRUMPIDO'] },
+            finishedAt: { lte: cutoff },
+          },
         ],
       } satisfies Prisma.TripWhereInput;
       const messages = await tx.tripChatMessage.findMany({

@@ -115,3 +115,31 @@ La suite comparte una sola dirección de loopback. Cuando Nest devuelve 429 en
 el login de fixtures, Playwright espera el valor real de `Retry-After` y vuelve
 a intentar una vez. Los límites de autenticación y las aserciones originales
 siguen activos.
+
+## Regresión del cierre, 26–28/11/2026
+
+- `expenses-policy.test.mjs` comprueba COP exactos, división por plazas más
+  conductor, cero, capacidad y gastos inválidos.
+- `release-economics-safety.e2e.test.mjs` usa HTTP y PostgreSQL reales para
+  publicación y consulta, privacidad, retiro, ausencia, concurrencia, abordaje,
+  estado persistente y autorización de contactos, incidencias y muestras.
+- `publication.spec.ts` prueba antes y después de publicar el aporte y la
+  consulta de métodos desde otra sesión. `safety.spec.ts` prueba gestión de
+  contactos, confirmaciones, registro privado y reconsulta en Chromium.
+  Cámara, marcador, SecureStore y GPS físico requieren el recorrido nativo.
+- Verifica migraciones y checksum después de restaurar en una base nueva. Corre
+  las suites que escriben la misma base de forma secuencial.
+
+## Pruebas de continuidad del producto
+
+- `backend/test/product-continuation.e2e.test.mjs` ejecuta HTTP real contra PostgreSQL de prueba. Cubre calendario Colombia, concurrencia, recuperación persistente, fallo de vigencia, estados de las plantillas, matching, privacidad, cancelación, interrupción, agregados, discrepancia, exportación de incidencias y recuperación de cuenta.
+- `tests/web/continuation.spec.ts` recorre gestión de recurrencias y accesos a cuenta e historiales en Chromium de escritorio y vista móvil. La suite de publicación comprueba la confirmación de retiro.
+- Usar `TEST_DATABASE_URL` dedicada con sufijo `_test`, `npm run db:generate`, `npm run db:test:setup`, `npm test` y `npm run test:e2e`. Consultar el [resultado de la regresión](../handoffs/2026-11-26_release-readiness_validacion_continuidad.md).
+- En el dispositivo físico quedan por comprobar los diálogos nativos de permiso de ubicación, el selector de compartir y la visualización en Expo Go. Las exportaciones sólo comprueban empaquetado.
+
+## Evolución ambiental y tiempo real
+
+- `environment.test.mjs` comprueba conversiones, fuentes, segmentos, consumo, escenarios y conservación de totales.
+- `product-evolution.e2e.test.mjs` usa HTTP y PostgreSQL real. Prueba instantánea histórica, exclusión de ausencia, agenda, permisos, señales después de commit, reconexión y revocación. Simula respuestas Expo al probar la cola y valida la separación de ticket y recibo.
+- `tests/web/evolution.spec.ts` prueba agenda, actualización operativa por SSE y persistencia de preferencias en Chromium.
+- Ejecutar en una base `_test` dedicada y hacer las exportaciones aparte. Registrar por separado compilaciones, pruebas en navegador y prueba en equipos físicos.

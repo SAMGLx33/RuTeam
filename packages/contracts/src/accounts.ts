@@ -43,3 +43,32 @@ export interface OnboardingInput {
 export interface AccessConfiguration {
   accountEmailAvailable: boolean;
 }
+
+export interface AccountLifecycleStatus {
+  state: 'ACTIVE' | 'DEACTIVATED';
+  deletionRequest: {
+    id: string;
+    status: 'REQUESTED' | 'WITHDRAWN';
+    requestedAt: string;
+    withdrawnAt: string | null;
+  } | null;
+  canReactivate: boolean;
+}
+
+export interface AccountSettings extends AccountLifecycleStatus {
+  sessions: {
+    id: string;
+    current: boolean;
+    createdAt: string | null;
+    expiresAt: string;
+  }[];
+  activeTrips: {
+    id: string;
+    asDriver: boolean;
+    departureAt: string;
+    status: import('./index.js').TripSummary['status'];
+  }[];
+  futureTrips: number;
+  futureParticipations: number;
+  activeSchedules: number;
+}

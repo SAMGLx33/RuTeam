@@ -126,6 +126,9 @@ export function VerificationScreen() {
               void action.run(session.refresh);
             }}
           />
+          <Link href="/account-settings" style={s.link}>
+            Cuenta y privacidad
+          </Link>
           <Button
             title="Cerrar sesión"
             secondary

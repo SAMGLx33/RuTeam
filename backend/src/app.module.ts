@@ -1,3 +1,4 @@
+import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -20,6 +21,7 @@ import { ClientOriginGuard } from './common/guards/client-origin.guard.js';
 @Module({
   imports: [
     InfrastructureModule,
+    RealtimeModule,
     AuthModule,
     VehiclesModule,
     TripsModule,

@@ -103,7 +103,12 @@ test('una ubicación voluntaria sólo se consulta en viaje activo, vence y se bo
     .expect(200);
   const empty = await call('ana', 'get', path).expect(200);
   expect(empty.headers['cache-control']).toBe('private, no-store');
-  expect(empty.body).toEqual({ canShare: false, sample: null, route: null });
+  expect(empty.body).toEqual({
+    state: 'NOT_SHARED',
+    canShare: false,
+    sample: null,
+    route: null,
+  });
   await call('ana', 'post', path).send(sample).expect(404);
   await call('sara', 'get', path).expect(404);
   await call('diego', 'post', path)
@@ -114,7 +119,11 @@ test('una ubicación voluntaria sólo se consulta en viaje activo, vence y se bo
     .expect(400);
   await call('diego', 'post', path).send(sample).expect(204);
   const viewed = await call('ana', 'get', path).expect(200);
-  expect(viewed.body.canShare).toBe(false);
+  expect(viewed.body).toMatchObject({
+    state: 'AVAILABLE',
+    canShare: false,
+    expiresAt: expect.any(String),
+  });
   expect(viewed.body.sample).toEqual({
     ...sample,
     sharedAt: expect.any(String),
@@ -148,7 +157,11 @@ test('una ubicación voluntaria sólo se consulta en viaje activo, vence y se bo
   await call('diego', 'post', `/trips/${tripId}/transition`)
     .send({ action: 'FINISH' })
     .expect(200);
-  await call('diego', 'get', path).expect(404);
+  expect((await call('diego', 'get', path).expect(200)).body).toMatchObject({
+    state: 'ENDED',
+    sample: null,
+    route: null,
+  });
   await call('diego', 'post', path).send(sample).expect(404);
   expect(
     await db.tripDriverPosition.findUnique({ where: { tripId } }),

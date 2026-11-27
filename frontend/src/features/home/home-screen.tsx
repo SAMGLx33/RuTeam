@@ -1,5 +1,6 @@
 import type {
   Account,
+  MobilityStatistics,
   NotificationPage,
   ReservationView,
   TripSummary,
@@ -25,6 +26,10 @@ export function HomeScreen({ user }: { user: Account }) {
     queryKey: ['my-trips', user.id],
     queryFn: () => api<TripSummary[]>('/trips/my'),
     enabled: user.capabilities.driverAccess,
+  });
+  const mobility = useQuery({
+    queryKey: ['mobility-statistics', user.id, 1],
+    queryFn: () => api<MobilityStatistics>('/mobility/statistics?months=1'),
   });
   const notifications = useQuery({
     queryKey: ['notifications', user.id],
@@ -71,6 +76,14 @@ export function HomeScreen({ user }: { user: Account }) {
           )}
         </View>
       </View>
+      <View style={s.section}>
+        <Link href="/activity" style={s.link}>
+          Mis actividades
+        </Link>
+        <Link href="/agenda" style={s.link}>
+          Agenda de viajes
+        </Link>
+      </View>
       {user.capabilities.driverAccess && (
         <View style={s.section}>
           <Text style={s.title}>Tus próximos viajes publicados</Text>
@@ -96,6 +109,9 @@ export function HomeScreen({ user }: { user: Account }) {
           <Link href="/my-trips" style={s.link}>
             Mis viajes publicados
           </Link>
+          <Link href="/recurring-trips" style={s.link}>
+            Viajes recurrentes
+          </Link>
           {!user.capabilities.driver && (
             <Link href="/vehicles" style={s.link}>
               Vehículos y licencia
@@ -120,6 +136,17 @@ export function HomeScreen({ user }: { user: Account }) {
         )}
         <Link href="/my-reservations" style={s.link}>
           Mis participaciones
+        </Link>
+      </View>
+      <View style={s.section}>
+        <Text style={s.title}>Movilidad este mes</Text>
+        {mobility.data && (
+          <Text style={s.text}>
+            Desplazamientos compartidos · {mobility.data.totals.sharedTrips}
+          </Text>
+        )}
+        <Link href="/mobility-statistics" style={s.link}>
+          Mis estadísticas
         </Link>
       </View>
       <Text style={s.title}>Viajes para ti</Text>

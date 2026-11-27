@@ -1,3 +1,5 @@
+import { cancellationLabel } from './cancellation-reasons';
+import { EconomicTerms } from '../expenses/economic-terms';
 import { ReputationLabel } from '../ratings/reputation-label';
 import { useState } from 'react';
 import { Link, useLocalSearchParams } from 'expo-router';
@@ -47,6 +49,11 @@ function DetailContent({
           Conduce {trip.driverName ?? 'un estudiante'} · {trip.vehicle.brand}{' '}
           {trip.vehicle.color.toLowerCase()}
         </Text>
+        {trip.terminationReason && (
+          <Text style={s.text}>
+            Motivo · {cancellationLabel[trip.terminationReason]}
+          </Text>
+        )}
         <ReputationLabel summary={trip.driverReputation} />
         <Text style={s.text}>
           {trip.availableSeats}{' '}
@@ -54,6 +61,21 @@ function DetailContent({
             ? 'plaza disponible'
             : 'plazas disponibles'}
         </Text>
+        <EconomicTerms terms={trip.economics} />
+        {(trip.isDriver || confirmed) && (
+          <Link
+            href={{
+              pathname: '/economic-history',
+              params: {
+                tripId: trip.id,
+                role: trip.isDriver ? 'DRIVER' : 'PASSENGER',
+              },
+            }}
+            style={s.link}
+          >
+            Historial económico de este viaje
+          </Link>
+        )}
         {trip.rules.map(({ id, description }) => (
           <Text key={id} style={s.text}>
             {description}
@@ -109,6 +131,17 @@ function DetailContent({
           groupCapacity={trip.offeredSeats}
           onConfirmed={() => setConfirmation(true)}
         />
+      )}
+      {(confirmed || trip.isDriver) && (
+        <Link
+          href={{
+            pathname: '/trip-operation/[tripId]',
+            params: { tripId: trip.id },
+          }}
+          style={s.link}
+        >
+          Seguimiento y resumen
+        </Link>
       )}
       {!confirmed && trip.acceptsPickupProposal && (
         <PickupProposalForm trip={trip} />

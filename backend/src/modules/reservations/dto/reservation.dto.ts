@@ -1,6 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsUUID } from 'class-validator';
-import type { ConfirmParticipationInput, TripAction } from '@ruteam/contracts';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Equals, IsIn, IsOptional, IsUUID } from 'class-validator';
+import type {
+  CancellationReason,
+  ConfirmParticipationInput,
+  TripAction,
+} from '@ruteam/contracts';
 
 export class ConfirmParticipationDto implements ConfirmParticipationInput {
   @ApiProperty({ format: 'uuid' })
@@ -12,9 +16,28 @@ export class ConfirmParticipationDto implements ConfirmParticipationInput {
   dropoffId!: string;
 }
 
-const actions = ['START', 'FINISH', 'CANCEL'];
-export class TripTransitionDto {
+const publicReasons = [
+  'DRIVER_UNAVAILABLE',
+  'VEHICLE_ISSUE',
+  'SAFETY',
+  'CHANGE_OF_PLANS',
+  'OTHER',
+] as const;
+export class CancellationDto {
+  @ApiPropertyOptional({ enum: publicReasons })
+  @IsOptional()
+  @IsIn(publicReasons)
+  reason?: Exclude<CancellationReason, 'ACCOUNT_CLOSED'>;
+}
+
+const actions = ['START', 'FINISH', 'CANCEL', 'INTERRUPT'];
+export class TripTransitionDto extends CancellationDto {
   @ApiProperty({ enum: actions })
   @IsIn(actions)
   action!: TripAction;
+
+  @ApiPropertyOptional({ enum: [true] })
+  @IsOptional()
+  @Equals(true)
+  confirmedSafe?: true;
 }

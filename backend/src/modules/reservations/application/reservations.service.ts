@@ -5,7 +5,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { BoardingPass, TripAction } from '@ruteam/contracts';
+import type {
+  BoardingPass,
+  CancellationReason,
+  TripAction,
+} from '@ruteam/contracts';
 
 import { allowsSegment } from '../../trips/domain/models/driver-route.js';
 import { presentStops } from '../../trips/infrastructure/repositories/trips.repository.js';
@@ -87,6 +91,7 @@ const transitions = {
   START: { from: 'PROGRAMADO', to: 'EN_CURSO' },
   FINISH: { from: 'EN_CURSO', to: 'COMPLETADO' },
   CANCEL: { from: 'PROGRAMADO', to: 'CANCELADO' },
+  INTERRUPT: { from: 'EN_CURSO', to: 'INTERRUMPIDO' },
 } as const;
 
 function presentTransition(trip: {
@@ -142,14 +147,14 @@ export class ReservationsService {
       if (trip.offeredSeats - trip.occupiedSeats < 1)
         throw new ConflictException('No hay plazas disponibles');
       await unit.addOccupiedSeats(1);
-      return reservationView(
-        await unit.create(actorId, pickupId, dropoffId, now),
-        actorId,
-      );
+      const created = await unit.create(actorId, pickupId, dropoffId, now);
+      await unit.notify('PARTICIPATION_CONFIRMED', [actorId], created.id);
+      await unit.notify('PASSENGER_JOINED', [trip.driverId], created.id);
+      return reservationView(created, actorId);
     });
   }
 
-  async cancel(actorId: string, id: string) {
+  async cancel(actorId: string, id: string, reason?: CancellationReason) {
     const tripId = await this.repository.tripForRequest(id);
     return this.repository.withTripLock(tripId, async (unit) => {
       const row = await unit.find(id);
@@ -169,9 +174,15 @@ export class ReservationsService {
         throw new ConflictException(
           'Sólo puedes retirarte de un viaje futuro programado antes de abordar',
         );
-      if (row.status === 'CONFIRMED')
+      if (row.status === 'CONFIRMED') {
         await unit.addOccupiedSeats(-row.quantity);
-      return reservationView(await unit.changeStatus(id, 'CANCELLED'), actorId);
+        await unit.notify('PASSENGER_WITHDREW', [trip.driverId], id);
+      }
+      await unit.revokePass(id);
+      return reservationView(
+        await unit.changeStatus(id, 'CANCELLED', undefined, reason),
+        actorId,
+      );
     });
   }
 
@@ -185,6 +196,7 @@ export class ReservationsService {
       const now = new Date();
       await checkBoarding(unit, trip, row, now);
       if (row.boardedAt) return reservationView(row, actorId);
+      await unit.revokePass(id);
       return reservationView(await unit.board(id, now, actorId), actorId);
     });
   }
@@ -311,12 +323,29 @@ export class ReservationsService {
       throw new ForbiddenException('Se requiere ser conductor del viaje');
     return rows;
   }
-  transition(actorId: string, tripId: string, action: TripAction) {
+  transition(
+    actorId: string,
+    tripId: string,
+    action: TripAction,
+    reason?: CancellationReason,
+    confirmedSafe?: boolean,
+  ) {
     return this.repository.withTripLock(tripId, async (unit) => {
       const trip = await unit.trip();
       if (trip.driverId !== actorId)
         throw new ForbiddenException(
           'Sólo el conductor del viaje puede cambiar su estado',
+        );
+      if (action === 'INTERRUPT' && (!reason || !confirmedSafe))
+        throw new BadRequestException(
+          'Confirma que el viaje está detenido en un lugar seguro e indica el motivo',
+        );
+      if (
+        (reason && action !== 'CANCEL' && action !== 'INTERRUPT') ||
+        (confirmedSafe && action !== 'INTERRUPT')
+      )
+        throw new BadRequestException(
+          'Los datos de cierre no corresponden a esta transición',
         );
       const { from, to } = transitions[action];
       if (trip.status === to) return presentTransition(trip);
@@ -334,7 +363,9 @@ export class ReservationsService {
           await unit.transition(actorId, to, now, origin.id),
         );
       }
-      return presentTransition(await unit.transition(actorId, to, now));
+      return presentTransition(
+        await unit.transition(actorId, to, now, undefined, reason),
+      );
     });
   }
 }

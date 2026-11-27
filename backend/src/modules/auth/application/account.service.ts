@@ -237,6 +237,7 @@ export class AccountService {
   }
   private async present(user: SessionUser) {
     const status = await this.eligibility(user);
+    await this.repository.observeEligibility(user, status);
     return {
       id: user.id,
       email: user.email,

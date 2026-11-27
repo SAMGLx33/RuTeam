@@ -234,4 +234,7 @@ test('rechazo, cierre e itinerarios DESDE_USC bloquean las incorporaciones', asy
   expect(
     (await requestAt('get', path, 'sara').expect(200)).body[0].status,
   ).toBe('EXPIRED');
+  expect(
+    await db.pickupProposal.findUnique({ where: { id: pending.body.id } }),
+  ).toMatchObject({ status: 'EXPIRED', decidedAt: expect.any(Date) });
 });

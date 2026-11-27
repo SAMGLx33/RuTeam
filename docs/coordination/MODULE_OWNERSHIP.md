@@ -43,3 +43,30 @@ Participaciones mantiene `groups` y reutiliza sus reglas de tramo, vigencia y
 bloqueo para confirmación y QR. Seguridad mantiene contexto y última posición.
 Economía mantiene `expenses`; Producto revisa futuras reglas de reparto.
 Los contratos transversales y las migraciones se revisan con Datos y QA.
+
+Para el corte de cierre se mantienen las fronteras existentes. Trips conserva
+el importe y los métodos de publicación. Expenses valida el cálculo y los
+registros por participación. Safety custodia los datos de autor. Reservations
+orquesta el cierre. Mobility mantiene las vistas del aviso. Revisiones
+humanas y promoción quedan POR_ASIGNAR en los frentes y el handoff de cierre.
+
+## Responsabilidades de continuidad
+
+| Responsable técnico          | Cambios integrados                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| Trips                        | Calendario, trabajador durable, plantilla, ocurrencia y reutilización de geometría.               |
+| Auth + Reservations + Groups | Confirmación sensible, revocación, cierre transaccional, solicitudes y consentimiento individual. |
+| Mobility                     | Agregados personales y bandeja durable.                                                           |
+| Expenses                     | Historial de gastos, aportes y registros de compensación por rol.                                 |
+| Reservations + Safety        | Cierre seguro, pases, ubicación, contexto y exportación de incidencias.                           |
+| Frontend                     | Publicación, pantallas de cuenta e historiales, cierre operativo y selección de ubicación.        |
+
+## Responsabilidades de evolución
+
+| Área                        | Responsabilidad                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| Mobility / Vehicles         | Catálogo de factores, energía, proyecciones y preferencias.                                         |
+| Trips / Reservations        | Plantillas verificadas, captura de entradas ambientales y cierre.                                   |
+| Realtime / Auth             | Conexión SSE, sesiones y reevaluación de permisos.                                                  |
+| Safety                      | Operación, QR, seguimiento y contexto posviaje.                                                     |
+| Mobility / plataforma móvil | Registro y cola push. La aplicación nativa habilitada requiere un adaptador del SDK y credenciales. |

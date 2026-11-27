@@ -1,0 +1,11 @@
+# Preferencias de avisos y push
+
+La bandeja de PostgreSQL, SSE dentro de la app y push del sistema operativo tienen alcances distintos. El usuario puede activar o desactivar avisos de recomendaciones, mensajes, recordatorios de calificación, recurrencias y actualizaciones opcionales. La bandeja respeta estas preferencias y mantiene las cancelaciones, confirmaciones, cambios esenciales, compensaciones e incidencias. La persona puede seguir consultando chat, actividades y recurrencias desde sus pantallas.
+
+## Infraestructura push
+
+- El backend habilita registro y envío con `EXPO_PUSH_ENABLED=true`. Se puede usar `EXPO_PUSH_ACCESS_TOKEN` como credencial del servidor para la seguridad reforzada de Expo.
+- Un cliente nativo habilitado necesita credenciales FCM/APNs, consentimiento y el token Expo del proyecto. El registro usa una sesión vigente, plataforma y un secreto de instalación. La API expone sólo el ID, plataforma y fecha. El secreto se mantiene en almacenamiento seguro en el cliente que implemente la inscripción.
+- Cada aviso nuevo encola una entrega por dispositivo activo. La clave por aviso y dispositivo evita duplicados en PostgreSQL. La cola se reclama con lease y `SKIP LOCKED`. Tiene reintentos acotados y aplica las preferencias y revocación antes de enviar. Una pérdida de respuesta de la red puede dejar un envío de resultado incierto en el proveedor.
+- El ticket confirma aceptación de Expo. El recibo confirma aceptación de APNs/FCM. `DeviceNotRegistered` revoca el dispositivo. El payload es genérico y enlaza a la bandeja, que requiere sesión y autorización. Ningún recibo prueba lectura ni visualización física. [API de envío, tickets y recibos](https://docs.expo.dev/push-notifications/sending-notifications/)
+- SDK 54 conserva Expo Go para la aplicación sin push remoto. El registro desde dispositivo requiere integrar el adaptador de `expo-notifications` en un development build del proyecto y validar sus credenciales. La pantalla actual permite gestionar dispositivos registrados y conserva la bandeja para todas las plataformas. [Configuración oficial](https://docs.expo.dev/push-notifications/push-notifications-setup/) · [Condiciones de Expo Go](https://docs.expo.dev/push-notifications/faq/)

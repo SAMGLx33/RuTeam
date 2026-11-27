@@ -31,10 +31,13 @@ enum VerificationOutcome {
   DENIED
 }
 model User {
+  notificationPreferences Json?
   id String @id @default(uuid()) @db.Uuid
   email String @unique @db.VarChar(254)
   demoIdentity String? @unique @db.VarChar(32)
   disabledAt DateTime? @db.Timestamptz(3)
+  selfDeactivatedAt DateTime? @db.Timestamptz(3)
+  observedEligibility String? @db.VarChar(32)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   passwordHash String? @db.VarChar(255)
   emailVerifiedAt DateTime? @db.Timestamptz(3)
@@ -42,6 +45,7 @@ model User {
   onboardingStep Int @default(0)
   onboardingCompletedAt DateTime? @db.Timestamptz(3)
   accountTokens AccountToken[]
+  deletionRequests AccountDeletionRequest[]
   mobilityPreferences MobilityPreference[]
   tripNotifications TripNotification[]
   chatMessages TripChatMessage[]
@@ -55,6 +59,7 @@ model User {
   reviewedLicenses DriverEligibility[] @relation("DriverLicenseReviewer")
   reviewedVehicleDocuments VehicleDocument[] @relation("VehicleDocumentReviewer")
   trips Trip[]
+  recurringTrips RecurringTrip[]
   tripEvents TripEvent[]
   ratingsSent TripRating[] @relation("TripRatingRater")
   ratingsReceived TripRating[] @relation("TripRatingRatee")
@@ -62,6 +67,8 @@ model User {
   reservationMemberships ReservationMember[]
   organizedTripGroups TripGroup[]
   tripGroupConsents TripGroupMember[]
+  emergencyContacts EmergencyContact[]
+  safetyIncidents TripIncident[]
   pickupProposals PickupProposal[]
 }
 model AccountToken {
@@ -93,6 +100,7 @@ model InstitutionalMembership {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 model AuthSession {
+  pushDevices PushDevice[]
   id String @id @default(uuid()) @db.Uuid
   userId String @db.Uuid
   tokenHash String @unique @db.Char(64)
@@ -170,6 +178,7 @@ enum TripStatus {
   EN_CURSO
   COMPLETADO
   CANCELADO
+  INTERRUMPIDO
 }
 model DriverEligibility {
   verificationSource String @default("SELF_DECLARED") @db.VarChar(32)
@@ -185,6 +194,7 @@ model DriverEligibility {
   reviewedBy User? @relation("DriverLicenseReviewer", fields: [reviewedById], references: [id])
 }
 model Vehicle {
+  energyProfile Json?
   id String @id @default(uuid()) @db.Uuid
   ownerId String @db.Uuid
   plate String @unique @db.VarChar(6)
@@ -222,6 +232,8 @@ model TripRuleDefinition {
   selections TripRuleSelection[]
 }
 model Trip {
+  environmentInput Json?
+  environmentSnapshot Json?
   id String @id @default(uuid()) @db.Uuid
   driverId String @db.Uuid
   vehicleId String @db.Uuid
@@ -239,6 +251,7 @@ model Trip {
   occupiedSeats Int @default(0)
   version Int @default(0)
   status TripStatus @default(PROGRAMADO)
+  terminationReason CancellationReason?
   startedAt DateTime? @db.Timestamptz(3)
   finishedAt DateTime? @db.Timestamptz(3)
   providesHelmet Boolean?
@@ -259,7 +272,12 @@ model Trip {
   ratings TripRating[]
   participationGroups TripGroup[]
   expenseEstimate TripExpenseEstimate?
+  suggestedContributionCop Int?
+  compensationMethods CompensationMethod[] @default([])
+  safetyIncidents TripIncident[]
+  trackingSharedAt DateTime? @db.Timestamptz(3)
   driverPosition TripDriverPosition?
+  recurringOccurrence RecurringOccurrence?
   @@index([driverId, departureAt, expectedEndAt])
   @@index([status, departureAt, id])
 }
@@ -311,16 +329,18 @@ model RecommendationJob {
   @@index([state, availableAt])
 }
 model TripNotification {
+  pushDeliveries PushDelivery[]
   id String @id @default(uuid()) @db.Uuid
   recipientId String @db.Uuid
-  tripId String @db.Uuid
+  tripId String? @db.Uuid
   kind String @default("TRIP_MATCH") @db.VarChar(32)
+  eventKey String @default("") @db.VarChar(80)
   matchType RecommendationMatchType?
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   readAt DateTime? @db.Timestamptz(3)
   recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  @@unique([recipientId, tripId, kind])
+  trip Trip? @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  @@unique([recipientId, tripId, kind, eventKey], map: "TripNotification_event_key")
   @@index([recipientId, createdAt, id])
   @@index([tripId])
 }
@@ -398,6 +418,7 @@ enum ReservationStatus {
   CANCELLED
 }
 model Reservation {
+  mobilityAlternative Json?
   id String @id @default(uuid()) @db.Uuid
   tripId String @db.Uuid
   requesterId String @db.Uuid
@@ -405,6 +426,7 @@ model Reservation {
   dropoffId String @db.Uuid
   quantity Int
   status ReservationStatus @default(PENDING)
+  withdrawalReason CancellationReason?
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   confirmedAt DateTime? @db.Timestamptz(3)
@@ -417,6 +439,7 @@ model Reservation {
   members ReservationMember[]
   tripGroupConsent TripGroupMember?
   boardingPass ReservationBoardingPass?
+  compensation TripCompensation?
   @@index([tripId, status, createdAt])
   @@index([requesterId, createdAt])
 }
@@ -438,6 +461,7 @@ model ReservationMember {
 }
 
 enum PickupProposalStatus {
+  EXPIRED
   PENDING
   ACCEPTED
   REJECTED
@@ -483,6 +507,64 @@ model TripRating {
   @@unique([tripId, raterId, rateeId])
   @@index([rateeId, capacity])
   @@index([raterId])
+}
+
+enum CompensationMethod {
+  NEQUI
+  DAVIPLATA
+  CASH
+}
+
+enum CompensationStatus {
+  DECLARED
+  ACKNOWLEDGED
+  DISPUTED
+  CANCELLED
+}
+
+model TripCompensation {
+  reservationId String @id @db.Uuid
+  method CompensationMethod
+  amountCop Int
+  status CompensationStatus @default(DECLARED)
+  declaredAt DateTime @default(now()) @db.Timestamptz(3)
+  resolvedAt DateTime? @db.Timestamptz(3)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+}
+
+model EmergencyContact {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @db.Uuid
+  name String @db.VarChar(80)
+  phone String @db.VarChar(16)
+  relationship String? @db.VarChar(40)
+  available Boolean @default(true)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  @@index([ownerId, id])
+}
+
+enum TripIncidentKind {
+  TRIP_PROBLEM
+  TERMS
+  VEHICLE
+  ECONOMIC
+  TECHNICAL
+  ROAD_SAFETY
+  CONDUCT
+  OTHER
+}
+
+model TripIncident {
+  id String @id @default(uuid()) @db.Uuid
+  tripId String @db.Uuid
+  reporterId String @db.Uuid
+  kind TripIncidentKind
+  description String @db.VarChar(1000)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Restrict)
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Restrict)
+  @@index([reporterId, tripId, createdAt])
+  @@index([reporterId, createdAt, id])
 }
 
 model TripExpenseEstimate {
@@ -536,4 +618,86 @@ model TripDriverPosition {
   sharedAt DateTime @db.Timestamptz(3)
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
   @@index([sharedAt])
+}
+
+enum RecurringTripState {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+model RecurringTrip {
+  id String @id @default(uuid()) @db.Uuid
+  driverId String @db.Uuid
+  name String @db.VarChar(80)
+  startsOn DateTime @db.Date
+  endsOn DateTime @db.Date
+  time String @db.VarChar(5)
+  weekdays Int[]
+  template Json
+  routeSnapshot Json
+  state RecurringTripState @default(ACTIVE)
+  nextScanAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  driver User @relation(fields: [driverId], references: [id], onDelete: Restrict)
+  occurrences RecurringOccurrence[]
+  @@index([state, nextScanAt])
+  @@index([driverId, updatedAt])
+}
+
+model RecurringOccurrence {
+  scheduleId String @db.Uuid
+  date DateTime @db.Date
+  departureAt DateTime @db.Timestamptz(3)
+  tripId String? @unique @db.Uuid
+  failure String? @db.VarChar(240)
+  schedule RecurringTrip @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
+  trip Trip? @relation(fields: [tripId], references: [id], onDelete: Restrict)
+  @@id([scheduleId, date])
+}
+
+model AccountDeletionRequest {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  requestedAt DateTime @default(now()) @db.Timestamptz(3)
+  withdrawnAt DateTime? @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@index([userId, requestedAt])
+}
+
+enum CancellationReason {
+  DRIVER_UNAVAILABLE
+  VEHICLE_ISSUE
+  SAFETY
+  CHANGE_OF_PLANS
+  ACCOUNT_CLOSED
+  OTHER
+}
+
+model PushDevice {
+  id String @id @default(uuid()) @db.Uuid
+  token String @unique @db.VarChar(160)
+  installationHash String @db.Char(64)
+  sessionId String @db.Uuid
+  platform String @db.VarChar(8)
+  registeredAt DateTime @default(now()) @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  session AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  deliveries PushDelivery[]
+  @@index([sessionId])
+}
+
+model PushDelivery {
+  noticeId String @db.Uuid
+  deviceId String @db.Uuid
+  stage String @default("PENDING") @db.VarChar(20)
+  ticketId String? @db.VarChar(100)
+  availableAt DateTime @default(now()) @db.Timestamptz(3)
+  leaseUntil DateTime? @db.Timestamptz(3)
+  attempts Int @default(0)
+  notice TripNotification @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  device PushDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  @@id([noticeId, deviceId])
+  @@index([stage, availableAt])
+  @@index([deviceId])
 }

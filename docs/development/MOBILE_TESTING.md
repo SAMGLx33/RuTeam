@@ -61,13 +61,13 @@ printf '\n'
 export AUTH_FIXTURE_PASSWORD
 TEST_DATABASE_URL="$(node --env-file=.env --input-type=module -e '
   const url = new URL(process.env.TEST_DATABASE_URL);
-  if (url.hostname !== "127.0.0.1" || url.port !== "55432" || url.pathname !== "/ruteam_test")
+  if (url.hostname !== "127.0.0.1" || !["5432", "55432"].includes(url.port) || !/^\/ruteam(?:_[a-z0-9]+)*_test$/.test(url.pathname))
     process.exit(1);
   url.pathname = "/ruteam_mobile_test";
   process.stdout.write(url.href);
 ')" || exit 1
 export TEST_DATABASE_URL
-npm run db:generate && npm run db:test:setup &&
+npm run db:generate && DEMO_MODE=true VERIFICATION_PROVIDER=demo npm run db:test:setup &&
 NODE_ENV=development DEMO_MODE=true VERIFICATION_PROVIDER=demo \
   CORS_ORIGINS="http://${RUTEAM_QA_ADDRESS}:8081" PORT=3000 \
   DATABASE_URL="$TEST_DATABASE_URL" npm run dev:api
@@ -120,3 +120,26 @@ flujos observados y resultado de cada fila. Los tokens, QR de acceso, enlaces
 de correo, números de serie y datos de cuenta quedan fuera de las capturas.
 Detén los procesos que iniciaste y solicita retirar las reglas temporales
 cuando termine la prueba.
+
+## Configuración de la VM del cierre
+
+`systemd-detect-virt` informó `oracle`. Se confirmó interfaz `enp0s3` en
+`10.0.2.15/24` con salida por `10.0.2.2`. PostgreSQL del contenedor de RuTeam
+publica sólo en `127.0.0.1:5432`. Antes de ejecutar el ejemplo de la guía,
+valida la URL local y usa su puerto real (5432 en esta VM o 55432 en el
+laboratorio anterior). Ejecuta el seed con `DEMO_MODE=true VERIFICATION_PROVIDER=demo`
+y credenciales únicas. La dirección del anfitrión alcanzable desde el teléfono
+y el dispositivo físico están pendientes.
+
+Añade al recorrido el perfil y su contacto privado, la confirmación del
+marcador, resumen y última ubicación, registro privado de incidencia,
+calificación posviaje y los métodos y estados de compensación. Captura los
+estados sin incluir números telefónicos, coordenadas, enlaces ni credenciales.
+
+El ensayo final preparó `ruteam_cierre_mobile_test` con credenciales sintéticas
+exclusivas. Nest en el puerto 3196 y Metro en el 8186 devolvieron HTTP 200
+desde `10.0.2.15` dentro de la VM. El manifiesto Android anunció esa IPv4
+tanto en la API como en el bundle. Se cerraron ambos procesos del ensayo.
+La IP del anfitrión y la conexión desde un teléfono quedan para la prueba
+física. Para esa prueba, crea la ruta privada descrita arriba y genera
+credenciales propias al sembrar la base de QA.

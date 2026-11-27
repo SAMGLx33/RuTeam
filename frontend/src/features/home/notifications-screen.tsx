@@ -15,6 +15,109 @@ import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
 import { tripDate } from '../trips/trip-feed';
 
+const eventNotice = {
+  PARTICIPATION_CONFIRMED: {
+    title: 'Tu plaza está confirmada',
+    action: 'Mis participaciones',
+    href: '/my-reservations',
+  },
+  PASSENGER_JOINED: {
+    title: 'Nueva participación en tu viaje',
+    action: 'Mis viajes publicados',
+    href: '/my-trips',
+  },
+  PASSENGER_WITHDREW: {
+    title: 'Un pasajero retiró su participación',
+    action: 'Mis viajes publicados',
+    href: '/my-trips',
+  },
+  PICKUP_PROPOSED: {
+    title: 'Nueva propuesta de recogida',
+    action: 'Mis viajes publicados',
+    href: '/my-trips',
+  },
+  PICKUP_ACCEPTED: {
+    title: 'Tu propuesta de recogida fue aceptada',
+    action: 'Mis participaciones',
+    href: '/my-reservations',
+  },
+  PICKUP_REJECTED: {
+    title: 'Tu propuesta de recogida fue rechazada',
+    action: 'Mis participaciones',
+    href: '/my-reservations',
+  },
+  TRIP_CANCELLED: {
+    title: 'El conductor canceló el viaje',
+    action: 'Ver historial',
+    href: '/my-reservations',
+  },
+  TRIP_STARTED: {
+    title: 'Tu viaje inició',
+    action: 'Mis participaciones',
+    href: '/my-reservations',
+  },
+  PICKUP_NEXT: {
+    title: 'Recogida actual o siguiente en el recorrido',
+    action: 'Mis participaciones',
+    href: '/my-reservations',
+  },
+  TRIP_FINISHED: {
+    title: 'El viaje finalizó',
+    action: 'Abrir viajes',
+    href: '/',
+  },
+  COMPENSATION_DECLARED: {
+    title: 'Un pasajero declaró una compensación',
+    action: 'Historial económico',
+    href: '/economic-history',
+  },
+  RECURRENCE_PAUSED: {
+    title: 'Pausaste una recurrencia',
+    action: 'Viajes recurrentes',
+    href: '/recurring-trips',
+  },
+  OCCURRENCE_FAILED: {
+    title: 'Una fecha recurrente está pendiente de publicar',
+    action: 'Revisar fechas',
+    href: '/recurring-trips',
+  },
+  OCCURRENCE_PUBLISHED: {
+    title: 'Se publicó una fecha de tu recurrencia',
+    action: 'Viajes recurrentes',
+    href: '/recurring-trips',
+  },
+  COMPENSATION_DISPUTED: {
+    title: 'Se registró una discrepancia en tu aporte',
+    action: 'Historial económico',
+    href: '/economic-history',
+  },
+  TRIP_INTERRUPTED: {
+    title: 'El conductor interrumpió el viaje',
+    action: 'Ver historial',
+    href: '/my-reservations',
+  },
+  INCIDENT_RECORDED: {
+    title: 'Guardaste una incidencia privada',
+    action: 'Mis incidencias',
+    href: '/incidents',
+  },
+  ACCOUNT_REACTIVATED: {
+    title: 'Reactivaste tu cuenta',
+    action: 'Cuenta y privacidad',
+    href: '/account-settings',
+  },
+  ELIGIBILITY_CHANGED: {
+    title: 'Cambió tu elegibilidad',
+    action: 'Ver perfil',
+    href: '/profile',
+  },
+  COMPENSATION_ACKNOWLEDGED: {
+    title: 'El conductor reconoció tu compensación',
+    action: 'Historial económico',
+    href: '/economic-history',
+  },
+} as const;
+
 function notificationContent(item: TripNotificationView): {
   title: string;
   action: string;
@@ -56,6 +159,42 @@ function notificationContent(item: TripNotificationView): {
         href: { pathname: '/trip/[id]', params: { id: item.tripId } },
         unavailable: 'El viaje ya no tiene disponibilidad.',
       };
+    default: {
+      if (item.kind === 'PICKUP_ACCEPTED' || item.kind === 'PICKUP_REJECTED')
+        return {
+          title: eventNotice[item.kind].title,
+          action: 'Abrir viaje',
+          href: { pathname: '/trip/[id]', params: { id: item.tripId } },
+          unavailable: 'El viaje ya no está abierto a nuevas recogidas.',
+        };
+      const { title, action, href } = eventNotice[item.kind];
+      if (
+        item.kind === 'COMPENSATION_DECLARED' ||
+        item.kind === 'COMPENSATION_ACKNOWLEDGED' ||
+        item.kind === 'COMPENSATION_DISPUTED'
+      ) {
+        return {
+          title,
+          action,
+          href: {
+            pathname: '/economic-history',
+            params: {
+              tripId: item.tripId,
+              role:
+                item.kind === 'COMPENSATION_DECLARED' ? 'DRIVER' : 'PASSENGER',
+            },
+          },
+          unavailable:
+            'El historial económico de este viaje ya no está disponible.',
+        };
+      }
+      return {
+        title,
+        action,
+        href,
+        unavailable: 'La acción de este aviso ya no está disponible.',
+      };
+    }
   }
 }
 
@@ -84,6 +223,9 @@ export function NotificationsScreen() {
   const items = query.data?.pages.flatMap((page) => page.items) ?? [];
   return (
     <ProtectedPage title="Notificaciones">
+      <Link href="/notification-settings" style={s.link}>
+        Preferencias de avisos
+      </Link>
       <Link href="/chat" style={s.link}>
         Ver mensajes
       </Link>
@@ -97,8 +239,8 @@ export function NotificationsScreen() {
         <View style={s.section}>
           <Text style={s.title}>Aún no tienes avisos</Text>
           <Text style={s.text}>
-            Verás aquí las nuevas publicaciones compatibles con tus zonas y
-            horarios.
+            Aquí aparecen las novedades de tus viajes y las coincidencias con
+            tus preferencias.
           </Text>
           <Link href="/mobility" style={s.link}>
             Configurar mis preferencias

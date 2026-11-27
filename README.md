@@ -106,3 +106,20 @@ calificaciones por capacidad, grupos con consentimiento, QR de abordaje,
 ubicación voluntaria, contexto de seguridad y estimaciones privadas en COP.
 Consulta la [prueba física Expo Go](docs/development/MOBILE_TESTING.md) para
 verificar permisos y acceso a la LAN.
+
+## Cierre funcional del 26/11/2026
+
+El corte local incorpora aporte sugerido en COP, registros personales de
+compensación, contactos e incidencias privadas y avisos transaccionales del
+ciclo de vida. Consulta la [preparación de entrega](docs/reviews/RELEASE_READINESS.md),
+el [contrato HTTP](docs/development/API.md) y la [guía de QA físico](docs/development/MOBILE_TESTING.md).
+
+## Continuidad del producto
+
+Inicio y Perfil enlazan las estadísticas mensuales, la cuenta y el historial económico. Conductor puede guardar y gestionar un recorrido recurrente desde la publicación. Mis viajes y Mis participaciones incluyen retiro, cancelación programada e interrupción segura. El historial personal de incidencias permite revisar y compartir un resumen privado.
+
+[API y contratos](docs/development/API.md#endpoints-de-continuidad) · [Configuración](docs/development/SETUP.md#ejecución-de-la-continuidad) · [Relevos](docs/handoffs/README.md#continuidad-del-producto)
+
+## Evolución ambiental y comunicación
+
+Inicio abre Agenda y Mis actividades. Los viajes y participaciones enlazan un resumen con contexto de operación, seguimiento y opciones posviaje. En Vehículos se puede declarar consumo para las estadísticas de movilidad. Las pantallas se actualizan por SSE y conservan las consultas HTTP. [Metodología y factores](docs/development/ENVIRONMENTAL_METHOD.md) · [Tiempo real](docs/development/REALTIME.md) · [Avisos](docs/development/NOTIFICATION_SETTINGS.md)

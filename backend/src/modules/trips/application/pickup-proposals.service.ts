@@ -50,6 +50,8 @@ export class PickupProposalsService {
     if (point.label.length < 2)
       throw new BadRequestException('Escribe una referencia pública');
     return this.repository.withTrip(tripId, async (unit) => {
+      if (!(await unit.activeRequester(actorId)))
+        throw new ForbiddenException('La cuenta está desactivada');
       const { trip, stops, geometry } = await openRoute(unit);
       if (trip.driverId === actorId)
         throw new ForbiddenException('El conductor ya define sus paradas');
@@ -66,7 +68,7 @@ export class PickupProposalsService {
         throw new ConflictException(
           'El viaje alcanzó su límite de propuestas pendientes',
         );
-      return proposalView(await unit.create(actorId, point));
+      return proposalView(await unit.create(actorId, point, trip.driverId));
     });
   }
 

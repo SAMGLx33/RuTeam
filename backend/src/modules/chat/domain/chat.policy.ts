@@ -3,7 +3,8 @@ export const chatRetentionMs = 24 * 60 * 60 * 1000;
 type ChatAccess = 'WRITE' | 'READ' | 'DENIED';
 interface ChatTrip {
   driverId: string;
-  status: 'PROGRAMADO' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO';
+  status:
+    'PROGRAMADO' | 'EN_CURSO' | 'COMPLETADO' | 'CANCELADO' | 'INTERRUMPIDO';
   finishedAt: Date | null;
 }
 
@@ -22,7 +23,8 @@ export function chatAccess(
   const isParticipant = !!participation && !participation.noShowAt;
   if (trip.status === 'CANCELADO' || (!isDriver && !isParticipant))
     return 'DENIED';
-  if (trip.status !== 'COMPLETADO') return 'WRITE';
+  if (trip.status !== 'COMPLETADO' && trip.status !== 'INTERRUMPIDO')
+    return 'WRITE';
   if (
     !trip.finishedAt ||
     trip.finishedAt.getTime() + chatRetentionMs <= now.getTime()

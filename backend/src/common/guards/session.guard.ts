@@ -7,19 +7,22 @@ import {
 export interface AuthenticatedRequest extends Request {
   principal: SessionPrincipal;
 }
+export function sessionCredential(req: Request) {
+  const bearer = req.headers.authorization?.match(
+    /^Bearer ([A-Za-z0-9_-]+)$/,
+  )?.[1];
+  const cookies = req.cookies as Record<string, unknown> | undefined;
+  const cookie = cookies?.ruteam_session;
+  return bearer ?? (typeof cookie === 'string' ? cookie : undefined);
+}
 @Injectable()
 export class SessionGuard implements CanActivate {
   protected requiresActiveMembership = true;
   constructor(private readonly auth: AuthService) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const bearer = req.headers.authorization?.match(
-      /^Bearer ([A-Za-z0-9_-]+)$/,
-    )?.[1];
-    const cookies = req.cookies as Record<string, unknown> | undefined;
-    const cookie = cookies?.ruteam_session;
     req.principal = await this.auth.authenticate(
-      bearer ?? (typeof cookie === 'string' ? cookie : undefined),
+      sessionCredential(req),
       this.requiresActiveMembership,
     );
     return true;

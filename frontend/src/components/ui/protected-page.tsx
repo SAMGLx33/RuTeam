@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import type { Account } from '@ruteam/contracts';
 import { useSession } from '../../providers/session-provider';
 import { colors } from '../../theme/tokens';
@@ -49,11 +49,13 @@ export function ProtectedPage({
   children,
   requires,
   allowOnboarding = false,
+  scrollRef,
 }: {
   title: string;
   children: ReactNode;
   requires?: 'driver' | 'driverAccess';
   allowOnboarding?: boolean;
+  scrollRef?: RefObject<ScrollView | null>;
 }) {
   const session = useSession();
   const path = usePathname();
@@ -125,6 +127,7 @@ export function ProtectedPage({
             </View>
           )}
           <ScrollView
+            ref={scrollRef}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.page}
           >

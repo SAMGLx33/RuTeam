@@ -1,11 +1,13 @@
+import { EconomicTerms } from '../expenses/economic-terms';
 import { ReputationLabel } from '../ratings/reputation-label';
 import { TripSafetyLink } from '../safety/trip-safety-link';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   ReservationView,
+  CancellationReason,
   TripAction,
   TripSummary,
 } from '@ruteam/contracts';
@@ -19,7 +21,64 @@ import { useSession } from '../../providers/session-provider';
 import { ReservationSummary } from './reservations-screen';
 import { RoutePreview, travelTime, tripStatusLabel } from './route-preview';
 import { DriverBoardingScanner } from '../boarding/boarding-pass';
+import { Choice } from './itinerary-form';
+import { cancellationLabel, CancellationReasons } from './cancellation-reasons';
 import { DriverPickupProposals } from './pickup-proposals';
+
+function DuplicateTrip({ trip }: { trip: TripSummary }) {
+  const { user } = useSession();
+  const client = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [departure, setDeparture] = useState('');
+  const mutation = useMutation({
+    mutationFn: () =>
+      api<TripSummary>('/trips/' + trip.id + '/duplicate', {
+        method: 'POST',
+        body: { departureAt: departure.replace(' ', 'T') + ':00-05:00' },
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['my-trips'] }),
+  });
+  if (!user?.capabilities.driver || !trip.itinerary) return null;
+  return open ? (
+    <View style={s.section}>
+      <Text style={s.text}>
+        Elige otra salida. El recorrido y las condiciones se reutilizan para una
+        publicación independiente.
+      </Text>
+      <TextInput
+        accessibilityLabel="Nueva salida Colombia (AAAA-MM-DD HH:mm)"
+        placeholder="AAAA-MM-DD HH:mm"
+        value={departure}
+        onChangeText={setDeparture}
+        style={{ minHeight: 48, borderWidth: 1, borderRadius: 8, padding: 10 }}
+      />
+      <Button
+        title="Publicar copia"
+        disabled={
+          mutation.isPending ||
+          !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(departure)
+        }
+        onPress={() => mutation.mutate()}
+      />
+      <Button
+        title="Cerrar duplicación"
+        secondary
+        disabled={mutation.isPending}
+        onPress={() => setOpen(false)}
+      />
+      {mutation.error && (
+        <Text accessibilityRole="alert" style={s.error}>
+          {mutation.error.message}
+        </Text>
+      )}
+      {mutation.isSuccess && (
+        <Text accessibilityLiveRegion="polite">Copia publicada.</Text>
+      )}
+    </View>
+  ) : (
+    <Button title="Duplicar viaje" secondary onPress={() => setOpen(true)} />
+  );
+}
 
 function DriverParticipants({ trip }: { trip: TripSummary }) {
   const client = useQueryClient();
@@ -76,6 +135,21 @@ function DriverParticipants({ trip }: { trip: TripSummary }) {
             {item.requesterName ?? 'Estudiante RuTeam'}
           </Text>
           <ReservationSummary item={item} />
+          {item.tripStatus === 'COMPLETADO' &&
+            item.boardedAt &&
+            !item.noShowAt &&
+            item.quantity === 1 &&
+            !!item.economics?.suggestedContributionCop && (
+              <Link
+                href={{
+                  pathname: '/compensations/[id]',
+                  params: { id: item.id },
+                }}
+                style={s.link}
+              >
+                Ver compensación
+              </Link>
+            )}
           {item.passengerReputation && (
             <ReputationLabel summary={item.passengerReputation} />
           )}
@@ -129,10 +203,20 @@ function DriverParticipants({ trip }: { trip: TripSummary }) {
   );
 }
 
-function TripCard({ trip }: { trip: TripSummary }) {
+export function TripCard({
+  trip,
+  operation = false,
+}: {
+  trip: TripSummary;
+  operation?: boolean;
+}) {
   const client = useQueryClient();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(operation);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [interrupt, setInterrupt] = useState(false);
+  const [safe, setSafe] = useState(false);
+  const [reason, setReason] =
+    useState<Exclude<CancellationReason, 'ACCOUNT_CLOSED'>>();
   const stops = trip.itinerary?.stops ?? [];
   const currentStop = [...stops].reverse().find((stop) => stop.reachedAt);
   const nextStop = stops.find((stop) => !stop.reachedAt);
@@ -141,15 +225,28 @@ function TripCard({ trip }: { trip: TripSummary }) {
       api(`/trips/${trip.id}/stops/${stopId}/reach`, { method: 'POST' }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ['my-trips'] });
+      void client.invalidateQueries({ queryKey: ['trip-operation'] });
       void client.invalidateQueries({ queryKey: ['trip-detail', trip.id] });
     },
   });
   const change = useMutation({
     mutationFn: (action: TripAction) =>
-      api(`/trips/${trip.id}/transition`, { method: 'POST', body: { action } }),
+      api(`/trips/${trip.id}/transition`, {
+        method: 'POST',
+        body: {
+          action,
+          reason:
+            action === 'CANCEL' || action === 'INTERRUPT' ? reason : undefined,
+          confirmedSafe: action === 'INTERRUPT' ? safe : undefined,
+        },
+      }),
     onSuccess: () => {
       setConfirmCancel(false);
+      setInterrupt(false);
+      setSafe(false);
+      setReason(undefined);
       void client.invalidateQueries({ queryKey: ['my-trips'] });
+      void client.invalidateQueries({ queryKey: ['trip-operation'] });
       void client.invalidateQueries({
         queryKey: ['driver-participations', trip.id],
       });
@@ -157,7 +254,7 @@ function TripCard({ trip }: { trip: TripSummary }) {
     },
   });
   return (
-    <View style={s.section}>
+    <View style={s.section} testID={`driver-trip-${trip.id}`}>
       <Text style={s.title}>
         {trip.origin.label} → {trip.destination.name}
       </Text>
@@ -177,6 +274,11 @@ function TripCard({ trip }: { trip: TripSummary }) {
         {trip.occupancy === 'LLENO' ? 'Completo' : 'Con plazas'} ·{' '}
         {trip.availableSeats}/{trip.offeredSeats} plazas
       </Text>
+      {trip.terminationReason && (
+        <Text style={s.text}>
+          Motivo · {cancellationLabel[trip.terminationReason]}
+        </Text>
+      )}
       <Text style={s.text}>
         {trip.vehicle.plate} · duración declarada{' '}
         {trip.estimatedDurationMinutes} min
@@ -191,6 +293,16 @@ function TripCard({ trip }: { trip: TripSummary }) {
       <Text style={s.text}>
         {trip.rules.map((rule) => rule.description).join(' · ')}
       </Text>
+      <EconomicTerms terms={trip.economics} />
+      {expanded && <DuplicateTrip trip={trip} />}
+      {expanded && trip.itinerary && (
+        <Link
+          href={{ pathname: '/publish', params: { sourceTripId: trip.id } }}
+          style={s.link}
+        >
+          Revisar y reutilizar publicación
+        </Link>
+      )}
       {trip.itinerary ? (
         <Button
           title={
@@ -255,6 +367,7 @@ function TripCard({ trip }: { trip: TripSummary }) {
             Se cancelarán las participaciones del viaje y se conservará su
             historial.
           </Text>
+          <CancellationReasons reason={reason} choose={setReason} asDriver />
           <Button
             title="Confirmar cancelación del viaje"
             disabled={change.isPending}
@@ -264,9 +377,23 @@ function TripCard({ trip }: { trip: TripSummary }) {
             title="Conservar viaje"
             secondary
             disabled={change.isPending}
-            onPress={() => setConfirmCancel(false)}
+            onPress={() => {
+              setConfirmCancel(false);
+              setReason(undefined);
+            }}
           />
         </>
+      )}
+      {(trip.status === 'COMPLETADO' || trip.status === 'INTERRUMPIDO') && (
+        <Link
+          href={{
+            pathname: '/incidents/[tripId]',
+            params: { tripId: trip.id },
+          }}
+          style={s.link}
+        >
+          Incidencias privadas
+        </Link>
       )}
       {trip.status === 'COMPLETADO' && (
         <Link
@@ -276,8 +403,58 @@ function TripCard({ trip }: { trip: TripSummary }) {
           Calificar participantes
         </Link>
       )}
+      {trip.status === 'EN_CURSO' &&
+        (interrupt ? (
+          <View style={s.section}>
+            <Text style={s.title}>Interrumpir el viaje</Text>
+            <Text style={s.text}>
+              Detén el vehículo en un lugar seguro. Informa a las personas a
+              bordo y coordina su descenso antes de confirmar.
+            </Text>
+            <CancellationReasons reason={reason} choose={setReason} asDriver />
+            <Choice
+              label="El vehículo está detenido y coordiné el descenso seguro"
+              checkbox
+              checked={safe}
+              onPress={() => setSafe(!safe)}
+            />
+            <Button
+              title="Confirmar interrupción"
+              disabled={!reason || !safe || change.isPending}
+              onPress={() => change.mutate('INTERRUPT')}
+            />
+            <Button
+              title="Volver al viaje activo"
+              secondary
+              disabled={change.isPending}
+              onPress={() => {
+                setInterrupt(false);
+                setSafe(false);
+                setReason(undefined);
+              }}
+            />
+          </View>
+        ) : (
+          <Button
+            title="Interrumpir viaje"
+            secondary
+            disabled={change.isPending}
+            onPress={() => setInterrupt(true)}
+          />
+        ))}
       {trip.status === 'EN_CURSO' && <TripSafetyLink tripId={trip.id} />}
-      {trip.status === 'EN_CURSO' && (
+      {!operation && (
+        <Link
+          href={{
+            pathname: '/trip-operation/[tripId]',
+            params: { tripId: trip.id },
+          }}
+          style={s.link}
+        >
+          Operación y resumen del viaje
+        </Link>
+      )}
+      {trip.status === 'EN_CURSO' && !interrupt && (
         <>
           {currentStop && (
             <Text style={s.text}>
@@ -314,6 +491,7 @@ export function MyTripsScreen() {
     queryKey: ['my-trips', user?.id],
     queryFn: () => api<TripSummary[]>('/trips/my'),
     enabled: !!user?.capabilities.driverAccess,
+    refetchInterval: 30000,
   });
   return (
     <ProtectedPage title="Mis viajes publicados" requires="driverAccess">
@@ -322,6 +500,15 @@ export function MyTripsScreen() {
           Publicar otro viaje
         </Link>
       )}
+      <Link
+        href={{ pathname: '/economic-history', params: { role: 'DRIVER' } }}
+        style={s.link}
+      >
+        Historial económico de mis viajes
+      </Link>
+      <Link href="/recurring-trips" style={s.link}>
+        Viajes recurrentes
+      </Link>
       {trips.isPending && <Text>Cargando viajes…</Text>}
       {trips.error && (
         <Text accessibilityRole="alert" style={s.error}>

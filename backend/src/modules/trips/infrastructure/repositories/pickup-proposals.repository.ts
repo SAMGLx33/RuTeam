@@ -5,6 +5,8 @@ import type {
 } from '@ruteam/contracts';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 import type { Prisma } from '../../../../generated/prisma/client.js';
+import { lockParticipationChanges } from '../../../reservations/infrastructure/participation-lock.js';
+import { recordTripNotice } from '../../../mobility/infrastructure/trip-notices.js';
 import { requeueRecommendation } from '../../../mobility/infrastructure/repositories/requeue-recommendation.js';
 
 const withRequester = {
@@ -37,28 +39,46 @@ function proposalUnit(tx: Prisma.TransactionClient, tripId: string) {
         where: { id: tripId },
         include: { stops: { orderBy: { position: 'asc' } } },
       }),
+    activeRequester: (id: string) =>
+      tx.user.count({ where: { id, disabledAt: null } }),
     pendingFor: (requesterId: string) =>
       tx.pickupProposal.findFirst({
         where: { tripId, requesterId, status: 'PENDING' },
       }),
     pendingCount: () =>
       tx.pickupProposal.count({ where: { tripId, status: 'PENDING' } }),
-    create: (requesterId: string, point: PickupProposalInput) =>
-      tx.pickupProposal.create({
+    create: async (
+      requesterId: string,
+      point: PickupProposalInput,
+      driverId: string,
+    ) => {
+      const row = await tx.pickupProposal.create({
         data: { ...point, tripId, requesterId },
         include: withRequester,
-      }),
+      });
+      await recordTripNotice(tx, tripId, 'PICKUP_PROPOSED', [driverId], row.id);
+      return row;
+    },
     find: (id: string) =>
       tx.pickupProposal.findFirst({
         where: { id, tripId },
         include: withRequester,
       }),
-    reject: (id: string, decidedAt: Date) =>
-      tx.pickupProposal.update({
+    reject: async (id: string, decidedAt: Date) => {
+      const row = await tx.pickupProposal.update({
         where: { id },
         data: { status: 'REJECTED', decidedAt },
         include: withRequester,
-      }),
+      });
+      await recordTripNotice(
+        tx,
+        tripId,
+        'PICKUP_REJECTED',
+        [row.requesterId],
+        id,
+      );
+      return row;
+    },
     accept: async (
       row: StoredProposal,
       position: number,
@@ -94,6 +114,13 @@ function proposalUnit(tx: Prisma.TransactionClient, tripId: string) {
         },
       });
       await requeueRecommendation(tx, tripId);
+      await recordTripNotice(
+        tx,
+        tripId,
+        'PICKUP_ACCEPTED',
+        [row.requesterId],
+        row.id,
+      );
       return tx.pickupProposal.update({
         where: { id: row.id },
         data: { status: 'ACCEPTED', decidedAt, acceptedStopId: stop.id },
@@ -114,6 +141,7 @@ export class PickupProposalsRepository {
     fn: (unit: ProposalUnit) => Promise<T>,
   ): Promise<T> {
     return this.db.$transaction(async (tx) => {
+      await lockParticipationChanges(tx);
       const rows = await tx.$queryRaw<
         { id: string }[]
       >`SELECT id FROM "Trip" WHERE id = ${tripId}::uuid FOR UPDATE`;

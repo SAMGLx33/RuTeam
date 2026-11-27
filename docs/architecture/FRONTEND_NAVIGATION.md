@@ -99,3 +99,9 @@ Expo Go físico. Registrar pantallas o flujos aún pendientes, sin «listo» glo
   controles explícitos de compartir o confirmar una llamada.
 - `/expenses/[tripId]` permite al conductor consultar y editar su estimación privada.
 - Mis viajes y Mis participaciones alojan escáner nativo, pase QR y el abordaje manual.
+
+La publicación revisa el cálculo de gastos antes de confirmar. El detalle y el
+grupo reutilizan la presentación de condiciones. Desde participaciones propias
+o participantes del viaje completado se llega a `/compensations/[id]`.
+Perfil incluye contactos de emergencia. Seguridad activa e historial abren
+`/incidents/[tripId]` con consulta del autor y acciones autorizadas por la API.

@@ -1,3 +1,6 @@
+import type { EmissionInput } from '../../../mobility/domain/emissions.js';
+import type { TripEconomicsPreview } from '@ruteam/contracts';
+import { publicEconomicTerms } from '../../../expenses/domain/expense-policy.js';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 import type { Prisma } from '../../../../generated/prisma/client.js';
@@ -39,7 +42,12 @@ export function presentStops(trip: Pick<StoredTrip, 'stops'>): RouteStop[] {
     instructions: stop.instructions,
   }));
 }
-export function presentItinerary(trip: StoredTrip): TripItinerary | null {
+export function presentItinerary(
+  trip: Pick<
+    StoredTrip,
+    'stops' | 'routeGeometry' | 'routeDescription' | 'routeDistanceMeters'
+  >,
+): TripItinerary | null {
   if (!trip.routeDescription) return null;
   const stops = presentStops(trip);
   return {
@@ -79,9 +87,11 @@ function present(trip: StoredTrip): TripSummary {
     occupiedSeats: trip.occupiedSeats,
     availableSeats: trip.offeredSeats - trip.occupiedSeats,
     status: trip.status,
+    terminationReason: trip.terminationReason,
     occupancy: Viaje.ocupacion(trip.offeredSeats, trip.occupiedSeats),
     locationMode: trip.locationMode,
     providesHelmet: trip.providesHelmet,
+    economics: publicEconomicTerms(trip),
     stops: trip.stops
       .filter(
         (stop) =>
@@ -131,12 +141,17 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
       end: Date,
       ruleIds: string[],
       itinerary: PlannedItinerary,
+      economics: TripEconomicsPreview,
+      energy: EmissionInput | null,
     ) => {
       const origin = itinerary.stops[0];
       return present(
         await tx.trip.create({
           data: {
             driverId,
+            environmentInput: energy
+              ? (energy as unknown as Prisma.InputJsonObject)
+              : undefined,
             vehicleId: data.vehicleId,
             destinationId: itinerary.stops.at(-1)?.campusPointId,
             routeDescription: itinerary.description,
@@ -152,6 +167,11 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
             expectedEndAt: end,
             estimatedDurationMinutes: data.estimatedDurationMinutes,
             offeredSeats: data.offeredSeats,
+            suggestedContributionCop: economics.suggestedContributionCop,
+            compensationMethods: economics.compensationMethods,
+            expenseEstimate: economics.estimate
+              ? { create: economics.estimate }
+              : undefined,
             providesHelmet: data.providesHelmet ?? null,
             stops: { create: itinerary.stops },
             rules: { create: ruleIds.map((ruleId) => ({ ruleId })) },
@@ -193,6 +213,7 @@ export function presentAvailable(
     estimatedDurationMinutes: trip.estimatedDurationMinutes,
     availableSeats: trip.offeredSeats - trip.occupiedSeats,
     providesHelmet: trip.providesHelmet,
+    economics: publicEconomicTerms(trip),
     itinerary: presentItinerary(trip)!,
     rules: trip.rules.map(({ rule }) => ({
       id: rule.id,
@@ -209,12 +230,15 @@ export class ViajeRepository {
   constructor(private readonly db: PrismaService) {}
   async withDriverLock<T>(
     driverId: string,
-    operation: (unit: PublicationUnit) => Promise<T>,
+    operation: (
+      unit: PublicationUnit,
+      tx: Prisma.TransactionClient,
+    ) => Promise<T>,
   ): Promise<T> {
     return this.db.$transaction(async (tx) => {
       // Serializa todas las publicaciones de un conductor; SQL parametrizado exclusivamente para locking.
-      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${driverId}::uuid FOR UPDATE`;
-      return operation(publicationUnit(tx, driverId));
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${driverId}::uuid FOR NO KEY UPDATE`;
+      return operation(publicationUnit(tx, driverId), tx);
     });
   }
   async attachDriverReputations<T>(

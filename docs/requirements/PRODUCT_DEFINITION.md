@@ -153,20 +153,26 @@ expuestos, acceso por recurso, frecuencia de peticiones y geolocalización conse
   evaluada. Si no hay evaluaciones, la interfaz muestra «Sin calificaciones».
   El comentario opcional, de hasta 500 caracteres, se limita al historial del
   evaluador. La reputación compartida muestra promedio y cantidad.
-- **RN-COSTO-01.** El conductor puede guardar, antes del inicio, una estimación
-  privada de combustible, peajes y estacionamiento en pesos colombianos
-  enteros. El total sólo suma esos tres conceptos. Las reglas para calcular un
-  aporte y registrar compensaciones quedan abiertas.
-- **RN-SEGUIMIENTO-01.** En un viaje en curso, el titular puede publicar
-  voluntariamente una posición capturada en primer plano y retirarla. Sólo
-  personas autorizadas del viaje pueden consultar la muestra. Se conserva un
-  punto durante un máximo de dos minutos de visibilidad y se exige un intervalo
-  de al menos 15 segundos entre actualizaciones. El cierre elimina la muestra.
-- **RN-SEGURIDAD-01.** En un viaje en curso, los participantes autorizados
-  consultan un resumen mínimo. Pueden revisarlo y entregarlo al selector
-  nativo de destinos o seleccionar el texto. La acción de emergencias en Cali
-  abre el marcador con el 123 tras confirmación. El destino y el último paso
-  permanecen bajo control del usuario.
+- **RN-COSTO-01 (RF-008/009).** Nest suma combustible, peajes y estacionamiento
+  declarados en COP enteros y divide por plazas ofertadas más conductor. Redondea
+  hacia abajo. El conductor revisa el total privado antes de publicar y puede
+  elegir aporte cero. El importe y uno o dos métodos distintos para aporte positivo
+  forman condiciones inmutables del viaje. El conductor asume las plazas vacías y
+  el residuo. El titular que abordó puede declarar tras el cierre. El conductor
+  puede reconocer recepción o discrepancia y el titular puede cancelar una
+  declaración sin resolver. El registro es voluntario y personal.
+- **RN-SEGUIMIENTO-01.** El titular del viaje activo comparte voluntariamente un
+  punto capturado en primer plano, con intervalo mínimo de 15 segundos y visibilidad
+  de dos minutos. Puede retirarlo. La API distingue disponible, caducado, sin compartir
+  y terminado para actores autorizados. El cierre elimina la muestra.
+- **RN-SEGURIDAD-01 (RF-011).** El perfil guarda contactos de emergencia privados
+  del estudiante. En viaje activo se puede revisar un resumen mínimo, compartirlo o
+  revisar la ubicación autorizada vigente antes de abrir el selector del sistema, y
+  confirmar la apertura del marcador con un contacto o con el número local. La acción
+  final depende del usuario. Los participantes confirmados autorizados pueden guardar
+  una incidencia propia durante el viaje. Tras el cierre conservan la creación el
+  conductor y quienes abordaron. El historial es exclusivo del autor. Cualquier
+  canal de entrega institucional requiere autorización y política de conservación.
 - Chat y avisos internos se limitan a sus destinatarios autorizados. Ver
   [trazabilidad](TRACEABILITY.md) para evidencia y límites por plataforma.
 
@@ -174,7 +180,7 @@ Consultas de servicios institucionales, verificación documental, geocodificaci�
 rutas dependen de proveedores aprobados. Un fallo del proveedor se informa de forma
 explícita. Mantener el stack Nest, Prisma/PostgreSQL, Expo y contratos compartidos.
 
-## Estado de la transformación y decisiones abiertas
+## Antecedente de la transformación y decisiones abiertas
 
 La base revisada registra autenticación sintética, búsqueda manual, publicación,
 confirmación individual/cupos, propuestas y ciclo básico. Ese antecedente no acredita
@@ -205,3 +211,18 @@ disponible. La llegada a una parada es ordenada; abordar o registrar ausencia es
 La conversación del viaje coordina a conductor y pasajeros confirmados. El retiro revoca
 el acceso. El viaje completado permite lectura durante 24 h al conductor y quienes abordaron.
 Las notificaciones internas pueden abrir una conversación cuando sigue disponible.
+
+## Continuidad funcional del 26/11/2026
+
+- RF-023 permite configurar viajes recurrentes con horario de Colombia. Cada fecha publicada requiere su propia participación. El conductor puede pausar, corregir, reactivar o detener la serie y elegir si cancela también los viajes futuros aún programados y sin abordajes. Las ediciones afectan fechas pendientes de publicar.
+- RF-020 incluye sesiones, desactivación, solicitud de eliminación, consulta y recuperación. El cierre exige la contraseña y confirma las operaciones afectadas. Una participación o viaje activo con obligaciones pendientes bloquea el cierre. El usuario retira una solicitud abierta antes de reactivar.
+- RF-019 muestra viajes completados y abordajes, totales mensuales y distancias con cobertura conocida. La estimación de operación usa el método versionado. El contraste voluntario depende de datos compatibles del escenario.
+- RF-026 permite consultar aportes, estados de compensación y gastos propios como conductor. Los importes sugeridos conservan las condiciones de publicación.
+- RF-028 distingue cancelación previa, retiro individual e interrupción en curso. El conductor confirma que las personas se encuentran en un punto seguro. Se conserva el abordaje registrado y se cierran las funciones en vivo.
+- RF-030 permite seleccionar el viaje, registrar y consultar una incidencia privada y decidir si comparte un resumen. El único estado disponible es registro privado.
+
+## Evolución del 26/11/2026
+
+RuTeam estima emisiones de viajes completados con factores FECOC y SIN. Congela datos de energía, calcula por tramo si hay evidencia y conserva la ausencia de datos. Permite declarar una alternativa de movilidad voluntaria por participación individual abordada.
+
+Los datos de viaje, chat y ubicación se revalidan al recibir señales SSE. El viaje activo reúne el seguimiento y las acciones por rol. El resumen posviaje conserva el acceso a calificaciones, compensaciones e incidencias según el abordaje y el estado. Agenda y Actividades proyectan registros propios. Los grupos mantienen consentimiento individual y sus avisos de confirmación. Las preferencias aplican a avisos opcionales y preservan los cambios operativos esenciales.
