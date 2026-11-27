@@ -145,6 +145,17 @@ export function ProtectedPage({
             {(!wide || !unlocked) && !compactTitle && (
               <Text role="heading" aria-level={1} style={styles.title}>
                 {title}
+            <Text role="heading" aria-level={1} style={styles.title}>
+              {title}
+            </Text>
+            {(session.connection !== 'available' ||
+              session.reconnectingLive) && (
+              <Text accessibilityLiveRegion="polite" style={formStyles.text}>
+                {session.connection === 'lost'
+                  ? 'Conexión perdida. La información visible puede contener datos desactualizados.'
+                  : session.connection === 'reconnecting'
+                    ? 'Reconectando. La información visible puede contener datos desactualizados.'
+                    : 'Reconectando las actualizaciones en tiempo real.'}
               </Text>
             )}
             {children}

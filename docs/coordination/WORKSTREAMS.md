@@ -92,3 +92,13 @@ Trips entrega plantillas y ocurrencias. Auth coordina el cierre con Reservations
 ## Evolución local
 
 Movilidad coordina estimación, agenda, actividad y preferencias. Viajes y Reservas integran la instantánea ambiental al publicar y finalizar. Tiempo real gestiona sesiones SSE y señales transaccionales. Safety y Frontend mantienen la operación y la experiencia posviaje. El integrador conserva la responsabilidad sobre CURRENT_STATUS.
+
+## Operación de viaje del 27/11/2026
+
+| Frente                  | Alcance local                                                  | Revisión humana |
+| ----------------------- | -------------------------------------------------------------- | --------------- |
+| Trips y Reservations    | Descenso, cierre, ventanas, demoras, vencimiento y edición.    | POR_ASIGNAR     |
+| Mobility                | Guardados, disponibilidad, recordatorios, agenda y lugares.    | POR_ASIGNAR     |
+| Safety, Chat y Realtime | GPS voluntario, permisos por recurso y reconexión.             | POR_ASIGNAR     |
+| Cliente Expo            | Dispositivos y enlaces de avisos, con prueba física pendiente. | POR_ASIGNAR     |
+| Integración             | Migraciones, contratos, prueba aislada y documentación.        | POR_ASIGNAR     |

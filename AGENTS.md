@@ -147,3 +147,11 @@ La rama local de continuidad amplía recurrencias, cuenta, estadísticas, econom
 ## Evolución ambiental y comunicación
 
 Conservar los factores y datos energéticos con los que se publicó cada viaje. Separar CO₂ de combustión y CO₂e eléctrico. Aplicar a SSE la misma sesión y autorización que a los recursos HTTP. Los eventos son señales posteriores al commit. Usar las proyecciones de agenda y actividad sin crear tablas de duplicación. Consulta los [relevos](docs/handoffs/README.md#evolución-ambiental-y-comunicación).
+
+## Operación de viajes
+
+El descenso requiere abordaje previo y llegada registrada a la parada autorizada.
+El cierre conserva los descensos pendientes de confirmación. Agenda y búsqueda usan
+el estado operativo de Nest. Describir, demorar y editar una publicación son acciones
+distintas. Mantener el orden de bloqueos y las referencias de reservas, grupos
+y propuestas. Ver [API](docs/development/API.md#operación-de-viaje-y-movilidad-cotidiana).

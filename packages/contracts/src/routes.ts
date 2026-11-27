@@ -112,6 +112,15 @@ type ReservedMeetingPoint = TripPoint & {
   id: string;
   instructions: string | null;
 };
+export type ParticipationStage =
+  | 'AWAITING_PICKUP'
+  | 'ABOARD'
+  | 'DROPPED_OFF'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'ABSENT'
+  | 'INTERRUPTED'
+  | 'UNCONFIRMED';
 export interface ReservationView {
   id: string;
   tripId: string;
@@ -130,6 +139,8 @@ export interface ReservationView {
   createdAt: string;
   confirmedAt: string | null;
   boardedAt: string | null;
+  droppedOffAt: string | null;
+  stage: ParticipationStage;
   noShowAt?: string | null;
   withdrawalReason?: CancellationReason | null;
   canCancel: boolean;

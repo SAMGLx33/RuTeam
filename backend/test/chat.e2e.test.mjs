@@ -103,6 +103,9 @@ test('viaje confirmado permite chat paginado y aviso único; retiro revoca el re
     call('diego', 'post', `${path}/messages`).send(item).expect(201),
   ]);
   expect(results[0].body.id).toBe(results[1].body.id);
+  expect(results[0].body.clientMessageId).toBe(item.clientMessageId);
+  const { body: ownHistory } = await call('diego', 'get', path).expect(200);
+  expect(ownHistory.messages[0].clientMessageId).toBe(item.clientMessageId);
   await call('diego', 'post', `${path}/messages`)
     .send({ ...item, body: 'Contenido cambiado' })
     .expect(409);
@@ -117,6 +120,7 @@ test('viaje confirmado permite chat paginado y aviso único; retiro revoca el re
     .query({ cursor: first.nextCursor })
     .expect(200);
   expect(older.body.messages.map(({ id }) => id)).toEqual([results[0].body.id]);
+  expect(older.body.messages[0]).not.toHaveProperty('clientMessageId');
   expect(
     await db.tripNotification.count({
       where: { tripId: trip.id, kind: 'CHAT_MESSAGE' },
@@ -157,7 +161,7 @@ test('viaje completado conserva acceso de lectura para quien abordó y expira a 
     .send({ action: 'START' })
     .expect(200);
   await call('diego', 'post', `${path}/transition`)
-    .send({ action: 'FINISH' })
+    .send({ action: 'FINISH', confirmMissingDropoffs: true })
     .expect(200);
   expect(
     (await call('ana', 'get', `${path}/chat`).expect(200)).body.conversation

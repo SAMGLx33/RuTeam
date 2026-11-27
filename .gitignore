@@ -17,3 +17,11 @@ test-results/
 reference-private/
 
 /docs/RuTeam_Referencias_Codex_PRIVADO/
+
+# Credenciales y archivos locales de compilaciones móviles.
+google-services.json
+GoogleService-Info.plist
+credentials.json
+*.jks
+*.keystore
+*.p8

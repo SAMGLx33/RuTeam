@@ -4,8 +4,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AppearanceProvider, useAppearance } from '../src/theme/appearance';
 import { SessionProvider } from '../src/providers/session-provider';
+import { NotificationNavigation } from '../src/providers/notification-navigation';
 const client = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
+  defaultOptions: {
+    queries: { retry: false },
+    mutations: { networkMode: 'always', retry: false },
+  },
 });
 function Screens() {
   const { dark, palette, reducedMotion } = useAppearance();
@@ -30,6 +34,9 @@ export default function RootLayout() {
           <AppearanceProvider>
             <Screens />
           </AppearanceProvider>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false }} />
+          <NotificationNavigation />
         </SessionProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

@@ -65,6 +65,12 @@ export class MobilityPreferenceDto implements MobilityPreferenceInput {
   @ArrayUnique()
   @IsIn(['CAR', 'MOTORCYCLE'], { each: true })
   vehicleTypes!: VehicleType[];
+  @ApiPropertyOptional({ nullable: true, minimum: 0, maximum: 2147483647 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(2_147_483_647)
+  maxContributionCop?: number | null;
   @ApiProperty() @IsBoolean() notificationsEnabled!: boolean;
   @ApiProperty() @IsBoolean() active!: boolean;
 }

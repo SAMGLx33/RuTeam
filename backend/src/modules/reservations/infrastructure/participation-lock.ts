@@ -1,7 +1,7 @@
 import type { Prisma } from '../../../generated/prisma/client.js';
 
-// A closure can affect trips with different drivers. Ordinary trip operations
-// take the shared lock before any user or trip rows.
+// Account closure and operations that assign a schedule across trips take the
+// exclusive lock. Other participation changes acquire a shared lock before rows.
 export async function lockParticipationChanges(
   tx: Prisma.TransactionClient,
   exclusive = false,

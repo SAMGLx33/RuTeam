@@ -158,40 +158,55 @@ export class GroupsService {
 
   async confirm(actorId: string, groupId: string) {
     const { tripId } = await this.locate(groupId);
-    return this.reservations.withTripLock(tripId, async (unit, tx) => {
-      const groups = groupsInTrip(tx, tripId);
-      const group = requireGroup(await groups.group(groupId));
-      if (group.organizerId !== actorId)
-        throw new ForbiddenException(
-          'Sólo el organizador puede confirmar el grupo',
-        );
-      const now = new Date();
-      if (group.confirmedAt) return groupView(group, actorId, now);
-      activeInvitation(group, now);
-      const trip = await unit.trip();
-      checkOpen(trip, now);
-      checkDriver(trip, now);
-      checkSegment(trip, group.pickupId, group.dropoffId);
-      const ids = group.members.map(({ userId }) => userId);
-      if (ids.length !== group.expectedMembers || !ids.includes(actorId))
-        throw new ConflictException(
-          'Aún faltan consentimientos para confirmar el grupo',
-        );
-      await groups.lockMemberships(ids);
-      await checkMembers(unit, ids, now);
-      for (const id of ids) {
-        if (id === trip.driverId || (await unit.activeForMember(id)))
-          throw new ConflictException('Un integrante ya participa en el viaje');
-      }
-      if (trip.offeredSeats - trip.occupiedSeats < ids.length)
-        throw new ConflictException('No hay plazas para todo el grupo');
-      await unit.addOccupiedSeats(ids.length);
-      for (const id of ids) {
-        const row = await unit.create(id, group.pickupId, group.dropoffId, now);
-        await groups.attachReservation(groupId, id, row.id);
-      }
-      return groupView(await groups.confirm(groupId, now, ids), actorId, now);
-    });
+    return this.reservations.withTripLock(
+      tripId,
+      async (unit, tx) => {
+        const groups = groupsInTrip(tx, tripId);
+        const group = requireGroup(await groups.group(groupId));
+        if (group.organizerId !== actorId)
+          throw new ForbiddenException(
+            'Sólo el organizador puede confirmar el grupo',
+          );
+        const now = new Date();
+        if (group.confirmedAt) return groupView(group, actorId, now);
+        activeInvitation(group, now);
+        const trip = await unit.trip();
+        checkOpen(trip, now);
+        checkDriver(trip, now);
+        checkSegment(trip, group.pickupId, group.dropoffId);
+        const ids = group.members.map(({ userId }) => userId);
+        if (ids.length !== group.expectedMembers || !ids.includes(actorId))
+          throw new ConflictException(
+            'Aún faltan consentimientos para confirmar el grupo',
+          );
+        await groups.lockMemberships(ids);
+        await checkMembers(unit, ids, now);
+        for (const id of ids) {
+          if (id === trip.driverId || (await unit.activeForMember(id)))
+            throw new ConflictException(
+              'Un integrante ya participa en el viaje',
+            );
+          if (await unit.conflictFor(id, trip, group.pickupId, group.dropoffId))
+            throw new ConflictException(
+              'Hay un conflicto de horario dentro del grupo',
+            );
+        }
+        if (trip.offeredSeats - trip.occupiedSeats < ids.length)
+          throw new ConflictException('No hay plazas para todo el grupo');
+        await unit.addOccupiedSeats(ids.length);
+        for (const id of ids) {
+          const row = await unit.create(
+            id,
+            group.pickupId,
+            group.dropoffId,
+            now,
+          );
+          await groups.attachReservation(groupId, id, row.id);
+        }
+        return groupView(await groups.confirm(groupId, now, ids), actorId, now);
+      },
+      true,
+    );
   }
 
   async leave(actorId: string, groupId: string) {

@@ -1,3 +1,7 @@
+import { SavedTripActions } from '../mobility/saved-trips-screen';
+import { cancellationLabel } from './cancellation-reasons';
+import { EconomicTerms } from '../expenses/economic-terms';
+import { ReputationLabel } from '../ratings/reputation-label';
 import { useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -199,6 +203,15 @@ export function TripDetailScreen() {
       <Link href="/available-trips" style={s.link}>
         Volver a viajes disponibles
       </Link>
+      <Link href="/saved-trips" style={s.link}>
+        Mis viajes guardados
+      </Link>
+      {trip.data && !trip.data.isDriver && (
+        <SavedTripActions
+          tripId={trip.data.id}
+          canSave={!!trip.data.canSaveInterest}
+        />
+      )}
       {trip.isPending && <Text style={s.text}>Cargando viaje…</Text>}
       {trip.error && (
         <Text accessibilityRole="alert" style={s.error}>

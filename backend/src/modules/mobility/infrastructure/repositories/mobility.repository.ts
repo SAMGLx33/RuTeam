@@ -47,6 +47,7 @@ function preferenceData(input: MobilityPreferenceDto) {
     label: input.label.trim(),
     placeLabel: input.placeLabel.trim(),
     campusPointId: input.campusPointId.toLowerCase(),
+    maxContributionCop: input.maxContributionCop ?? null,
     latitude: input.latitude ?? null,
     longitude: input.longitude ?? null,
   };
@@ -223,7 +224,7 @@ export class MobilityRepository {
     });
   }
   async mayReadHistory(userId: string, tripId: string) {
-    const [member, notification] = await Promise.all([
+    const [member, notification, saved] = await Promise.all([
       this.db.reservationMember.findFirst({
         where: { userId, reservation: { tripId } },
         select: { userId: true },
@@ -232,8 +233,12 @@ export class MobilityRepository {
         where: { recipientId: userId, tripId },
         select: { id: true },
       }),
+      this.db.savedTrip.findUnique({
+        where: { userId_tripId: { userId, tripId } },
+        select: { userId: true },
+      }),
     ]);
-    return !!member || !!notification;
+    return !!member || !!notification || !!saved;
   }
   async notifications(recipientId: string, cursor?: TripCursor) {
     const user = await this.db.user.findUnique({

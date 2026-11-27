@@ -109,7 +109,7 @@ export function AccountFeedback({
   );
 }
 
-export function LoginScreen() {
+export function LoginScreen({ reason }: { reason?: string }) {
   const session = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -25,6 +25,8 @@ import { Icon } from '../../components/ui/icon';
 import { api } from '../../services/api/client';
 import { breakpoints, colors, radii } from '../../theme/tokens';
 import { Link, Pressable, Text, View } from '../../theme/primitives';
+import { colors } from '../../theme/tokens';
+import { notificationContent } from './notification-content';
 import { TripCards, tripDate, useTripFeed } from '../trips/trip-feed';
 
 type TravelContext = 'passenger' | 'driver';
@@ -154,6 +156,10 @@ export function HomeScreen({ user }: { user: Account }) {
   const hasTrip = driving ? !!nextTrip : !!nextParticipation;
   const currentQuery = driving ? trips : next;
 
+  const reminders = unread
+    .filter(({ kind, available }) => available && kind.endsWith('_REMINDER'))
+    .slice(0, 3);
+
   return (
     <ProtectedPage title="Inicio" compactTitle>
       <View style={styles.welcome}>
@@ -208,6 +214,27 @@ export function HomeScreen({ user }: { user: Account }) {
             }
           />
           {campuses.error && (
+      {reminders.length > 0 && (
+        <View style={s.section}>
+          <Text style={s.title}>Recordatorios</Text>
+          {reminders.map((notice) => (
+            <Link
+              key={notice.id}
+              href={`/open/notice/${notice.id}`}
+              style={s.link}
+            >
+              {notificationContent(notice).title}
+            </Link>
+          ))}
+        </View>
+      )}
+      {user.capabilities.driverAccess && (
+        <View style={s.section}>
+          <Text style={s.title}>Tus próximos viajes publicados</Text>
+          {!user.capabilities.driver && (
+            <Text style={s.text}>Revisa tus documentos antes de publicar.</Text>
+          )}
+          {trips.error && (
             <Text accessibilityRole="alert" style={s.error}>
               No pudimos consultar los puntos USC.
             </Text>

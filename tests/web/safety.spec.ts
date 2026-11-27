@@ -137,9 +137,11 @@ test('seguridad del viaje activo comparte contexto, resuelve ubicación voluntar
       page.getByText(/Próxima parada · Encuentro identificable sólo en RuTeam/),
     ).toBeVisible();
     await page.context().grantPermissions(['geolocation']);
-    await page
-      .context()
-      .setGeolocation({ latitude: 3.40391, longitude: -76.54879 });
+    await page.context().setGeolocation({
+      latitude: 3.40391,
+      longitude: -76.54879,
+      accuracy: 14,
+    });
     await expect(
       page.getByText('No hay una ubicación reciente compartida.'),
     ).toBeVisible();
@@ -149,11 +151,19 @@ test('seguridad del viaje activo comparte contexto, resuelve ubicación voluntar
         response.url().endsWith('/location') &&
         response.request().method() === 'POST',
     );
-    await page
-      .getByRole('button', { name: 'Compartir mi ubicación ahora' })
-      .click();
+    await page.getByRole('button', { name: 'Activar compartición' }).click();
     expect((await posted).status()).toBe(204);
     await expect(page.getByText(/Última ubicación aproximada/)).toBeVisible();
+    await expect(page.getByText('Precisión estimada · 14 m')).toBeVisible();
+    await page.getByRole('button', { name: 'Pausar compartición' }).click();
+    await expect(page.getByText(/Compartición pausada/)).toBeVisible();
+    await page.context().setGeolocation({
+      latitude: 3.45,
+      longitude: -76.52,
+      accuracy: 350,
+    });
+    await page.getByRole('button', { name: 'Reanudar compartición' }).click();
+    await expect(page.getByText('Compartición activa.')).toBeVisible();
     const locationMap = page.getByLabel(
       'Vista esquemática de la última ubicación compartida y las paradas publicadas.',
     );
@@ -199,13 +209,39 @@ test('seguridad del viaje activo comparte contexto, resuelve ubicación voluntar
     await expect(
       page.getByRole('button', { name: 'Abrir marcador del 123' }),
     ).toHaveCount(0);
+    await expect(page.getByText('Precisión estimada · 350 m')).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(
+      page.getByText(/La precisión es insuficiente para dibujar un punto/),
+    ).toBeVisible();
+    await expect(locationMap).toHaveCount(0);
+    expect(locationWrites).toEqual(['POST', 'POST']);
     await page
-      .getByRole('button', { name: 'Quitar ubicación compartida' })
+      .getByRole('button', { name: 'Detener y quitar ubicación' })
       .click();
     await expect(
       page.getByText('No hay una ubicación reciente compartida.'),
     ).toBeVisible();
     await expect(locationMap).toHaveCount(0);
+
+    await page.goto(`/chat/${tripId}`);
+    let messageWrites = 0;
+    await page.route('**/chat/messages', async (route) => {
+      messageWrites++;
+      const accepted = await route.fetch();
+      expect(accepted.status()).toBe(201);
+      await route.abort('connectionreset');
+    });
+    const messageField = page.getByLabel('Mensaje', { exact: true });
+    await messageField.fill('Mensaje confirmado tras recuperar la lectura');
+    await page.getByRole('button', { name: 'Enviar mensaje' }).click();
+    await expect(
+      page.getByText('Envío confirmado después de consultar la conversación.'),
+    ).toBeVisible();
+    await expect(messageField).toHaveValue('');
+    expect(messageWrites).toBe(1);
+    await page.goBack();
 
     await page
       .getByRole('button', { name: 'Contactar a Contacto sintético QA' })

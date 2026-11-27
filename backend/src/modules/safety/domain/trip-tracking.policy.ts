@@ -1,10 +1,10 @@
 export const positionLifetimeMs = 2 * 60000;
 export const positionMinimumIntervalMs = 15000;
-const allowedClockAheadMs = 15000;
+export const positionClockAheadMs = 15000;
 
 export function canShareCapturedPosition(now: Date, capturedAt: Date) {
   const age = now.getTime() - capturedAt.getTime();
-  return age >= -allowedClockAheadMs && age < positionLifetimeMs;
+  return age >= -positionClockAheadMs && age < positionLifetimeMs;
 }
 
 export function positionIsVisible(

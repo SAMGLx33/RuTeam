@@ -70,3 +70,12 @@ humanas y promoción quedan POR_ASIGNAR en los frentes y el handoff de cierre.
 | Realtime / Auth             | Conexión SSE, sesiones y reevaluación de permisos.                                                  |
 | Safety                      | Operación, QR, seguimiento y contexto posviaje.                                                     |
 | Mobility / plataforma móvil | Registro y cola push. La aplicación nativa habilitada requiere un adaptador del SDK y credenciales. |
+
+## Responsables de revisión de operación
+
+Trips revisa cronología, edición y ocurrencias. Reservations y Groups revisan
+asientos, descenso y atomicidad. Mobility revisa matching, persistencia de
+avisos y trazabilidad ambiental. Safety y Realtime revisan permiso y
+caducidad. El equipo Expo verifica dispositivos y reconsulta al abrir avisos.
+El integrador coordina migraciones, contratos y lockfile. Personas
+revisoras POR_ASIGNAR.

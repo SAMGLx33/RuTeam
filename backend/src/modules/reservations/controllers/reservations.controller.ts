@@ -24,6 +24,7 @@ import {
   TripTransitionDto,
 } from '../dto/reservation.dto.js';
 
+import { DelayTripDto } from '../dto/delay.dto.js';
 import { RedeemBoardingPassDto } from '../dto/boarding-pass.dto.js';
 
 @ApiTags('reservations')
@@ -117,6 +118,16 @@ export class ReservationsController {
     return this.service.noShow(req.principal.userId, id);
   }
 
+  @Post('participations/:id/drop-off')
+  @UseGuards(SessionGuard)
+  @HttpCode(200)
+  dropOff(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.dropOff(req.principal.userId, id);
+  }
+
   @Post('trips/:tripId/stops/:stopId/reach')
   @UseGuards(SessionGuard)
   @HttpCode(200)
@@ -126,6 +137,21 @@ export class ReservationsController {
     @Param('stopId', ParseUUIDPipe) stopId: string,
   ) {
     return this.service.reachStop(req.principal.userId, tripId, stopId);
+  }
+
+  @Post('trips/:tripId/delay')
+  @UseGuards(SessionGuard)
+  @HttpCode(200)
+  delay(
+    @Req() req: AuthenticatedRequest,
+    @Param('tripId', ParseUUIDPipe) tripId: string,
+    @Body() body: DelayTripDto,
+  ) {
+    return this.service.delay(
+      req.principal.userId,
+      tripId,
+      body.estimatedDepartureAt,
+    );
   }
 
   @Post('trips/:tripId/transition')
@@ -142,6 +168,7 @@ export class ReservationsController {
       body.action,
       body.reason,
       body.confirmedSafe,
+      body.confirmMissingDropoffs,
     );
   }
 }

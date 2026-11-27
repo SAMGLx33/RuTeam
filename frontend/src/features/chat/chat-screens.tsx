@@ -19,10 +19,11 @@ import {
 import { Button } from '../../components/ui/button';
 import { Icon } from '../../components/ui/icon';
 import { useSession } from '../../providers/session-provider';
-import { api } from '../../services/api/client';
 import { useAppearance } from '../../theme/appearance';
 import { Link, Text, TextInput, View } from '../../theme/primitives';
 import { breakpoints, colors, radii } from '../../theme/tokens';
+import { api, ApiError } from '../../services/api/client';
+import { colors } from '../../theme/tokens';
 import { tripDate } from '../trips/trip-feed';
 import { tripStatusLabel } from '../trips/route-preview';
 
@@ -231,6 +232,16 @@ function ChatRoom({
   });
   const current = history.data;
   const newest = current?.messages[0]?.id;
+  const resultRecovered =
+    send.error instanceof ApiError &&
+    send.error.outcome === 'unknown' &&
+    lastAttempt &&
+    current?.messages.some(
+      (message) => message.clientMessageId === lastAttempt.clientMessageId,
+    );
+  const sendError = resultRecovered ? undefined : send.error;
+  const draft =
+    resultRecovered && body.trim() === lastAttempt?.body ? '' : body;
   useEffect(() => {
     if (!newest) return;
     const frame = requestAnimationFrame(() =>
@@ -314,7 +325,7 @@ function ChatRoom({
       </View>
       {(send.error || read.error || loadOlder.error) && (
         <Text accessibilityRole="alert" style={s.error}>
-          {send.error?.message ??
+          {sendError?.message ??
             read.error?.message ??
             loadOlder.error?.message}
         </Text>
@@ -336,8 +347,11 @@ function ChatRoom({
             placeholder="Escribe un mensaje"
             multiline
             maxLength={1000}
-            value={body}
-            onChangeText={setBody}
+            value={draft}
+            onChangeText={(text) => {
+              if (resultRecovered) setLastAttempt(undefined);
+              setBody(text);
+            }}
             editable={!send.isPending}
             style={styles.input}
           />
@@ -345,15 +359,16 @@ function ChatRoom({
             title={
               send.isPending
                 ? 'Enviando…'
-                : send.error && lastAttempt?.body === body.trim()
+                : sendError && lastAttempt?.body === draft.trim()
                   ? 'Reintentar envío'
                   : 'Enviar mensaje'
             }
             disabled={!body.trim() || send.isPending}
             loading={send.isPending}
             icon="send"
+            disabled={!draft.trim() || send.isPending}
             onPress={() => {
-              const text = body.trim();
+              const text = draft.trim();
               const input =
                 lastAttempt?.body === text
                   ? lastAttempt

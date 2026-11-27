@@ -1,4 +1,5 @@
 import type { Href } from 'expo-router';
+import { Link, useLocalSearchParams, type Href } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -111,6 +112,7 @@ export function ActivityScreen() {
   const { user } = useSession();
   const [filter, setFilter] =
     useState<(typeof activityFilters)[number]['id']>('all');
+  const { activity: focus } = useLocalSearchParams<{ activity?: string }>();
   const activity = useQuery({
     queryKey: ['activity', user?.id],
     enabled: !!user?.capabilities.passenger,

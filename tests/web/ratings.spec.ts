@@ -119,6 +119,12 @@ test('finaliza un viaje, califica desde el aviso y actualiza el promedio persist
       page.getByRole('textbox', { name: 'Combustible', exact: true }),
     ).toHaveValue('12001');
     await page.goto('/my-trips');
+    await card.getByRole('button', { name: 'Editar descripción' }).click();
+    await card
+      .getByRole('textbox', { name: 'Descripción del recorrido' })
+      .fill('Recorrido actualizado en la prueba RF-010');
+    await card.getByRole('button', { name: 'Guardar descripción' }).click();
+    await expect(card.getByText('Cambio guardado.')).toBeVisible();
     await card
       .getByRole('button', { name: 'Iniciar viaje', exact: true })
       .click();
@@ -131,9 +137,12 @@ test('finaliza un viaje, califica desde el aviso y actualiza el promedio persist
     await card
       .getByRole('button', { name: 'Confirmar abordaje', exact: true })
       .click();
-    await expect(card.getByText(/Abordada/)).toBeVisible();
+    await expect(card.getByText(/A bordo/)).toBeVisible();
     await card
       .getByRole('button', { name: 'Finalizar viaje', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Finalizar sin registrar descensos' })
       .click();
     await expect(
       card.getByRole('link', { name: 'Calificar participantes' }),

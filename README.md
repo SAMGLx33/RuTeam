@@ -123,3 +123,11 @@ Inicio y Perfil enlazan las estadísticas mensuales, la cuenta y el historial ec
 ## Evolución ambiental y comunicación
 
 Inicio abre Agenda y Mis actividades. Los viajes y participaciones enlazan un resumen con contexto de operación, seguimiento y opciones posviaje. En Vehículos se puede declarar consumo para las estadísticas de movilidad. Las pantallas se actualizan por SSE y conservan las consultas HTTP. [Metodología y factores](docs/development/ENVIRONMENTAL_METHOD.md) · [Tiempo real](docs/development/REALTIME.md) · [Avisos](docs/development/NOTIFICATION_SETTINGS.md)
+
+## Operación de viajes del 27/11/2026
+
+La aplicación incluye descenso del pasajero, control de horarios, edición
+versionada, guardados, lugares habituales y seguimiento voluntario en primer
+plano. Consulta los [contratos](docs/development/API.md#operación-de-viaje-y-movilidad-cotidiana),
+la [validación](docs/reviews/RELEASE_READINESS.md) y la
+[guía de Expo Go y development build](docs/development/MOBILE_TESTING.md).

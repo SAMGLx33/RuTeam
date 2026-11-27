@@ -1,3 +1,4 @@
+import { FrequentPlacePicker } from '../mobility/frequent-place-picker';
 import {
   Accuracy,
   getCurrentPositionAsync,
@@ -238,6 +239,12 @@ export function PointEditor({
               {locationError}
             </Text>
           )}
+          <FrequentPlacePicker
+            title={`Centrar en un lugar habitual · ${title}`}
+            onSelect={({ latitude, longitude }) =>
+              setSearchFocus({ latitude, longitude })
+            }
+          />
           <PlaceSearch
             title={title}
             onSelect={({ latitude, longitude, label: name }) => {

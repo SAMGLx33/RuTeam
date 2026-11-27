@@ -141,7 +141,11 @@ const join = (actor, trip, stop = 2) =>
     .expect(201);
 const transition = (trip, action, extra = {}) =>
   call('diego', 'post', '/trips/' + trip.id + '/transition')
-    .send({ action, ...extra })
+    .send({
+      action,
+      confirmMissingDropoffs: action === 'FINISH' ? true : undefined,
+      ...extra,
+    })
     .expect(200);
 const energy = {
   propulsion: 'COMBUSTION',

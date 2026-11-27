@@ -109,7 +109,7 @@ async function complete(trip, markNoShow) {
       200,
     );
   await call('diego', 'post', `/trips/${trip.id}/transition`)
-    .send({ action: 'FINISH' })
+    .send({ action: 'FINISH', confirmMissingDropoffs: true })
     .expect(200);
 }
 

@@ -115,8 +115,9 @@ export function EnvironmentPanel({
       })}
       <Text style={s.text}>
         El consumo declarado y la distancia publicada estiman la operación. El
-        reparto incluye al conductor y usa los abordajes y descensos previstos.
-        Las unidades de combustible y electricidad se muestran por separado.
+        reparto incluye al conductor y combina abordajes registrados con el
+        punto de descenso del itinerario. Las unidades de combustible y
+        electricidad se muestran por separado.
       </Text>
       <Link
         href="https://app.upme.gov.co/Calculadora_Emisiones1/new/Informe_Final_FECOC_Correcciones_UPME_FunNatura.pdf#page=31"
@@ -183,6 +184,13 @@ export function TripEnvironment({ tripId }: { tripId: string }) {
         <Text style={s.text}>
           Distancia estimada de tu recorrido ·{' '}
           {formatted(row.distanceMeters / 1000)} km
+        </Text>
+      )}
+      {row.dropoffBasis && (
+        <Text style={s.text}>
+          {row.dropoffBasis === 'CONFIRMED_STOP'
+            ? 'Tramo hasta el descenso confirmado'
+            : 'Tramo estimado hasta el descenso previsto'}
         </Text>
       )}
       {row.missing && <Text style={s.text}>{missingLabel[row.missing]}</Text>}

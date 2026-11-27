@@ -215,3 +215,16 @@ test('recogida intermedia con hora vial se evalúa en el día de Colombia en que
     ),
   ).toBeNull();
 });
+
+test('el aporte máximo es un filtro de coincidencia y admite un tope de cero', () => {
+  const priced = { ...trip, suggestedContributionCop: 2700 };
+  expect(
+    matchMobility(priced, { ...profile, maxContributionCop: 2699 }),
+  ).toBeNull();
+  expect(
+    matchMobility(priced, { ...profile, maxContributionCop: 2700 })?.type,
+  ).toBe('DIRECT');
+  expect(matchMobility(trip, { ...profile, maxContributionCop: 0 })?.type).toBe(
+    'DIRECT',
+  );
+});

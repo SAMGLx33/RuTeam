@@ -124,7 +124,7 @@ test('el contexto del viaje activo se limita a titular y ocupantes confirmados s
   ).expect(200);
   await call('ana', 'get', path).expect(404);
   await call('diego', 'post', `/trips/${tripId}/transition`)
-    .send({ action: 'FINISH' })
+    .send({ action: 'FINISH', confirmMissingDropoffs: true })
     .expect(200);
   await call('diego', 'get', path).expect(404);
 });

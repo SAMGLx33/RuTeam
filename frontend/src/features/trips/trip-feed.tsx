@@ -177,6 +177,9 @@ export function TripFeedScreen() {
 
   return (
     <ProtectedPage title="Viajes disponibles">
+      <Link href="/saved-trips" style={s.link}>
+        Mis viajes guardados
+      </Link>
       <View accessibilityRole="tablist" style={styles.tabs}>
         {tabs.map(({ key, label }) => (
           <Pressable

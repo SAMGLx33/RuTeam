@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException } from '@nestjs/common';
 import type { ReservationUnit } from '../infrastructure/repositories/reservations.repository.js';
 import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
 import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
+import { tripWindow } from '../../trips/domain/activity-window.js';
 import { tripDirection } from '../../trips/domain/models/driver-route.js';
 import { presentStops } from '../../trips/infrastructure/repositories/trips.repository.js';
 
@@ -10,10 +11,10 @@ export function checkDriver(trip: BookableTrip, now: Date): void {
   if (
     trip.driver.disabledAt ||
     !isActiveMembership(trip.driver.membership, now) ||
-    !VehiculoPolicy.esPublicable(trip.vehicle.document, trip.expectedEndAt) ||
+    !VehiculoPolicy.esPublicable(trip.vehicle.document, tripWindow(trip).end) ||
     !VehiculoPolicy.esPublicable(
       trip.driver.driverEligibility,
-      trip.expectedEndAt,
+      tripWindow(trip).end,
     ) ||
     (trip.driver.driverEligibility?.category !== 'BOTH' &&
       trip.driver.driverEligibility?.category !== trip.vehicle.type)
@@ -27,6 +28,7 @@ export function checkOpen(trip: BookableTrip, now: Date): void {
     !trip.routeDescription ||
     !tripDirection(presentStops(trip)) ||
     trip.status !== 'PROGRAMADO' ||
+    trip.expiredAt ||
     trip.departureAt <= now
   )
     throw new ConflictException('El viaje ya no admite participaciones');

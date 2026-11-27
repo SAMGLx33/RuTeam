@@ -26,7 +26,7 @@ lo aportado y lo acreditado por fuente autorizada. Producción no usa fixtures c
 
 Viajes: DESDE_USC/HACIA_USC con campus por FK o identidad institucional equivalente,
 un extremo USC y otro externo. Texto del encuentro interior válido sin GPS propio.
-Itinerario publicado inmutable; paso y parada autorizada distintos. Matching de lectura
+Itinerario con condiciones aceptadas inmutables. Un paso y una parada autorizada son distintos. Matching de lectura
 no cambia ruta ni confirma recogidas cercanas. No compatibilidad basada sólo en cadenas.
 
 Confirmación ordinaria directa: estudiante, reloj/estado, vehículo/documentos,
@@ -94,3 +94,11 @@ Trips orquesta la publicación de ocurrencias y del viaje manual en la misma uni
 ## Evolución ambiental y comunicación
 
 Las funciones de emisiones viven en Mobility/domain. Publicar congela el factor y cerrar registra el reparto en la misma transacción. Preserva las 24 migraciones de continuidad y las nuevas migraciones aditivas. Para tiempo real, los triggers emiten claves mínimas y Nest revisa sesión y recurso. Los recibos del proveedor push se distinguen de tickets y de la recepción física.
+
+## Ventanas y descenso
+
+La publicación, la generación recurrente, la edición, la demora y la confirmación
+individual o grupal que alteran horarios adquieren el advisory exclusivo antes
+de conductor y viaje. Los descensos permanecen por pasajero, conservan plazas y
+provocan señales de lectura. El vencimiento de un viaje sin iniciar es persistente.
+Mantener las lecturas autorizadas por recurso, incluidas ubicación y SSE.

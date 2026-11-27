@@ -31,6 +31,7 @@ export async function recordEmissions(
         select: {
           pickupId: true,
           dropoffId: true,
+          droppedOffAt: true,
           members: { select: { userId: true } },
         },
       },
@@ -45,7 +46,13 @@ export async function recordEmissions(
     const end = indexes.get(reservation.dropoffId);
     if (first === undefined || end === undefined || first >= end) continue;
     for (const { userId } of reservation.members) {
-      if (!riders.has(userId)) riders.set(userId, { userId, first, last: end });
+      if (!riders.has(userId))
+        riders.set(userId, {
+          userId,
+          first,
+          last: end,
+          observedDropoff: !!reservation.droppedOffAt,
+        });
     }
   }
   const segments = segmentDistances(

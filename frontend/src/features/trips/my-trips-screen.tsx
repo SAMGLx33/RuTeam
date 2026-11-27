@@ -10,8 +10,10 @@ import type {
   CancellationReason,
   TripAction,
   TripSummary,
+  TripEditInput,
+  TripOperation,
 } from '@ruteam/contracts';
-import { api } from '../../services/api/client';
+import { ApiError, api } from '../../services/api/client';
 import { Button } from '../../components/ui/button';
 import {
   ProtectedPage,
@@ -95,7 +97,13 @@ function DriverParticipants({ trip }: { trip: TripSummary }) {
     queryFn: () => api<ReservationView[]>(`/trips/${trip.id}/participations`),
   });
   const recordPresence = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: 'board' | 'no-show' }) =>
+    mutationFn: ({
+      id,
+      action,
+    }: {
+      id: string;
+      action: 'board' | 'no-show' | 'drop-off';
+    }) =>
       api<ReservationView>(`/participations/${id}/${action}`, {
         method: 'POST',
       }),
@@ -103,6 +111,7 @@ function DriverParticipants({ trip }: { trip: TripSummary }) {
       setConfirmAbsence(null);
       void client.invalidateQueries({ queryKey });
       void client.invalidateQueries({ queryKey: ['my-reservations'] });
+      void client.invalidateQueries({ queryKey: ['trip-operation'] });
     },
   });
   return (
@@ -120,15 +129,17 @@ function DriverParticipants({ trip }: { trip: TripSummary }) {
           {requests.error?.message ?? recordPresence.error?.message}
         </Text>
       )}
-      {requests.data?.some(
-        (item) =>
-          item.status === 'CONFIRMED' &&
-          item.quantity === 1 &&
-          !item.boardedAt &&
-          !item.noShowAt &&
-          item.pickup.id === pickup?.id &&
-          (item.tripStatus === 'PROGRAMADO' || item.tripStatus === 'EN_CURSO'),
-      ) && <DriverBoardingScanner tripId={trip.id} />}
+      {!trip.expiredAt &&
+        requests.data?.some(
+          (item) =>
+            item.status === 'CONFIRMED' &&
+            item.quantity === 1 &&
+            !item.boardedAt &&
+            !item.noShowAt &&
+            item.pickup.id === pickup?.id &&
+            (item.tripStatus === 'PROGRAMADO' ||
+              item.tripStatus === 'EN_CURSO'),
+        ) && <DriverBoardingScanner tripId={trip.id} />}
       {requests.data?.map((item) => (
         <View key={item.id} style={s.section}>
           <Text style={s.text}>
@@ -153,7 +164,20 @@ function DriverParticipants({ trip }: { trip: TripSummary }) {
           {item.passengerReputation && (
             <ReputationLabel summary={item.passengerReputation} />
           )}
-          {item.status === 'CONFIRMED' &&
+          {item.tripStatus === 'EN_CURSO' &&
+            item.stage === 'ABOARD' &&
+            item.quantity === 1 &&
+            item.dropoff.id === pickup?.id && (
+              <Button
+                title="Registrar descenso"
+                disabled={recordPresence.isPending}
+                onPress={() =>
+                  recordPresence.mutate({ id: item.id, action: 'drop-off' })
+                }
+              />
+            )}
+          {!trip.expiredAt &&
+            item.status === 'CONFIRMED' &&
             !item.boardedAt &&
             !item.noShowAt &&
             item.quantity === 1 &&
@@ -203,6 +227,135 @@ function DriverParticipants({ trip }: { trip: TripSummary }) {
   );
 }
 
+function ScheduledActions({ trip }: { trip: TripSummary }) {
+  const client = useQueryClient();
+  const [editing, setEditing] = useState<'description' | 'delay'>();
+  const [draftVersion, setDraftVersion] = useState<number>();
+  const [description, setDescription] = useState(
+    trip.itinerary?.description ?? '',
+  );
+  const [estimate, setEstimate] = useState('');
+  const validEstimate = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(estimate);
+  const update = useMutation({
+    mutationFn: () => {
+      if (editing === 'delay')
+        return api('/trips/' + trip.id + '/delay', {
+          method: 'POST',
+          body: {
+            estimatedDepartureAt: estimate.replace(' ', 'T') + ':00-05:00',
+          },
+        });
+      if (draftVersion === undefined)
+        throw new Error('Vuelve a cargar la publicación.');
+      const body: TripEditInput = {
+        version: draftVersion,
+        description: description.trim(),
+      };
+      return api('/trips/' + trip.id, { method: 'PATCH', body });
+    },
+    onSuccess: () => {
+      setEditing(undefined);
+      for (const key of [
+        'my-trips',
+        'trip-operation',
+        'trip-detail',
+        'agenda',
+        'saved-trips',
+        'available-trips',
+        'trip-feed',
+      ])
+        void client.invalidateQueries({ queryKey: [key] });
+    },
+  });
+  if (trip.expiredAt) return null;
+  return (
+    <View style={s.section}>
+      {trip.canEdit &&
+        trip.itinerary &&
+        (trip.descriptiveEditsOnly ? (
+          <Button
+            title="Editar descripción"
+            secondary
+            onPress={() => {
+              update.reset();
+              setDescription(trip.itinerary?.description ?? '');
+              setDraftVersion(trip.version);
+              setEditing('description');
+            }}
+          />
+        ) : (
+          <Link
+            href={{ pathname: '/publish', params: { editTripId: trip.id } }}
+            style={s.link}
+          >
+            Editar publicación
+          </Link>
+        ))}
+      <Button
+        title="Informar demora"
+        secondary
+        onPress={() => {
+          update.reset();
+          setEditing('delay');
+        }}
+      />
+      {editing && (
+        <>
+          {editing === 'delay' && (
+            <Text style={s.text}>
+              La nueva estimación se comparte con los participantes. La hora
+              publicada se conserva.
+            </Text>
+          )}
+          <TextInput
+            accessibilityLabel={
+              editing === 'delay'
+                ? 'Nueva salida estimada en Colombia'
+                : 'Descripción del recorrido'
+            }
+            placeholder={editing === 'delay' ? 'AAAA-MM-DD HH:mm' : undefined}
+            value={editing === 'delay' ? estimate : description}
+            onChangeText={editing === 'delay' ? setEstimate : setDescription}
+            maxLength={editing === 'delay' ? 16 : 240}
+            style={{
+              minHeight: 48,
+              borderWidth: 1,
+              borderRadius: 8,
+              padding: 10,
+            }}
+          />
+          <Button
+            title={
+              editing === 'delay' ? 'Guardar demora' : 'Guardar descripción'
+            }
+            disabled={
+              update.isPending ||
+              (editing === 'delay'
+                ? !validEstimate
+                : description.trim().length < 2)
+            }
+            onPress={() => update.mutate()}
+          />
+          <Button
+            title="Volver"
+            secondary
+            disabled={update.isPending}
+            onPress={() => setEditing(undefined)}
+          />
+        </>
+      )}
+      {update.error && (
+        <Text accessibilityRole="alert" style={s.error}>
+          {update.error.message}
+        </Text>
+      )}
+      {update.isSuccess && (
+        <Text accessibilityLiveRegion="polite">Cambio guardado.</Text>
+      )}
+    </View>
+  );
+}
+
 export function TripCard({
   trip,
   operation = false,
@@ -214,6 +367,8 @@ export function TripCard({
 }) {
   const client = useQueryClient();
   const [expanded, setExpanded] = useState(operation);
+  const { user } = useSession();
+  const [confirmFinish, setConfirmFinish] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [interrupt, setInterrupt] = useState(false);
   const [safe, setSafe] = useState(false);
@@ -222,6 +377,11 @@ export function TripCard({
   const stops = trip.itinerary?.stops ?? [];
   const currentStop = [...stops].reverse().find((stop) => stop.reachedAt);
   const nextStop = stops.find((stop) => !stop.reachedAt);
+  const manifest = useQuery({
+    queryKey: ['trip-operation', user?.id, trip.id],
+    enabled: trip.status === 'EN_CURSO' && !!user,
+    queryFn: () => api<TripOperation>('/trips/' + trip.id + '/operation'),
+  });
   const markArrival = useMutation({
     mutationFn: (stopId: string) =>
       api(`/trips/${trip.id}/stops/${stopId}/reach`, { method: 'POST' }),
@@ -239,11 +399,21 @@ export function TripCard({
           action,
           reason:
             action === 'CANCEL' || action === 'INTERRUPT' ? reason : undefined,
+          confirmMissingDropoffs:
+            action === 'FINISH' && confirmFinish ? true : undefined,
           confirmedSafe: action === 'INTERRUPT' ? safe : undefined,
         },
       }),
+    onError: (error) => {
+      if (
+        error instanceof ApiError &&
+        error.code === 'TRIP_CLOSE_REQUIRES_CONFIRMATION'
+      )
+        setConfirmFinish(true);
+    },
     onSuccess: () => {
       setConfirmCancel(false);
+      setConfirmFinish(false);
       setInterrupt(false);
       setSafe(false);
       setReason(undefined);
@@ -261,6 +431,13 @@ export function TripCard({
         {trip.origin.label} → {trip.destination.name}
       </Text>
       <Text style={s.text}>{travelTime(trip.departureAt)}</Text>
+      {trip.estimatedDepartureAt && (
+        <Text style={s.text}>
+          Nueva estimación · {travelTime(trip.estimatedDepartureAt)}
+        </Text>
+      )}
+      {trip.expiredAt && <Text style={s.text}>Vencido sin iniciar</Text>}
+      {trip.status === 'PROGRAMADO' && <ScheduledActions trip={trip} />}
       {trip.startedAt && (
         <Text style={s.text}>
           Inicio registrado · {travelTime(trip.startedAt)}
@@ -338,11 +515,16 @@ export function TripCard({
           <DriverPickupProposals trip={trip} />
         </>
       )}
-      {change.error && (
-        <Text accessibilityRole="alert" style={s.error}>
-          {change.error.message}
-        </Text>
-      )}
+      {change.error &&
+        !(
+          confirmFinish &&
+          change.error instanceof ApiError &&
+          change.error.code === 'TRIP_CLOSE_REQUIRES_CONFIRMATION'
+        ) && (
+          <Text accessibilityRole="alert" style={s.error}>
+            {change.error.message}
+          </Text>
+        )}
       {trip.status !== 'CANCELADO' && (
         <Link
           href={{ pathname: '/expenses/[tripId]', params: { tripId: trip.id } }}
@@ -356,7 +538,7 @@ export function TripCard({
           <Button
             title="Iniciar viaje"
             secondary
-            disabled={change.isPending}
+            disabled={change.isPending || !!trip.expiredAt}
             onPress={() => change.mutate('START')}
           />
           <Button
@@ -479,12 +661,49 @@ export function TripCard({
               {markArrival.error.message}
             </Text>
           )}
-          <Button
-            title="Finalizar viaje"
-            secondary
-            disabled={change.isPending || markArrival.isPending}
-            onPress={() => change.mutate('FINISH')}
-          />
+          {manifest.error && (
+            <Text accessibilityRole="alert" style={s.error}>
+              {manifest.error.message}
+            </Text>
+          )}
+          {confirmFinish ? (
+            <View style={s.section}>
+              <Text style={s.text}>
+                Hay pasajeros sin descenso registrado. Si cierras el viaje, esos
+                descensos quedarán sin confirmar.
+              </Text>
+              <Button
+                title="Finalizar sin registrar descensos"
+                disabled={change.isPending}
+                onPress={() => change.mutate('FINISH')}
+              />
+              <Button
+                title="Volver"
+                secondary
+                disabled={change.isPending}
+                onPress={() => {
+                  change.reset();
+                  setConfirmFinish(false);
+                }}
+              />
+            </View>
+          ) : (
+            <Button
+              title="Finalizar viaje"
+              secondary
+              disabled={
+                change.isPending ||
+                markArrival.isPending ||
+                manifest.isPending ||
+                !!manifest.error
+              }
+              onPress={() =>
+                manifest.data?.manifest?.aboard
+                  ? setConfirmFinish(true)
+                  : change.mutate('FINISH')
+              }
+            />
+          )}
         </>
       )}
     </View>

@@ -9,6 +9,7 @@ import {
 import type {
   RouteGeometry,
   TripDriverLocationInput,
+  TripDriverLocationStopInput,
   TripTrackingView,
 } from '@ruteam/contracts';
 import {
@@ -16,6 +17,7 @@ import {
   positionIsVisible,
   positionLifetimeMs,
   positionMinimumIntervalMs,
+  positionClockAheadMs,
 } from '../domain/trip-tracking.policy.js';
 import { TripTrackingRepository } from '../infrastructure/repositories/trip-tracking.repository.js';
 
@@ -58,6 +60,9 @@ export class TripTrackingService {
         ...coordinates(position),
         capturedAt: position.capturedAt.toISOString(),
         sharedAt: position.sharedAt.toISOString(),
+        ...(position.accuracyMeters !== null && {
+          accuracyMeters: Number(position.accuracyMeters),
+        }),
       },
       route: {
         geometry: trip.routeGeometry as RouteGeometry | null,
@@ -77,6 +82,10 @@ export class TripTrackingService {
           throw new BadRequestException(
             'La ubicación debe haberse capturado en este momento',
           );
+        if (unit.revokedThrough && capturedAt <= unit.revokedThrough)
+          throw new ConflictException(
+            'La muestra se capturó antes de detener la compartición',
+          );
         const last = await unit.last();
         if (
           last &&
@@ -95,14 +104,21 @@ export class TripTrackingService {
           longitude: data.longitude,
           capturedAt,
           sharedAt: now,
+          accuracyMeters: data.accuracyMeters ?? null,
         });
       },
     );
   }
 
-  forget(tripId: string, actorId: string) {
-    return this.repository.withActiveDriverLock(tripId, actorId, (unit) =>
-      unit.clear(),
-    );
+  forget(tripId: string, actorId: string, data?: TripDriverLocationStopInput) {
+    return this.repository.withActiveDriverLock(tripId, actorId, (unit) => {
+      if (!data?.throughCapturedAt) return unit.clear();
+      const cutoff = Date.parse(data.throughCapturedAt);
+      if (!Number.isFinite(cutoff))
+        throw new BadRequestException('La hora de captura es inválida');
+      return unit.clear(
+        new Date(Math.min(cutoff, Date.now() + positionClockAheadMs)),
+      );
+    });
   }
 }

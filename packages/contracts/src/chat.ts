@@ -11,6 +11,7 @@ export interface ChatConversation {
 
 export interface ChatMessage {
   id: string;
+  clientMessageId?: string;
   authorName: string;
   isMine: boolean;
   body: string;

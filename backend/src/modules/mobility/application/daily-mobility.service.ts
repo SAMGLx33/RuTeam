@@ -12,6 +12,13 @@ import {
 } from '../../trips/domain/recurrence.js';
 import { DailyMobilityRepository } from '../infrastructure/repositories/daily-mobility.repository.js';
 
+import {
+  overlap,
+  segmentWindow,
+  tripWindow,
+  type ActivityWindow,
+} from '../../trips/domain/activity-window.js';
+
 const dayMs = 86400_000;
 @Injectable()
 export class DailyMobilityService {
@@ -40,42 +47,93 @@ export class DailyMobilityService {
       calendarEnd,
     );
     const result: AgendaEntry[] = [];
-    for (const trip of own)
-      result.push({
+    const occupied: { entry: AgendaEntry; window: ActivityWindow }[] = [];
+    const localEnd = new Date(+localStart + days * dayMs);
+    for (const trip of own) {
+      const window = tripWindow(trip);
+      if (window.start >= localEnd || window.end <= localStart) continue;
+      const entry: AgendaEntry = {
         id: trip.id,
-        day: bogotaDay(trip.departureAt),
-        at: trip.departureAt.toISOString(),
+        day: bogotaDay(window.start),
+        at: window.start.toISOString(),
         label: trip.originLabel,
         kind: 'PUBLISHED',
-        status: trip.status,
+        status: trip.expiredAt ? 'EXPIRED' : trip.status,
         tripId: trip.id,
         scheduleId: trip.recurringOccurrence?.scheduleId ?? null,
         failure: null,
-      });
+        estimatedDepartureAt: trip.estimatedDepartureAt?.toISOString(),
+      };
+      result.push(entry);
+      if (
+        !trip.expiredAt &&
+        (trip.status === 'PROGRAMADO' || trip.status === 'EN_CURSO')
+      )
+        occupied.push({ entry, window });
+    }
     const seen = new Set<string>();
     for (const booking of bookings.sort(
       (a, b) =>
         Number(b.status === 'CONFIRMED') - Number(a.status === 'CONFIRMED'),
     )) {
-      const trip = booking.trip;
+      const { trip, pickup, dropoff } = booking;
       if (seen.has(trip.id)) continue;
       seen.add(trip.id);
-      result.push({
+      const planned = tripWindow(trip);
+      const window = segmentWindow(trip, pickup, dropoff);
+      if (window.start >= localEnd || window.end <= localStart) continue;
+      const pickupAt =
+        pickup.position === 0
+          ? planned.start
+          : pickup.estimatedOffsetSeconds === null
+            ? null
+            : new Date(+planned.start + pickup.estimatedOffsetSeconds * 1000);
+      const dropoffAt =
+        dropoff.position === trip._count.stops - 1
+          ? planned.end
+          : dropoff.estimatedOffsetSeconds === null
+            ? null
+            : new Date(+planned.start + dropoff.estimatedOffsetSeconds * 1000);
+      const at = pickupAt ?? window.start;
+      const entry: AgendaEntry = {
         id: booking.id,
-        day: bogotaDay(trip.departureAt),
-        at: trip.departureAt.toISOString(),
-        label: trip.originLabel,
+        day: bogotaDay(at),
+        at: at.toISOString(),
+        label: pickup.label,
         kind: 'PARTICIPATION',
-        status:
-          booking.status === 'CANCELLED' &&
-          trip.status !== 'CANCELADO' &&
-          trip.status !== 'INTERRUMPIDO'
+        status: trip.expiredAt
+          ? 'EXPIRED'
+          : booking.status === 'CANCELLED' &&
+              trip.status !== 'CANCELADO' &&
+              trip.status !== 'INTERRUMPIDO'
             ? 'WITHDRAWN'
             : trip.status,
         tripId: trip.id,
-        scheduleId: null,
+        scheduleId: trip.recurringOccurrence?.scheduleId ?? null,
         failure: null,
-      });
+        estimatedDepartureAt: trip.estimatedDepartureAt?.toISOString(),
+        pickupAt: pickupAt?.toISOString() ?? null,
+        dropoffAt: dropoffAt?.toISOString() ?? null,
+      };
+      result.push(entry);
+      if (
+        !trip.expiredAt &&
+        booking.status === 'CONFIRMED' &&
+        !booking.noShowAt &&
+        !booking.droppedOffAt &&
+        (trip.status === 'PROGRAMADO' || trip.status === 'EN_CURSO')
+      )
+        occupied.push({ entry, window });
+    }
+    occupied.sort((a, b) => +a.window.start - +b.window.start);
+    for (const [index, { entry, window }] of occupied.entries()) {
+      for (let other = index + 1; other < occupied.length; other++) {
+        const next = occupied[other];
+        if (next.window.start >= window.end) break;
+        if (!overlap(window, next.window)) continue;
+        (entry.conflictWithTripIds ??= []).push(next.entry.tripId!);
+        (next.entry.conflictWithTripIds ??= []).push(entry.tripId!);
+      }
     }
     const today = calendarDate(bogotaDay(now));
     for (const schedule of schedules) {

@@ -14,6 +14,7 @@ import { PassengerBoardingPass } from '../boarding/boarding-pass';
 import { TripEnvironment } from '../mobility/environment-panel';
 import { TripLocation } from '../safety/trip-location';
 import { TripSafetyLink } from '../safety/trip-safety-link';
+import { participationLabel } from './reservations-screen';
 import { TripCard } from './my-trips-screen';
 import { PublicStopDirections } from './public-stop-directions';
 import { RoutePreview, travelTime } from './route-preview';
@@ -210,6 +211,58 @@ export function TripOperationScreen() {
               ) : (
                 <View style={ui.panel}>
                   <TripSectionTitle>Recorrido del conductor</TripSectionTitle>
+          <View style={s.section}>
+            <Text style={s.title}>Viaje {tripStatusLabel[row.status]}</Text>
+            <Text style={s.text}>
+              Salida programada · {travelTime(row.departureAt)}
+            </Text>
+            {row.departureState === 'SOON' && (
+              <Text style={s.text}>Salida próxima</Text>
+            )}
+            {row.departureState === 'DELAYED' && (
+              <Text style={s.text}>Salida retrasada</Text>
+            )}
+            {row.estimatedDepartureAt && (
+              <Text style={s.text}>
+                Nueva salida estimada · {travelTime(row.estimatedDepartureAt)}
+              </Text>
+            )}
+            {row.departureState === 'EXPIRED' && (
+              <Text style={s.text}>Vencido sin iniciar</Text>
+            )}
+            {row.startedAt && (
+              <Text style={s.text}>
+                Inicio registrado · {travelTime(row.startedAt)}
+              </Text>
+            )}
+            {row.finishedAt && (
+              <Text style={s.text}>
+                Cierre registrado · {travelTime(row.finishedAt)}
+              </Text>
+            )}
+            <Text style={s.text}>
+              {row.driver ?? 'Conductor'} · {row.vehicle.brand} ·{' '}
+              {row.vehicle.color} · {row.vehicle.plate}
+            </Text>
+            {active && (
+              <>
+                {row.role === 'DRIVER' && (
+                  <Text style={s.text}>
+                    {row.trackingEnabled
+                      ? 'Compartición de ubicación habilitada'
+                      : 'Ubicación sin compartir'}
+                  </Text>
+                )}
+                <Text style={s.text}>
+                  Paradas registradas · {row.progress.reached}/
+                  {row.progress.total}
+                </Text>
+                {row.progress.current && (
+                  <Text style={s.text}>
+                    Última parada · {row.progress.current.label}
+                  </Text>
+                )}
+                {row.progress.next && (
                   <Text style={s.text}>
                     Recorrido no disponible para este viaje.
                   </Text>
@@ -221,6 +274,13 @@ export function TripOperationScreen() {
                 <OperationSummary row={row} tripId={tripId} />
                 {passenger?.canIssuePass && (
                   <PassengerBoardingPass reservationId={passenger.id} />
+                <Text style={s.text}>
+                  Participación · {participationLabel(passenger)}
+                </Text>
+                {passenger.pickup && (
+                  <Text style={s.text}>
+                    Recogida · {passenger.pickup.label}
+                  </Text>
                 )}
                 {showSafety && <TripSafetyLink tripId={tripId} />}
                 {inProgress && row.itinerary?.direction && navigationStop && (
@@ -236,6 +296,73 @@ export function TripOperationScreen() {
               showRoutePreview={!row.itinerary}
             />
           )}
+                {passenger.droppedOffAt && (
+                  <Text style={s.text}>
+                    Descenso confirmado · {travelTime(passenger.droppedOffAt)}
+                  </Text>
+                )}
+                {passenger.dropoffEstimatedAt &&
+                  !passenger.droppedOffAt &&
+                  active &&
+                  admitted && (
+                    <Text style={s.text}>
+                      Hora estimada de descenso ·{' '}
+                      {travelTime(passenger.dropoffEstimatedAt)}
+                    </Text>
+                  )}
+                {passenger.pickupEstimatedAt &&
+                  !passenger.boardedAt &&
+                  admitted &&
+                  ((row.status === 'PROGRAMADO' &&
+                    row.departureState !== 'EXPIRED') ||
+                    active) && (
+                    <Text style={s.text}>
+                      Hora estimada de recogida ·{' '}
+                      {travelTime(passenger.pickupEstimatedAt)}
+                    </Text>
+                  )}
+              </>
+            )}
+            {row.manifest && (active || row.status === 'PROGRAMADO') && (
+              <>
+                <Text style={s.text}>
+                  Realiza las acciones con el vehículo detenido en un lugar
+                  seguro.
+                </Text>
+                <Text style={s.text}>
+                  Por abordar en esta parada · {row.manifest.awaitingHere}
+                </Text>
+                <Text style={s.text}>
+                  Pendientes en otras paradas · {row.manifest.awaitingLater}
+                </Text>
+                <Text style={s.text}>
+                  Abordaron · {row.manifest.boarded} · Ausencias ·{' '}
+                  {row.manifest.noShows}
+                </Text>
+                {active && (
+                  <Text style={s.text}>
+                    A bordo · {row.manifest.aboard} · Descensos registrados ·{' '}
+                    {row.manifest.droppedOff}
+                  </Text>
+                )}
+                {active && (
+                  <Text style={s.text}>
+                    Por descender en esta parada ·{' '}
+                    {row.manifest.awaitingDropoffHere}
+                  </Text>
+                )}
+                {!!row.manifest.pendingProposals && (
+                  <Text style={s.text}>
+                    Propuestas por revisar · {row.manifest.pendingProposals}
+                  </Text>
+                )}
+              </>
+            )}
+            {row.role === 'PASSENGER' && row.itinerary && (
+              <RoutePreview {...row.itinerary} />
+            )}
+          </View>
+          {ownerTrip && !complete && <TripCard trip={ownerTrip} operation />}
           {mine.error && (
             <Text accessibilityRole="alert" style={s.error}>
               {mine.error.message}
@@ -263,6 +390,35 @@ export function TripOperationScreen() {
                     Consultar compensación voluntaria
                   </Link>
                 )}
+          {active &&
+            user &&
+            (row.role === 'DRIVER' ||
+              (admitted && !passenger?.droppedOffAt)) && (
+              <TripLocation userId={user.id} tripId={tripId} />
+            )}
+          {active && admitted && <TripSafetyLink tripId={tripId} />}
+          {(row.status === 'PROGRAMADO' || active) &&
+            (admitted || row.role === 'DRIVER') && (
+              <Link
+                href={{ pathname: '/chat/[tripId]', params: { tripId } }}
+                style={s.link}
+              >
+                Chat del viaje
+              </Link>
+            )}
+          {passenger?.canIssuePass && (
+            <PassengerBoardingPass reservationId={passenger.id} />
+          )}
+          {complete && (participated || row.role === 'DRIVER') && (
+            <>
+              <TripEnvironment tripId={tripId} />
+              <Link
+                href={{ pathname: '/ratings/[tripId]', params: { tripId } }}
+                style={s.link}
+              >
+                Calificar
+              </Link>
+              {participated && passenger && (
                 <Link
                   href={{
                     pathname: '/economic-history',

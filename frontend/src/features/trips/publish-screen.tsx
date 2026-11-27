@@ -20,6 +20,7 @@ import type {
   CampusMeetingPoint,
   CompensationMethod,
   TripEconomicsPreview,
+  TripEditInput,
   MeetingPointInput,
   PublishTripInput,
   RouteOption,
@@ -179,9 +180,10 @@ function formPoint(point: MeetingPointInput): PublishFormValues['origin'] {
 }
 
 export function PublishScreen() {
-  const { scheduleId, sourceTripId } = useLocalSearchParams<{
+  const { scheduleId, sourceTripId, editTripId } = useLocalSearchParams<{
     scheduleId: string;
     sourceTripId: string;
+    editTripId: string;
   }>();
   const { user } = useSession();
   const schedule = useQuery({
@@ -192,18 +194,49 @@ export function PublishScreen() {
       ),
     enabled: !!scheduleId && !!user?.capabilities.driver,
   });
+  const mine = useQuery({
+    queryKey: ['my-trips', user?.id],
+    queryFn: () => api<TripSummary[]>('/trips/my'),
+    enabled: !scheduleId && !!editTripId && !!user?.capabilities.driver,
+  });
+  const edited = mine.data?.find(({ id }) => id === editTripId);
+  const priorId = editTripId ?? sourceTripId;
   const source = useQuery({
-    queryKey: ['trip-reuse', user?.id, sourceTripId],
+    queryKey: ['trip-reuse', user?.id, priorId],
     queryFn: () =>
       api<RecurringTripTemplate>(
-        '/trips/' + encodeURIComponent(sourceTripId) + '/reuse',
+        '/trips/' + encodeURIComponent(priorId) + '/reuse',
       ),
-    enabled: !scheduleId && !!sourceTripId && !!user?.capabilities.driver,
+    enabled:
+      !scheduleId &&
+      !!priorId &&
+      !!user?.capabilities.driver &&
+      (!editTripId || (!!edited && !edited.descriptiveEditsOnly)),
     staleTime: 0,
   });
-  if (!scheduleId && sourceTripId && !source.data)
+  if (!scheduleId && editTripId && (!edited || edited.descriptiveEditsOnly))
     return (
-      <ProtectedPage title="Reutilizar publicación" requires="driver">
+      <ProtectedPage title="Editar viaje publicado" requires="driver">
+        <Text
+          accessibilityRole={
+            mine.error || (mine.isSuccess && !edited) ? 'alert' : undefined
+          }
+        >
+          {mine.error?.message ??
+            (edited?.descriptiveEditsOnly
+              ? 'El viaje tiene participaciones, grupos o propuestas. Puedes editar la descripción en Mis viajes.'
+              : mine.isSuccess
+                ? 'El viaje propio no está disponible.'
+                : 'Cargando publicación…')}
+        </Text>
+      </ProtectedPage>
+    );
+  if (!scheduleId && priorId && !source.data)
+    return (
+      <ProtectedPage
+        title={edited ? 'Editar viaje publicado' : 'Reutilizar publicación'}
+        requires="driver"
+      >
         <Text accessibilityRole={source.error ? 'alert' : undefined}>
           {source.error?.message ?? 'Cargando recorrido anterior…'}
         </Text>
@@ -219,9 +252,10 @@ export function PublishScreen() {
     );
   return (
     <PublishForm
-      key={scheduleId ?? sourceTripId ?? 'new'}
+      key={scheduleId ?? priorId ?? 'new'}
       schedule={schedule.data}
       prior={source.data}
+      edited={edited}
     />
   );
 }
@@ -229,9 +263,11 @@ export function PublishScreen() {
 function PublishForm({
   schedule,
   prior,
+  edited,
 }: {
   schedule?: RecurringTripView;
   prior?: RecurringTripTemplate;
+  edited?: TripSummary;
 }) {
   const { user } = useSession();
   const client = useQueryClient();
@@ -255,6 +291,7 @@ function PublishForm({
     }
   }, [step]);
 
+  const [draftVersion] = useState(edited?.version);
   const [tomorrow] = useState(() =>
     new Date(Date.now() + 86400000 - 5 * 3600000)
       .toISOString()
@@ -273,7 +310,12 @@ function PublishForm({
           ...formPoint(point),
           access: point.access,
         })) ?? [],
-      departureAt: tomorrow,
+      departureAt: edited
+        ? new Date(Date.parse(edited.departureAt) - 5 * 3600000)
+            .toISOString()
+            .slice(0, 16)
+            .replace('T', ' ')
+        : tomorrow,
       estimatedDurationMinutes: String(
         template?.estimatedDurationMinutes ?? 45,
       ),
@@ -358,6 +400,20 @@ function PublishForm({
       draft: Draft;
       recurrence?: RecurrenceInput;
     }) => {
+      if (edited) {
+        if (draftVersion === undefined)
+          throw new Error('Vuelve a cargar la publicación.');
+        const body: TripEditInput = {
+          version: draftVersion,
+          publication: draft,
+        };
+        return {
+          trip: await api<TripSummary>('/trips/' + edited.id, {
+            method: 'PATCH',
+            body,
+          }),
+        };
+      }
       if (!recurrence)
         return {
           trip: await api<TripSummary>('/trips', {
@@ -382,6 +438,8 @@ function PublishForm({
       void client.invalidateQueries({ queryKey: ['trip-schedules'] });
       void client.invalidateQueries({ queryKey: ['available-trips'] });
       void client.invalidateQueries({ queryKey: ['trip-feed'] });
+      void client.invalidateQueries({ queryKey: ['trip-operation'] });
+      void client.invalidateQueries({ queryKey: ['agenda'] });
     },
   });
   const economicsPreview = useMutation({
@@ -577,6 +635,21 @@ function PublishForm({
             weekdays: selectedDays.slice().sort((a, b) => a - b),
           }
         : undefined;
+      if (
+        recurrence &&
+        (!recurrence.name ||
+          !recurrence.startsOn ||
+          !recurrence.endsOn ||
+          !recurrence.time ||
+          !selectedDays.length)
+      )
+        throw new Error(
+          'Completa el nombre, las fechas, la hora y al menos un día de la recurrencia.',
+        );
+      const submittedMinutes =
+        edited || !chosen?.routingSelection
+          ? Number(values.estimatedDurationMinutes)
+          : chosen.durationMinutes;
       setConfirmedPublic(false);
       setPreview({
         recurrence,
@@ -587,16 +660,17 @@ function PublishForm({
           departureAt: `${values.departureAt.replace(' ', 'T')}:00-05:00`,
           offeredSeats,
           economics,
-          estimatedDurationMinutes: chosen?.routingSelection
-            ? chosen.durationMinutes
-            : Number(values.estimatedDurationMinutes),
+          estimatedDurationMinutes: submittedMinutes,
           ruleIds,
           ...(selected.type === 'MOTORCYCLE' && { providesHelmet: helmet }),
           itinerary: {
             ...route,
             description: values.description.trim(),
             geometry: chosen?.geometry,
-            routingSelection: chosen?.routingSelection,
+            routingSelection:
+              chosen?.durationMinutes === submittedMinutes
+                ? chosen.routingSelection
+                : undefined,
           },
         },
       });
@@ -625,7 +699,13 @@ function PublishForm({
 
   return (
     <ProtectedPage
-      title={schedule ? 'Editar recurrencia' : 'Publicar viaje'}
+      title={
+        schedule
+          ? 'Editar recurrencia'
+          : edited
+            ? 'Editar viaje publicado'
+            : 'Publicar viaje'
+      }
       requires="driver"
       scrollRef={scroll}
     >
@@ -678,6 +758,124 @@ function PublishForm({
               >
                 <Text style={w.title}>{activeTitle}</Text>
               </View>
+          {save.isSuccess ? (
+            <Text accessibilityLiveRegion="polite">
+              {save.data?.schedule
+                ? 'Recurrencia guardada. Consulta las fechas generadas en Viajes recurrentes.'
+                : edited
+                  ? 'Cambios guardados en el viaje.'
+                  : 'Viaje publicado. Ya aparece en Mis viajes.'}
+            </Text>
+          ) : (
+            <>
+              <Choice
+                label="Confirmo que la ruta y los puntos son públicos y no incluyen domicilios ni datos privados"
+                checkbox
+                checked={confirmedPublic}
+                onPress={() => setConfirmedPublic(!confirmedPublic)}
+              />
+              <Button
+                title={
+                  save.isPending
+                    ? 'Guardando…'
+                    : preview.recurrence
+                      ? 'Guardar recurrencia'
+                      : edited
+                        ? 'Confirmar cambios'
+                        : 'Confirmar publicación'
+                }
+                disabled={!confirmedPublic || save.isPending}
+                onPress={() => save.mutate(preview)}
+              />
+              <Button
+                title="Editar antes de publicar"
+                secondary
+                disabled={save.isPending}
+                onPress={() => {
+                  save.reset();
+                  setPreview(undefined);
+                }}
+              />
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          <Text style={s.text}>
+            Define los puntos públicos del viaje desde o hacia la USC. La salida
+            requiere más de 30 minutos de anticipación.
+          </Text>
+          <View style={s.section}>
+            <Text style={s.title}>Vehículo propio</Text>
+            {vehicles.data &&
+              !vehicles.data.some(({ eligibleNow }) => eligibleNow) && (
+                <Text>
+                  Registra un vehículo y consulta los requisitos vigentes para
+                  conducir.
+                </Text>
+              )}
+            {vehicles.data?.map((item) => (
+              <Choice
+                key={item.id}
+                label={`Vehículo ${item.plate} · ${item.passengerCapacity} plazas · ${item.verificationStatus === 'VERIFIED' ? 'verificado' : item.verificationStatus === 'DECLARED' ? 'declarado' : 'sin vigencia verificada'}`}
+                checked={selected?.id === item.id}
+                onPress={() => setVehicleId(item.id)}
+              />
+            ))}
+            {selected?.type === 'MOTORCYCLE' && (
+              <Choice
+                checkbox
+                label="Casco de pasajero incluido"
+                checked={helmet}
+                onPress={() => setHelmet(!helmet)}
+              />
+            )}
+          </View>
+          <View style={s.section}>
+            <Text style={s.title}>Sentido del viaje</Text>
+            <Choice
+              label="Desde la USC"
+              checked={direction === 'DESDE_USC'}
+              onPress={() => {
+                form.setValue('direction', 'DESDE_USC');
+                form.getValues('stops').forEach(({ access }, index) => {
+                  if (access === 'PICKUP' || access === 'BOTH')
+                    form.setValue(`stops.${index}.access`, 'DROPOFF');
+                });
+              }}
+            />
+            <Choice
+              label="Hacia la USC"
+              checked={direction === 'HACIA_USC'}
+              onPress={() => form.setValue('direction', 'HACIA_USC')}
+            />
+          </View>
+          <PointEditor
+            title="Origen"
+            institutional={direction === 'DESDE_USC'}
+            name="origin"
+            control={form.control}
+            catalog={catalog}
+          />
+          <PointEditor
+            title="Destino"
+            institutional={direction === 'HACIA_USC'}
+            name="destination"
+            control={form.control}
+            catalog={catalog}
+          />
+          {!schedule && !edited && (
+            <View style={s.section}>
+              <Choice
+                label="Viaje individual"
+                checked={!isRecurring}
+                onPress={() => setIsRecurring(false)}
+              />
+              <Choice
+                label="Viaje recurrente"
+                checked={isRecurring}
+                onPress={() => setIsRecurring(true)}
+              />
             </View>
             {step === 'schedule' && (
               <>

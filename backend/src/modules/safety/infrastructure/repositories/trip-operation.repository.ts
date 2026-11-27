@@ -38,6 +38,7 @@ export class TripOperationRepository {
             dropoffId: true,
             status: true,
             boardedAt: true,
+            droppedOffAt: true,
             noShowAt: true,
             quantity: true,
           },

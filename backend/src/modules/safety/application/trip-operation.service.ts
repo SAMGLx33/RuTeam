@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
+import { departureState } from '../../trips/domain/departure-state.js';
+import { tripWindow } from '../../trips/domain/activity-window.js';
+import { participationStage } from '../../reservations/domain/participation-stage.js';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { TripOperation } from '@ruteam/contracts';
 import { TripOperationRepository } from '../infrastructure/repositories/trip-operation.repository.js';
 import {
@@ -8,7 +12,10 @@ import {
 
 @Injectable()
 export class TripOperationService {
-  constructor(private readonly repository: TripOperationRepository) {}
+  constructor(
+    private readonly repository: TripOperationRepository,
+    @Inject(ENVIRONMENT) private readonly env: Environment,
+  ) {}
   async context(tripId: string, actorId: string): Promise<TripOperation> {
     const trip = await this.repository.context(tripId, actorId);
     if (!trip) throw new NotFoundException('Viaje personal no disponible');
@@ -30,11 +37,34 @@ export class TripOperationService {
     const awaitingHere = sum(
       pending.filter((row) => row.pickupId === current?.id),
     );
+    const aboard = confirmed.filter(
+      ({ boardedAt, droppedOffAt }) => boardedAt && !droppedOffAt,
+    );
+    const now = new Date();
+    const departure = departureState(
+      trip,
+      now,
+      this.env.TRIP_EXPIRATION_GRACE_MINUTES,
+    );
+    const estimate = (offset?: number | null) =>
+      offset == null
+        ? null
+        : new Date(+tripWindow(trip).start + offset * 1000).toISOString();
     return {
       id: trip.id,
       role: owner ? 'DRIVER' : 'PASSENGER',
       status: trip.status,
       departureAt: trip.departureAt.toISOString(),
+      estimatedDepartureAt: trip.estimatedDepartureAt?.toISOString() ?? null,
+      expiredAt: trip.expiredAt?.toISOString() ?? null,
+      departureState: departure,
+      trackingEnabled:
+        trip.status === 'EN_CURSO' &&
+        !!trip.trackingSharedAt &&
+        (owner ||
+          (reservation?.status === 'CONFIRMED' &&
+            !reservation.droppedOffAt &&
+            !reservation.noShowAt)),
       startedAt: trip.startedAt?.toISOString() ?? null,
       finishedAt: trip.finishedAt?.toISOString() ?? null,
       driver: trip.driver.profile?.displayName ?? null,
@@ -46,6 +76,9 @@ export class TripOperationService {
             id: reservation.id,
             status: reservation.status,
             boardedAt: reservation.boardedAt?.toISOString() ?? null,
+            droppedOffAt: reservation.droppedOffAt?.toISOString() ?? null,
+            dropoffEstimatedAt: estimate(dropoff?.estimatedOffsetSeconds),
+            stage: participationStage(reservation, trip.status),
             noShowAt: reservation.noShowAt?.toISOString() ?? null,
             pickup,
             dropoff,
@@ -55,20 +88,22 @@ export class TripOperationService {
               reservation.status === 'CONFIRMED' &&
               !reservation.boardedAt &&
               !reservation.noShowAt &&
-              (trip.status === 'PROGRAMADO' || trip.status === 'EN_CURSO'),
-            pickupEstimatedAt:
-              pickup?.estimatedOffsetSeconds != null
-                ? new Date(
-                    +(trip.startedAt ?? trip.departureAt) +
-                      pickup.estimatedOffsetSeconds * 1000,
-                  ).toISOString()
-                : null,
+              (departure === 'STARTED' ||
+                (trip.status === 'PROGRAMADO' && departure !== 'EXPIRED')),
+            pickupEstimatedAt: estimate(pickup?.estimatedOffsetSeconds),
           }
         : null,
       manifest: owner
         ? {
             awaitingHere,
             boarded: sum(confirmed.filter(({ boardedAt }) => !!boardedAt)),
+            droppedOff: sum(
+              confirmed.filter(({ droppedOffAt }) => !!droppedOffAt),
+            ),
+            aboard: sum(aboard),
+            awaitingDropoffHere: sum(
+              aboard.filter(({ dropoffId }) => dropoffId === current?.id),
+            ),
             noShows: sum(confirmed.filter(({ noShowAt }) => !!noShowAt)),
             awaitingLater: sum(pending) - awaitingHere,
             pendingProposals:

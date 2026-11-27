@@ -626,7 +626,9 @@ test('publicación, feed automático, aviso persistente y participación directa
       publishedCard.getByRole('button', { name: 'Aceptar solicitud' }),
     ).toHaveCount(0);
     await expect(
-      publishedCard.getByText('Confirmada · Viaje programado', { exact: true }),
+      publishedCard.getByText('En espera de recogida · Viaje programado', {
+        exact: true,
+      }),
     ).toBeVisible();
 
     // Enter the origin boarding window without waiting for the scheduled trip.
@@ -662,7 +664,7 @@ test('publicación, feed automático, aviso persistente y participación directa
 
     await passenger.goto('http://localhost:8082/my-reservations');
     await expect(
-      passenger.getByText('Confirmada · Viaje programado'),
+      passenger.getByText('En espera de recogida · Viaje programado'),
     ).toBeVisible();
     await passenger
       .getByRole('button', { name: 'Cancelar participación' })

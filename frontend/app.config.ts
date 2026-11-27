@@ -1,5 +1,8 @@
 import { config } from 'dotenv';
 config({ path: '../.env', quiet: true });
+const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+const googleServicesFile = process.env.RUTEAM_ANDROID_GOOGLE_SERVICES_FILE;
+
 export default {
   expo: {
     name: 'RuTeam',
@@ -11,6 +14,7 @@ export default {
     plugins: [
       'expo-router',
       'expo-secure-store',
+      ['expo-notifications', { defaultChannel: 'ruteam-updates' }],
       [
         'expo-camera',
         {
@@ -30,16 +34,22 @@ export default {
         },
       ],
     ],
-    ios: { supportsTablet: true },
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier:
+        process.env.RUTEAM_IOS_BUNDLE_IDENTIFIER || 'org.ruteam.demo',
+    },
     android: {
-      package: 'org.ruteam.demo',
+      package: process.env.RUTEAM_ANDROID_PACKAGE || 'org.ruteam.demo',
       blockedPermissions: ['android.permission.RECORD_AUDIO'],
+      ...(googleServicesFile ? { googleServicesFile } : {}),
     },
     web: { bundler: 'metro', output: 'single', name: 'RuTeam' },
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
       routeTileUrl: process.env.EXPO_PUBLIC_ROUTE_TILE_URL,
       routeTileAttribution: process.env.EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION,
+      ...(projectId ? { eas: { projectId } } : {}),
     },
   },
 };

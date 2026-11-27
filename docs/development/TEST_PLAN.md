@@ -143,3 +143,13 @@ siguen activos.
 - `product-evolution.e2e.test.mjs` usa HTTP y PostgreSQL real. Prueba instantánea histórica, exclusión de ausencia, agenda, permisos, señales después de commit, reconexión y revocación. Simula respuestas Expo al probar la cola y valida la separación de ticket y recibo.
 - `tests/web/evolution.spec.ts` prueba agenda, actualización operativa por SSE y persistencia de preferencias en Chromium.
 - Ejecutar en una base `_test` dedicada y hacer las exportaciones aparte. Registrar por separado compilaciones, pruebas en navegador y prueba en equipos físicos.
+
+## Operación del viaje y movilidad cotidiana
+
+Preparar un PostgreSQL local distinto de desarrollo y ejecutar Jest y Playwright
+secuencialmente. `activity-window.test` cubre intervalos y falta de tiempos.
+`driver-routes.e2e` cubre descenso, repetición, acceso, cierre, demoras, vencimiento,
+edición y una carrera entre viajes. `daily-mobility.e2e` cubre guardados, lugares
+y recordatorios. `connectivity.spec` cubre reconexión web y
+`evolution.spec` retoma enlaces internos. Los pasos y evidencias del dispositivo
+se consignan en la [guía móvil](MOBILE_TESTING.md).
