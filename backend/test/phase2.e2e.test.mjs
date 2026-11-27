@@ -24,26 +24,38 @@ const vehicleInput = () => ({
 });
 const tripInput = (offset = 1) => ({
   vehicleId: vehicle.id,
-  destinationId: destination.id,
-  origin: { label: 'Origen DEMO', latitude: 3.43, longitude: -76.52 },
   departureAt: days(offset),
   estimatedDurationMinutes: 45,
   offeredSeats: 3,
   ruleIds: [],
-  stops: [
-    {
-      position: 1,
-      label: 'Recogida uno DEMO',
-      latitude: 3.42,
-      longitude: -76.53,
+  itinerary: {
+    direction: 'HACIA_USC',
+    publicMeetingPoints: true,
+    description: 'Recorrido sintético del estudiante',
+    origin: {
+      label: 'Origen de prueba',
+      latitude: 3.43,
+      longitude: -76.52,
+      instructions: 'Encuentro público',
     },
-    {
-      position: 2,
-      label: 'Recogida dos DEMO',
-      latitude: 3.41,
-      longitude: -76.54,
-    },
-  ],
+    destination: { campusPointId: destination.id },
+    stops: [
+      {
+        label: 'Recogida uno de prueba',
+        latitude: 3.42,
+        longitude: -76.53,
+        instructions: 'Encuentro público',
+        access: 'PICKUP',
+      },
+      {
+        label: 'Recogida dos de prueba',
+        latitude: 3.41,
+        longitude: -76.54,
+        instructions: 'Encuentro público',
+        access: 'PICKUP',
+      },
+    ],
+  },
 });
 beforeAll(async () => {
   if (
@@ -60,7 +72,7 @@ beforeAll(async () => {
   await app.init();
   db = app.get(PrismaService);
   tokens = {};
-  for (const identity of ['diego', 'ana', 'admin']) {
+  for (const identity of ['diego', 'ana', 'sara']) {
     const res = await request(app.getHttpServer())
       .post('/api/v1/auth/demo/login')
       .set('x-ruteam-client', 'native')
@@ -87,36 +99,31 @@ afterAll(async () => {
   await app?.close();
 });
 
-test('registra vehículo propio y sólo revisión admin puede habilitar documentos DEMO', async () => {
+test('autogestión declara documentos sin revisión ni verificación oficial', async () => {
   const res = await call('post', '/vehicles').send(vehicleInput()).expect(201);
   vehicle = res.body;
   vehicleIds.push(vehicle.id);
   expect(vehicle).toMatchObject({
-    reviewStatus: 'PENDING',
+    verificationStatus: 'DECLARED',
+    verificationSource: 'SELF_DECLARED',
     demo: true,
     passengerCapacity: 3,
+    eligibleNow: true,
   });
+  expect(vehicle).not.toHaveProperty('reviewStatus');
   await call('post', `/admin/demo/vehicles/${vehicle.id}/review`)
     .send({ decision: 'APPROVED', revision: 1 })
-    .expect(403);
-  await call('post', '/trips').send(tripInput()).expect(403);
-  await call('post', `/admin/demo/vehicles/${vehicle.id}/review`, 'admin')
-    .send({ decision: 'APPROVED', revision: 1 })
-    .expect(201);
+    .expect(404);
   originalLicense = await db.driverEligibility.findUnique({
     where: { userId: driverId },
   });
   const submitted = await call('post', '/driver-eligibility')
     .send({ category: 'BOTH', expiresAt: days(400) })
     .expect(201);
-  await call('post', '/trips').send(tripInput()).expect(403);
-  await call(
-    'post',
-    `/admin/demo/driver-eligibility/${driverId}/review`,
-    'admin',
-  )
-    .send({ decision: 'APPROVED', revision: submitted.body.revision })
-    .expect(201);
+  expect(submitted.body).toMatchObject({
+    verificationStatus: 'DECLARED',
+    verificationSource: 'SELF_DECLARED',
+  });
 });
 test('unicidad de placa normalizada y rechazo de autoaprobación', async () => {
   await call('post', '/vehicles')
@@ -168,7 +175,7 @@ test('vehículo ajeno no permite publicar ni revisar', async () => {
   await call('post', '/trips', 'ana').send(tripInput(3)).expect(403);
   await call('post', `/admin/demo/vehicles/${vehicle.id}/review`, 'ana')
     .send({ decision: 'APPROVED', revision: 1 })
-    .expect(403);
+    .expect(404);
 });
 test.each([
   { origin: [] },
@@ -207,7 +214,13 @@ test('destino USC deshabilitado no se acepta ni redirige', async () => {
   });
   try {
     await call('post', '/trips')
-      .send({ ...tripInput(5), destinationId: disabled.id })
+      .send({
+        ...tripInput(5),
+        itinerary: {
+          ...tripInput(5).itinerary,
+          destination: { campusPointId: disabled.id },
+        },
+      })
       .expect(400);
   } finally {
     await db.campusDestination.delete({ where: { id: disabled.id } });
@@ -276,31 +289,25 @@ test('baja institucional posterior impide registro/listado/publicación', async 
   }
 });
 
-test('tarjeta admin obsoleta no aprueba una nueva presentación de licencia', async () => {
+test('renovación declarada se versiona y antiguas rutas administrativas no existen', async () => {
   const original = await db.driverEligibility.findUniqueOrThrow({
     where: { userId: driverId },
   });
   try {
-    const shown = await call('post', '/driver-eligibility')
+    const first = await call('post', '/driver-eligibility')
       .send({ category: 'CAR', expiresAt: days(400) })
       .expect(201);
-    await call('post', '/driver-eligibility')
+    const second = await call('post', '/driver-eligibility')
       .send({ category: 'BOTH', expiresAt: days(400) })
       .expect(201);
+    expect(second.body.revision).toBe(first.body.revision + 1);
     await call(
       'post',
       `/admin/demo/driver-eligibility/${driverId}/review`,
-      'admin',
+      'sara',
     )
-      .send({ decision: 'APPROVED', revision: shown.body.revision })
-      .expect(409);
-    expect(
-      (
-        await db.driverEligibility.findUniqueOrThrow({
-          where: { userId: driverId },
-        })
-      ).reviewStatus,
-    ).toBe('PENDING');
+      .send({ decision: 'APPROVED', revision: first.body.revision })
+      .expect(404);
   } finally {
     await db.driverEligibility.update({
       where: { userId: driverId },
@@ -308,9 +315,40 @@ test('tarjeta admin obsoleta no aprueba una nueva presentación de licencia', as
         category: original.category,
         expiresAt: original.expiresAt,
         reviewStatus: original.reviewStatus,
-        reviewedAt: original.reviewedAt,
-        reviewedById: original.reviewedById,
+        verificationSource: original.verificationSource,
       },
+    });
+  }
+});
+test('SOAT sólo puede actualizarlo el propietario y siempre queda declarado', async () => {
+  await call('patch', `/vehicles/${vehicle.id}/soat`, 'ana')
+    .send({ soatExpiresAt: days(500) })
+    .expect(404);
+  await call('patch', `/vehicles/${vehicle.id}/soat`)
+    .send({ soatExpiresAt: new Date(0).toISOString() })
+    .expect(400);
+  await call('patch', `/vehicles/${vehicle.id}/soat`)
+    .send({ soatExpiresAt: days(500), verificationSource: 'AUTHORIZED_SOURCE' })
+    .expect(400);
+  const updated = await call('patch', `/vehicles/${vehicle.id}/soat`)
+    .send({ soatExpiresAt: days(500) })
+    .expect(200);
+  expect(updated.body).toMatchObject({
+    verificationStatus: 'DECLARED',
+    verificationSource: 'SELF_DECLARED',
+  });
+});
+test('documento no sintético sin fuente autorizada bloquea publicación', async () => {
+  await db.vehicleDocument.update({
+    where: { vehicleId: vehicle.id },
+    data: { demo: false },
+  });
+  try {
+    await call('post', '/trips').send(tripInput(12)).expect(403);
+  } finally {
+    await db.vehicleDocument.update({
+      where: { vehicleId: vehicle.id },
+      data: { demo: true },
     });
   }
 });
@@ -325,12 +363,6 @@ test('motocicleta exige casco declarado y una plaza, conserva etiqueta de casco 
     })
     .expect(201);
   vehicleIds.push(res.body.id);
-  await call('post', `/admin/demo/vehicles/${res.body.id}/review`, 'admin')
-    .send({ decision: 'APPROVED', revision: res.body.revision })
-    .expect(201);
-  await call('post', `/admin/demo/vehicles/${res.body.id}/review`, 'admin')
-    .send({ decision: 'APPROVED', revision: res.body.revision })
-    .expect(409);
   const input = { ...tripInput(13), vehicleId: res.body.id, offeredSeats: 1 };
   await call('post', '/trips').send(input).expect(400);
   const trip = await call('post', '/trips')
@@ -340,15 +372,9 @@ test('motocicleta exige casco declarado y una plaza, conserva etiqueta de casco 
   expect(trip.body.providesHelmet).toBe(false);
   expect(trip.body.availableSeats).toBe(1);
 });
-test('bandeja de revisión sólo admin y vehículos sólo del propietario', async () => {
-  await call('get', '/admin/demo/document-reviews', 'ana').expect(403);
-  const queue = await call(
-    'get',
-    '/admin/demo/document-reviews',
-    'admin',
-  ).expect(200);
-  expect(queue.body).toHaveProperty('vehicles');
-  expect(queue.body).toHaveProperty('licenses');
+test('sin bandeja administrativa y vehículos restringidos al propietario', async () => {
+  await call('get', '/admin/demo/document-reviews', 'ana').expect(404);
+  await call('get', '/admin/demo/document-reviews', 'sara').expect(404);
   const own = await call('get', '/vehicles', 'ana').expect(200);
   expect(own.body.some((item) => item.id === vehicle.id)).toBe(false);
 });

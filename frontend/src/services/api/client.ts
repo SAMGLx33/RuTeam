@@ -1,3 +1,4 @@
+import { fetch as expoFetch } from 'expo/fetch';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 let sessionToken: string | null = null;
@@ -14,21 +15,22 @@ export class ApiError extends Error {
 }
 export async function api<T>(
   path: string,
-  options?: { method?: 'GET' | 'POST' | 'PATCH'; body?: unknown },
+  options?: {
+    method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+    body?: unknown;
+    signal?: AbortSignal;
+  },
 ): Promise<T> {
-  const baseUrl: unknown = Constants.expoConfig?.extra?.apiUrl;
-  if (typeof baseUrl !== 'string' || !baseUrl.startsWith('http'))
-    throw new ApiError('Configura EXPO_PUBLIC_API_URL y reinicia Expo.', 0);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
+  const signal = options?.signal;
+  const cancel = () => controller.abort();
+  if (signal?.aborted) cancel();
+  signal?.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(cancel, 10000);
   try {
-    const response = await fetch(`${baseUrl.replace(/\/$/, '')}${path}`, {
+    const response = await fetch(apiUrl(path), {
       method: options?.method ?? 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-ruteam-client': Platform.OS === 'web' ? 'web' : 'native',
-        ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
-      },
+      headers: { ...clientHeaders(), 'Content-Type': 'application/json' },
       credentials: 'include',
       body:
         options?.body === undefined ? undefined : JSON.stringify(options.body),
@@ -45,12 +47,33 @@ export async function api<T>(
     }
     return payload as T;
   } catch (error) {
-    if (error instanceof ApiError) throw error;
+    if (error instanceof ApiError || signal?.aborted) throw error;
     throw new ApiError(
-      'No pudimos conectar con la API. Revisa la URL LAN, la red y que Nest esté iniciado.',
+      'No pudimos conectar con RuTeam. Comprueba tu conexión e inténtalo de nuevo.',
       0,
     );
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', cancel);
   }
+}
+
+function apiUrl(path: string) {
+  const baseUrl: unknown = Constants.expoConfig?.extra?.apiUrl;
+  if (typeof baseUrl !== 'string' || !baseUrl.startsWith('http'))
+    throw new ApiError('El servicio de RuTeam no está disponible.', 0);
+  return baseUrl.replace(/\/$/, '') + path;
+}
+function clientHeaders(): Record<string, string> {
+  return {
+    'x-ruteam-client': Platform.OS === 'web' ? 'web' : 'native',
+    ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
+  };
+}
+export function openApiStream(signal: AbortSignal) {
+  return expoFetch(apiUrl('/realtime'), {
+    headers: { ...clientHeaders(), Accept: 'text/event-stream' },
+    credentials: 'include',
+    signal,
+  });
 }

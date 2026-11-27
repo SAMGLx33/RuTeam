@@ -1,3 +1,38 @@
+# Catálogo ERS: interpretación vigente y fuente histórica
+
+Actualización 26/11/2026. [PRODUCT_DEFINITION](PRODUCT_DEFINITION.md) prevalece sobre
+criterios literales incompatibles. Se conservan RF-001..030/RNF-031..050, títulos,
+prioridades e información histórica de la fuente abajo. No se reescribe el original
+ni se acredita aprobación académica por esta anotación. RF-001 sin prioridad unívoca.
+
+| ID oficial / extensión existente        | Interpretación vigente y edición pendiente del original                                                                                                                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-001/002/016; RQ-ACC-01               | Sólo estudiantes vigentes, una identidad/capacidades; control del correo≠matrícula. No imponer contraseña/JWT por texto anterior si la identidad autorizada requiere otra estrategia. Tokens/códigos propios seguros si se implementan |
+| RF-003/004/029; RQ-RUTA-01              | Dos modalidades con USC en un extremo institucional; conductor elige recorrido/condiciones, encuentro interior libre sin GPS propio, ubicaciones externas genéricas. No externo→externo aunque USC intermedia                          |
+| RF-005/018; RQ-RUTA-01                  | Descubrimiento de viajes existentes por modalidad/horario/texto/paradas/proximidad según calidad de datos; sin solicitudes de transporte ni itinerario recalculado. UI sin coordenadas técnicas y sin inventar precisión geográfica    |
+| RF-006                                  | Sustituir Solicitar→aceptación por confirmación directa; cupos transaccionales en ese momento. Conductor consulta confirmados. Notificaciones, si existen, no son autorización ordinaria                                               |
+| RF-007/012/015                          | Retiro futuro permitido libera plazas y conserva historial; lleno≠iniciado. Estados/actores explícitos, cambios esenciales no silenciosos; contradicción de penalidad sin resolver, ningún cobro automático                            |
+| RF-013/024/022                          | Vehículos autogestionados y elegibilidad sin revisión ADMIN; conservar titularidad/capacidad/casco/licencia/SOAT y diferenciar declaración de verificación autorizada                                                                  |
+| RF-017                                  | Retirado del alcance funcional vigente por decisión explícita; conservar ID/historia. No panel/login/permisos/endpoints ni métricas administrativas como producto                                                                      |
+| RQ-GRUPO-01 y RF-006                    | Grupos con identidad/consentimiento explícito, invitaciones temporales y lote atómico; no UUID público como código ni plazas retenidas indefinidamente. Individual seguro prioritario mientras falte mecanismo                         |
+| Propuesta HACIA_USC                     | Nueva regla RN-PARADA-01, no inventar RF/HU oficial. Entidad separada, decide propietario, no cambia geometría ni confirma/consume plazas                                                                                              |
+| RF-027                                  | Abordaje separado de participación, sólo confirmada y sin segunda plaza; QR interno seguro no acredita carné institucional                                                                                                             |
+| RF-014/010/008/009/011/028/030          | Conservar objetivos compatibles de chat, ratings, economía y seguridad con participantes reales y privacidad. Retirar destinatario ADMIN; soporte legítimo pendiente. Sin pagos/multas/SOS ficticios                                   |
+| RNF-038/039/040/041/045/046/048/049/050 | Sesión/PII/consentimiento, rate limiting, historial, MVC/contratos y UX compartida siguen aplicando. Sin cuenta administrativa, sin secretos públicos, sin cobertura RNF inferida de tests                                             |
+
+La consolidación del 26/11/2026 resolvió que RF-010 admite enteros de 1 a 5
+y calcula la media aritmética por capacidad. Género/moto/exclusividad, fórmula
+económica, penalidades y excepciones de plataforma siguen en OPEN_DECISIONS.
+La rúbrica no se modifica unilateralmente. Ver
+[edición académica precisa](ACADEMIC_REDEFINITION_CHANGES.md),
+[trazabilidad actual](TRACEABILITY.md) y [UML](UML_CROSSWALK.md).
+La correspondencia documental no acredita implementación ni porcentaje funcional.
+
+## Transcripción/cotejo histórico del 13/11/2026
+
+Todo el bloque siguiente preserva el texto de la fuente y sus divergencias en ese corte;
+expresiones como ADMIN, docente/trabajador o aceptación ordinaria no son reglas vigentes.
+
 # Catálogo de requisitos cotejado (derivado sin PII)
 
 Cotejo: 2026-11-13, America/Bogota. Fuente privada ERS_RuTeam.doc, extraída íntegramente
@@ -111,6 +146,11 @@ Sección: 3.2.7. Prioridad literal de matriz: **Media/Deseado**.
 - Relaciones entradas/salidas: Delta tiempo < 30 → Generacion de deuda en “wallets”.
 - BD: Wallets: debt(Float).
 
+La [decisión económica](../development/COMPENSACIONES_COP.md) del 26/11/2026
+preserva las fichas RF-008 y RF-009 siguientes como fuente histórica. El producto
+usa gastos enteros, participación del conductor, condiciones publicadas y
+declaraciones personales. [Definición vigente](PRODUCT_DEFINITION.md).
+
 <a id="rf-008"></a>
 
 ## RF-008 — Cálculo de división de costos
@@ -152,6 +192,10 @@ Sección: 3.2.10. Prioridad literal de matriz: **Alta/Esencial**.
 - Generación de salidas: Nuevo promedio de calificaciones en el perfil.
 - Relaciones entradas/salidas: Formula (average_reviews + stars) ÷ total_reviews.
 - BD: Ratings: stars (Int), comment(String).
+
+La aplicación vigente de RF-011 usa contactos propios, acciones nativas
+confirmadas y registros de incidencia de autor. La ficha siguiente conserva la
+secuencia del original. [Definición vigente](PRODUCT_DEFINITION.md#seguridad-y-módulos-complementarios).
 
 <a id="rf-011"></a>
 
@@ -650,3 +694,61 @@ Sección: 3.4.1.3. Prioridad literal de matriz: **Media/Deseado**.
 - Justificación: Asegura inclusión de estudiantes con discapacidades visuales.
 - Métrica de validación: Auditoría pasando con > 90% en herramientas como Google Lighthouse.
 - Dependencias tecnológicas: Atributos semánticos/aria-labels en el framework móvil.
+
+## Enmienda funcional del 24 de noviembre de 2026
+
+Los criterios anteriores conservan el cotejo de la ERS. La enmienda aplica sólo a los requisitos siguientes y conserva sus IDs.
+
+| Requisitos                    | Cambio que debe reflejar la ERS                                                                                                                                                                                                                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-003, RF-004                | El conductor define ambos extremos, puntos ordenados, permisos de operación, vías y condiciones. La USC puede asociarse a cualquier punto de encuentro. Mantener validaciones de vehículo, afiliación, capacidad y agenda. Guardar geometría cuando se aporta o elige y distinguir su ausencia. |
+| RF-005                        | Buscar próximos viajes por cercanía a abordaje y descenso autorizados, ventana de salida, sentido y cupos. Preservar el radio de la ERS. Una plaza disponible admite un pasajero. Match no cambia el itinerario.                                                                                |
+| RF-006, RF-012, RF-015        | Solicitud de grupo con par ordenado de paradas, aceptación del dueño y capacidad atómica por viaje. Conservar miembros e historial. Cancelar desde PROGRAMADO o avanzar EN_CURSO → COMPLETADO. RF-007 conserva la contradicción pendiente de decisión.                                          |
+| RF-018, RF-027, RF-029        | Distinguir catálogo DEMO, puntos internos por nivel/acceso, catálogo oficial, ruta consultable y posición del dispositivo. El QR futuro debe vincular al participante con su parada seleccionada y reserva confirmada.                                                                          |
+| RNF-031, RNF-035, RNF-039–041 | Filtrar antes de devolver datos, paginar búsqueda y limitar operaciones y geometrías. Datos de búsqueda mínimos. Conservar eventos y estados; las mediciones y garantías completas de la ERS siguen pendientes de evidencia.                                                                    |
+| RNF-046–048, RNF-050          | Una app Expo Web/Native. Experiencia usable con mapa base opcional, permisos y errores explícitos cuando una integración se habilite. Validación física y conformidad de accesibilidad requieren pruebas propias.                                                                               |
+
+## Nota de evolución 25/11/2026
+
+Para RF-001/002 y recuperación, la implementación local incorpora contraseña propia,
+enlaces de buzón y recuperación y elegibilidad separada. Para RF-005, añadir preferencias
+privadas, listado general y conciliación de compatibilidad directa/potencial. Para RF-006,
+la participación ordinaria sigue siendo directa y atómica. Los avisos internos se vinculan
+a nuevas coincidencias y no adjudican plazas. Los textos/identificadores archivados de
+la ERS y la prioridad pendiente de RF-001 se conservan. Consultar
+[trazabilidad vigente](TRACEABILITY.md) y [cambios académicos](ACADEMIC_REDEFINITION_CHANGES.md).
+
+## Nota de continuidad
+
+RF-014 tiene una implementación REST compartida con avisos persistentes.
+Actualización en tiempo real y push requieren una evolución separada. Las políticas
+de lectura tras finalizar y retención se mantienen en la definición y el informe de
+continuidad. En ese corte se mantenía pendiente la decisión RF-010 sobre rango
+y fórmula. La consolidación posterior la resuelve.
+
+## Consolidación funcional del 26 de noviembre
+
+La transcripción histórica de RF-010 conserva el criterio excluyente y la
+fórmula originales. El encargo vigente aprueba el intervalo entero 1–5
+inclusive y la media aritmética por capacidad evaluada en viajes completados.
+La evaluación exige la pareja conductor y pasajero con abordaje, y una clave
+única de viaje, evaluador y evaluado. Los estados de implementación de grupos,
+QR, estimaciones privadas, seguimiento, seguridad y RF-010 se registran en
+[trazabilidad](TRACEABILITY.md#consolidación-funcional-26112026).
+
+## Implementación de continuidad del 26/11/2026
+
+| ID histórico | Alcance vigente                                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RF-019       | Estadísticas de movilidad por rol, mes y alcance. Estimaciones con factores versionados y contraste voluntario.                                  |
+| RF-020       | Gestión de sesiones, desactivación, registro de solicitud, consulta y recuperación. Ejecución del borrado sujeta a política de conservación.     |
+| RF-023       | Recurrencias independientes de los viajes de cada fecha, generación durable y edición con alcance futuro.                                        |
+| RF-026       | Historial de gastos propios, condiciones de viaje y compensaciones voluntarias en COP.                                                           |
+| RF-028       | Retiro con motivo opcional, cancelación programada, cancelación de fechas recurrentes e interrupción segura. Gestión de apoyo externo pendiente. |
+| RF-030       | Categorías operativas, historial privado del autor y exportación voluntaria. Canal institucional pendiente.                                      |
+
+RF-021 y RF-025 siguen en definición de Producto. Consulta las [reglas vigentes](PRODUCT_DEFINITION.md#continuidad-funcional-del-26112026).
+
+## Alcance actualizado de la evolución
+
+RF-019 incluye estimaciones reproducibles de operación, atribución y contraste voluntario de movilidad. RF-014 usa chat persistente con actualización SSE y recuperación HTTP. RF-015 suma una vista operativa por rol. RF-023 conserva la independencia de fechas en agenda y permite revisar una publicación como plantilla. RNF-032 distingue señales de primer plano de push remoto y mantiene pendiente la comprobación de entrega física. Las fichas anteriores conservan la transcripción original.

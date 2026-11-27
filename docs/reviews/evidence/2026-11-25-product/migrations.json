@@ -1,0 +1,221 @@
+{
+  "previous": {
+    "stats": {
+      "User": 4,
+      "Profile": 4,
+      "InstitutionalMembership": 4,
+      "Vehicle": 1,
+      "VehicleDocument": 1,
+      "DriverEligibility": 1,
+      "Trip": 0,
+      "TripStop": 0,
+      "Reservation": 0,
+      "ReservationMember": 0,
+      "AuthSession": 6
+    },
+    "migrations": [
+      {
+        "migration_name": "20261114003554_foundation",
+        "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261114004000_domain_constraints",
+        "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261114014345_phase2_vehicle_publication",
+        "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261114015557_phase2_document_revisions",
+        "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261124203000_driver_itineraries",
+        "checksum": "13b2639e98a7a8053e75a0ce0267f9266c67b5b2ae6d10f8652174316f0869f6",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261124204500_route_reservations",
+        "checksum": "b4a430ac128351755dfac5a3d930f41c44d3007015a5d9f4a1259cb541ae4818",
+        "complete": true,
+        "current": true,
+        "matches": true
+      }
+    ],
+    "adminHistory": 1
+  },
+  "development": {
+    "stats": {
+      "User": 4,
+      "Profile": 4,
+      "InstitutionalMembership": 4,
+      "Vehicle": 1,
+      "VehicleDocument": 1,
+      "DriverEligibility": 1,
+      "Trip": 0,
+      "TripStop": 0,
+      "Reservation": 0,
+      "ReservationMember": 0,
+      "AuthSession": 6
+    },
+    "migrations": [
+      {
+        "migration_name": "20261114003554_foundation",
+        "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261114004000_domain_constraints",
+        "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261114014345_phase2_vehicle_publication",
+        "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261114015557_phase2_document_revisions",
+        "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261124203000_driver_itineraries",
+        "checksum": "13b2639e98a7a8053e75a0ce0267f9266c67b5b2ae6d10f8652174316f0869f6",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261124204500_route_reservations",
+        "checksum": "b4a430ac128351755dfac5a3d930f41c44d3007015a5d9f4a1259cb541ae4818",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261125000200_participation_boarding",
+        "checksum": "d382a671ccbe879d4392b9b0defef9658601c6bfbdd1ba6af222ab00402e7b6f",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261125000300_pickup_proposals",
+        "checksum": "e1e6f216361bec2dfa0ea7d098a9df1e5fedd31218c15f2412b2928fc8b1087e",
+        "complete": true,
+        "current": true,
+        "matches": true
+      },
+      {
+        "migration_name": "20261125010000_student_identity_self_service",
+        "checksum": "0e1c425ffed93610e1ca79cf74ad7a03eafe79a975bb8b716d49a1f8797a71b8",
+        "complete": true,
+        "current": true,
+        "matches": true
+      }
+    ]
+  },
+  "testMigrations": [
+    {
+      "migration_name": "20261114003554_foundation",
+      "checksum": "6fb88bba84f29ec3d9f921b1603d8d6625a8f0215c81c07f309c8b2753af1350",
+      "complete": true,
+      "current": true,
+      "matches": true
+    },
+    {
+      "migration_name": "20261114004000_domain_constraints",
+      "checksum": "327c59ceb40de79df4e0648b8e6bb6868edf80a267c0589aaba0f84aae848a6f",
+      "complete": true,
+      "current": true,
+      "matches": true
+    },
+    {
+      "migration_name": "20261114014345_phase2_vehicle_publication",
+      "checksum": "9311a6b8ab79693d22823592252bb727606edcdc766387923c6d6ffd4ca4e4a9",
+      "complete": true,
+      "current": true,
+      "matches": true
+    },
+    {
+      "migration_name": "20261114015557_phase2_document_revisions",
+      "checksum": "8590166ec33140b466bc2df2c76aec01df0bdfec465d61f0b537eacd595c1303",
+      "complete": true,
+      "current": true,
+      "matches": true
+    },
+    {
+      "migration_name": "20261124203000_driver_itineraries",
+      "checksum": "13b2639e98a7a8053e75a0ce0267f9266c67b5b2ae6d10f8652174316f0869f6",
+      "complete": true,
+      "current": true,
+      "matches": true
+    },
+    {
+      "migration_name": "20261124204500_route_reservations",
+      "checksum": "b4a430ac128351755dfac5a3d930f41c44d3007015a5d9f4a1259cb541ae4818",
+      "complete": true,
+      "current": true,
+      "matches": true
+    },
+    {
+      "migration_name": "20261125000200_participation_boarding",
+      "checksum": "d382a671ccbe879d4392b9b0defef9658601c6bfbdd1ba6af222ab00402e7b6f",
+      "complete": true,
+      "current": true,
+      "matches": true
+    },
+    {
+      "migration_name": "20261125000300_pickup_proposals",
+      "checksum": "e1e6f216361bec2dfa0ea7d098a9df1e5fedd31218c15f2412b2928fc8b1087e",
+      "complete": true,
+      "current": true,
+      "matches": true
+    },
+    {
+      "migration_name": "20261125010000_student_identity_self_service",
+      "checksum": "0e1c425ffed93610e1ca79cf74ad7a03eafe79a975bb8b716d49a1f8797a71b8",
+      "complete": true,
+      "current": true,
+      "matches": true
+    }
+  ],
+  "developmentRowCountsPreservedBeforeSeed": {
+    "User": true,
+    "Profile": true,
+    "InstitutionalMembership": true,
+    "Vehicle": true,
+    "VehicleDocument": true,
+    "DriverEligibility": true,
+    "Trip": true,
+    "TripStop": true,
+    "Reservation": true,
+    "ReservationMember": true,
+    "AuthSession": true
+  },
+  "backupRetainedOutsideGit": true
+}

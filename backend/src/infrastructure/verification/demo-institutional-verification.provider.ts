@@ -8,10 +8,15 @@ export class DemoInstitutionalVerificationProvider extends InstitutionalVerifica
     super();
   }
   async verify(userId: string): Promise<boolean> {
-    const membership = await this.db.institutionalMembership.findUnique({
-      where: { userId },
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      include: { membership: true },
     });
+    const membership = user?.membership ?? null;
     return (
+      !!user &&
+      !!user.demoIdentity &&
+      !user.disabledAt &&
       membership?.verifiedBy === 'DEMO' &&
       isActiveMembership(membership, new Date())
     );

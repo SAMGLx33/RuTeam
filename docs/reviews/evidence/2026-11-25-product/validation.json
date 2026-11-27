@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-25",
+  "timezone": "America/Bogota",
+  "branch": "task/driver-defined-routes",
+  "base": "72a31d7",
+  "database": "PostgreSQL 18.6; local port 55432, separate dev and test",
+  "checks": {
+    "check:env": "passed",
+    "db:generate": "passed",
+    "db:test:setup": "passed",
+    "db:migrate": "passed",
+    "db:seed": "passed",
+    "lint": "passed",
+    "typecheck": "passed",
+    "format:check": "passed",
+    "git diff --check": "passed",
+    "npm test": {
+      "passed": 117,
+      "suites": 12,
+      "exit": 0
+    },
+    "npm run test:e2e": {
+      "passed": 4,
+      "exit": 0,
+      "platforms": ["desktop Chromium", "mobile viewport Chromium"],
+      "providerFixture": true
+    },
+    "smoke": {
+      "passed": 6,
+      "exit": 0
+    },
+    "swagger": {
+      "paths": 25,
+      "admin": false,
+      "participations": true,
+      "pickupProposals": true
+    },
+    "build:api": "passed",
+    "build:web": "passed",
+    "npx expo-doctor frontend": "18/18",
+    "Expo export Android/iOS": "passed",
+    "Prisma migrate diff": "No difference detected."
+  },
+  "requiredInvariants": {
+    "lastSeatConfirmationPair": [201, 409],
+    "replayNoDuplicate": true,
+    "boardDoesNotAddSeat": true,
+    "acceptedPickupDoesNotAddSeatOrChangeGeometry": true,
+    "historicalPendingNotPromoted": true
+  },
+  "earlierFailures": [
+    "E2E 2/4 before coordinate event adaptation on React Native Web",
+    "HTTP expectation for conflicting duplicate used an outbound pickup that is now denied (400); changed to a valid alternate dropoff to exercise 409"
+  ],
+  "pending": [
+    "institutional credentials",
+    "document verification provider",
+    "operational tiles/routing provider in local configuration",
+    "physical mobile",
+    "consented group flow",
+    "complementary modules",
+    "remote CI"
+  ]
+}

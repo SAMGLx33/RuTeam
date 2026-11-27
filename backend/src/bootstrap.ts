@@ -32,8 +32,8 @@ export async function createApp() {
   );
   app.useGlobalFilters(new ApiExceptionFilter());
   const config = new DocumentBuilder()
-    .setTitle('RuTeam DEMO')
-    .setDescription('Vinculación simulada. Sólo rutas implementadas.')
+    .setTitle('RuTeam')
+    .setDescription('Viajes compartidos para estudiantes vigentes de la USC.')
     .setVersion('0.1.0')
     .addCookieAuth('ruteam_session')
     .addBearerAuth()

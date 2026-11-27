@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 import { config } from 'dotenv';
+import fixtures from './scripts/test-fixtures.json';
 config({ quiet: true });
+// Known password for isolated synthetic TEST accounts only. Override in the process
+// environment and run db:seed with the same value; never use this for real accounts.
+process.env.AUTH_FIXTURE_PASSWORD ??= fixtures.defaultAuthFixturePassword;
 if (
   !process.env.TEST_DATABASE_URL ||
   process.env.TEST_DATABASE_URL === process.env.DATABASE_URL ||
@@ -36,19 +40,33 @@ export default defineConfig({
       reuseExistingServer: false,
       env: {
         DATABASE_URL: process.env.TEST_DATABASE_URL,
+        AUTH_FIXTURE_PASSWORD: process.env.AUTH_FIXTURE_PASSWORD,
+        // Exercise the durable notification worker, which is paused in NODE_ENV=test.
+        // The process still connects exclusively to TEST_DATABASE_URL above.
+        NODE_ENV: 'development',
         PORT: '3100',
         CORS_ORIGINS: 'http://localhost:8082',
         DEMO_MODE: 'true',
         VERIFICATION_PROVIDER: 'demo',
+        // Browser coverage uses seeded, verified accounts and never real SMTP.
+        SMTP_HOST: '127.0.0.1',
+        SMTP_PORT: '1',
+        SMTP_SECURE: 'false',
       },
     },
     {
-      command:
-        'npm exec -w @ruteam/client -- expo start --web --port 8082 --clear',
+      // Serve the same Expo web export evaluated by QA, with the test API baked in.
+      command: 'npm run build:web && node scripts/serve-playwright-web.mjs',
       url: 'http://localhost:8082',
       timeout: 120000,
       reuseExistingServer: false,
-      env: { CI: '1', EXPO_PUBLIC_API_URL: 'http://localhost:3100/api/v1' },
+      env: {
+        CI: '1',
+        EXPO_PUBLIC_API_URL: 'http://localhost:3100/api/v1',
+        EXPO_PUBLIC_ROUTE_TILE_URL:
+          'https://tiles.ruteam.invalid/{z}/{x}/{y}.png',
+        EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION: 'Teselas sintéticas de prueba',
+      },
     },
   ],
 });

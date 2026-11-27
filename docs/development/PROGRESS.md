@@ -76,3 +76,86 @@ conserva variables y aislamiento API3100/BD_test. Primer falloE2E4/4 documentado
 [handoff](../handoffs/2026-11-14_task-refactor-monorepo-structure_recuperacion-postgresql.md).
 Rama task/refactor-monorepo-structure, HEAD bab4e63; sin stage/commit/PR/push/merge.
 Fase2 aún no integrada en feature. Local validado, no integrado; físico/CI/audit pendientes.
+
+## 2026-11-24 — Redefinición funcional del itinerario y reservas
+
+Rama local `task/driver-defined-routes` desde `690d486` de feature. El conductor publica un trayecto hacia o desde USC, con puntos DEMO institucionales o públicos personalizados y geometría opcional. El pasajero busca sobre pares autorizados y solicita plazas. El conductor decide, gestiona estados y conserva la ruta. Cupos de grupo validados en PostgreSQL real. Jest 81/81, Playwright 4/4, smoke 6/6 y Expo Doctor 18/18. Export web/Android y Playwright en escritorio y viewport móvil. Fuentes originales privadas y Expo Go físico pendientes.
+
+[Informe](../reviews/DRIVER_DEFINED_ROUTES_DELIVERY.md), [diagnóstico y datos](../handoffs/2026-11-24_driver-defined-routes_diagnostico-datos.md), [publicación y matching](../handoffs/2026-11-24_driver-defined-routes_publicacion-matching.md) y [reservas e integración](../handoffs/2026-11-24_driver-defined-routes_reservas-integracion.md). Validación local. Revisión humana, decisiones PO y promoción pendientes.
+
+## 2026-11-25 — Identidad estudiantil y autogestión documental
+
+Incremento local en task/driver-defined-routes: sesión sólo STUDENT vigente, capacidades
+compatibles, retiro de administración y migración histórica sin reclasificar usuarios.
+Autogestión de licencia/SOAT con procedencia declarada separada de verificación autorizada;
+producción cerrada y acceso sintético por opt-in explícito de desarrollo. ESLint propio
+aprobado; suites reales serializadas por el ejecutor central, ver informe integrado.
+[Decisiones/endpoints](../reviews/STUDENT_IDENTITY_SELF_SERVICE.md) y
+[handoff propio](../handoffs/2026-11-25_identidad-autogestion-estudiantil.md).
+Sin stage/commit/push/PR/merge ni alteración de migraciones tras su aplicación.
+
+## 2026-11-25 — Confirmación directa y recorrido controlado por el conductor
+
+Actualización local de `task/driver-defined-routes` en `72a31d7`. La nueva
+[definición](../requirements/PRODUCT_DEFINITION.md) sustituye las reglas
+incompatibles de los cortes anteriores. Confirmación individual transaccional,
+retiro futuro, abordaje, recogida propuesta hacia USC, publicación con texto
+libre/mapa y descubrimiento por recorrido. Se eliminó la aprobación ordinaria y
+la administración del producto. Invitar grupos y acreditar matrícula real
+siguen pendientes.
+
+Ejecutadas 117/117 Jest, 4/4 Playwright, 6/6 smoke. Dos confirmaciones compitiendo
+por una plaza devolvieron 201/409. Nueve migraciones verificadas en PostgreSQL
+`ruteam` y `ruteam_test`, separadas. La publicación en navegador pasó en escritorio
+y viewport móvil con teselas y respuesta vial controladas.
+
+[Informe y límites](../reviews/PRODUCT_REDEFINITION_DELIVERY.md).
+Handoffs de [identidad](../handoffs/2026-11-25_identidad-autogestion-estudiantil.md),
+[participación](../handoffs/2026-11-25_direct-participation.md) y
+[recorrido e integración](../handoffs/2026-11-25_driver-defined-routes_redefinicion-producto.md).
+
+## 25/11/2026 | Transformación de cuentas, navegación y recomendaciones
+
+Avance local en `task/driver-defined-routes` desde `5af65f2`. Registro, contraseña
+propia, verificación de buzón, recuperación y onboarding se integraron con los guards
+de cuenta y producto. Inicio y perfil se separaron y la navegación responde a capacidades
+efectivas. PostgreSQL conserva preferencias múltiples privadas, jobs y avisos internos.
+Los viajes mantienen dirección USC, ruta del conductor, propuestas, participación directa
+y capacidad transaccional. Ver [revisión de entrega](../reviews/PRODUCT_TRANSFORMATION_DELIVERY.md).
+La acreditación USC real, el dispositivo físico y la revisión/promoción humana siguen pendientes.
+
+## 26/11/2026 | Continuidad operativa
+
+Se reprodujo el punto de control anterior y se prepararon incrementos separados.
+Esta intervención añade verificación de correo con buzón local, geocodificación,
+sedes, estimaciones viales, progreso de paradas y conversación del viaje. Ver
+[revisión de continuidad](../reviews/PRODUCT_CONTINUITY.md) para resultados,
+autorizaciones, pruebas y pendientes. El estado integrado sigue a cargo de la persona
+integradora.
+
+## 26/11/2026 · Consolidación funcional
+
+Con un punto de control separado se repitieron 184 pruebas de backend y cuatro
+recorridos web del corte previo. El incremento implementa RF-010 con su regla
+aprobada, grupos consentidos con plaza atómica, pases QR internos, contexto de
+seguridad, ubicación voluntaria en viaje activo y una estimación privada de
+costos. El ensayo PostgreSQL restauró en una base nueva el respaldo histórico.
+Los resultados, el flujo completo y los asuntos pendientes están en la
+[revisión del corte](../reviews/PRODUCT_CONSOLIDATION.md).
+
+## Cierre funcional local, 26/11/2026
+
+La revisión partió de `f7013ea` en una copia de trabajo aislada. Incluye
+RF-008/009, contactos e incidencias privadas, estado de seguimiento y efectos
+del ciclo de vida. La migración aditiva conserva las 18 anteriores.
+Resultados, pruebas visuales y bloqueos vigentes están en
+[RELEASE_READINESS](../reviews/RELEASE_READINESS.md). La promoción requiere la
+revisión habitual del equipo.
+
+## Continuidad del producto del 26/11/2026
+
+En `task/release-readiness` sobre `f7013ea` se añadieron siete incrementos de trabajo técnico. Las recurrencias reutilizan la publicación, la cuenta resuelve cupos y sesiones y los historiales consultan PostgreSQL. Cierre seguro, incidencias y bandeja se integran en las pantallas operativas. Evidencia y decisiones en los [relevos por incremento](../handoffs/README.md#continuidad-del-producto) y [preparación de entrega](../reviews/RELEASE_READINESS.md).
+
+## Evolución del 26/11/2026
+
+RF-019 pasó de infraestructura a cálculo de operación y atribución. Se incorporaron SSE, seguimiento, contexto posviaje, agenda, actividad, reutilización y preferencias de notificación. Los [relevos por incremento](../handoffs/README.md#evolución-ambiental-y-comunicación) registran implementación y evidencia. La entrega en dispositivo y proveedores reales sigue una validación separada.

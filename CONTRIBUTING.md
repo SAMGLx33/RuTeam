@@ -1,6 +1,7 @@
 # Contribuir
 
-Leer [SETUP](docs/development/SETUP.md), [AGENTS](AGENTS.md) y coordinación antes
+Leer [PRODUCT_DEFINITION](docs/requirements/PRODUCT_DEFINITION.md),
+[SETUP](docs/development/SETUP.md), [AGENTS](AGENTS.md) y coordinación antes
 de editar. Responsables humanos pendientes de asignación; no adjudicarlos a una IA.
 
 Flujo obligatorio: `task/<area>-<tarea> → feature → dev → main`. Consultar
@@ -25,5 +26,6 @@ Leer AGENTS raíz y backend/AGENTS.md o frontend/AGENTS.md, REPOSITORY_STRUCTURE
 coordination/ownership y handoff vigente. Probar/documentar cada avance, incluso parcial
 o fallido. Backend MVC por módulo; frontend único Expo Router + src/features. No mover
 capas internas ni crear aplicaciones paralelas. Personas POR_ASIGNAR.
-Excepción autorizada actual: refactor parte de bab4e63 de Fase 2 hasta su integración en
-feature; después revisar diff de refactor contra feature sin arrastrar cambios funcionales.
+La excepción de base del refactor14/11 fue histórica; consultar Git/PROGRESS antes de
+retomar una rama. No autoriza nuevas tareas fuera de la secuencia vigente. La redefinición
+del 25/11 se continúa en la task pertinente sin Git writes automáticos.

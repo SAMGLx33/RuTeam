@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import type { VehicleEnergyInput } from '@ruteam/contracts';
+import { EnergyFields, VehicleEnergyEditor } from '../mobility/vehicle-energy';
+import { useSession } from '../../providers/session-provider';
 import { Pressable, Text, View } from 'react-native';
 import { useForm, useWatch } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -26,33 +30,101 @@ interface LicenseFormValues {
   category: string;
   expiresAt: string;
 }
-export function VehiclesScreen() {
+const documentLabels = {
+  DECLARED: 'Declarado · sin verificación oficial',
+  VERIFIED: 'Verificado por fuente autorizada',
+  EXPIRED: 'Vencido',
+  UNVERIFIED: 'Sin verificación habilitante',
+};
+const licenseLabels = {
+  CAR: 'Automóvil',
+  MOTORCYCLE: 'Motocicleta',
+  BOTH: 'Auto y moto',
+} as const;
+function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
   const client = useQueryClient();
+  const form = useForm<{ soatExpiresAt: string }>({
+    defaultValues: { soatExpiresAt: '' },
+  });
+  const save = useMutation({
+    mutationFn: ({ soatExpiresAt }: { soatExpiresAt: string }) =>
+      api<VehicleSummary>(`/vehicles/${vehicle.id}/soat`, {
+        method: 'PATCH',
+        body: { soatExpiresAt: `${soatExpiresAt}T23:59:59-05:00` },
+      }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['vehicles'] });
+      void client.invalidateQueries({ queryKey: ['me'] });
+    },
+  });
+  return (
+    <View style={s.section}>
+      <Text style={s.text}>
+        {vehicle.plate} · {vehicle.type === 'CAR' ? 'Automóvil' : 'Moto'} ·{' '}
+        {vehicle.passengerCapacity} plazas de pasajeros ·{' '}
+        {documentLabels[vehicle.verificationStatus]}
+      </Text>
+      <Text style={s.text}>
+        {vehicle.soatExpiresAt
+          ? `Vigencia declarada hasta ${new Date(vehicle.soatExpiresAt).toLocaleDateString('es-CO')}`
+          : 'Sin vigencia SOAT declarada'}
+      </Text>
+      <Field
+        control={form.control}
+        name="soatExpiresAt"
+        label={`Nueva vigencia SOAT ${vehicle.plate} (AAAA-MM-DD)`}
+      />
+      {save.error && (
+        <Text accessibilityRole="alert" style={s.error}>
+          {save.error.message}
+        </Text>
+      )}
+      {save.isSuccess && (
+        <Text>Vigencia declarada actualizada; no es verificación oficial.</Text>
+      )}
+      <Button
+        title={`Actualizar SOAT ${vehicle.plate}`}
+        disabled={save.isPending}
+        onPress={() => {
+          void form.handleSubmit((values) => save.mutate(values))();
+        }}
+      />
+      <VehicleEnergyEditor vehicle={vehicle} />
+    </View>
+  );
+}
+export function VehiclesScreen() {
+  const { user } = useSession();
+  const client = useQueryClient();
+  const [energy, setEnergy] = useState<VehicleEnergyInput>();
   const vehicles = useQuery({
     queryKey: ['vehicles'],
     queryFn: () => api<VehicleSummary[]>('/vehicles'),
+    enabled: !!user?.capabilities.driverAccess,
   });
   const catalog = useQuery({
     queryKey: ['vehicle-catalog'],
     queryFn: () => api<{ colors: string[] }>('/vehicles/catalog'),
+    enabled: !!user?.capabilities.driverAccess,
   });
   const license = useQuery({
     queryKey: ['license'],
     queryFn: () => api<DemoLicense | null>('/driver-eligibility'),
+    enabled: !!user?.capabilities.driverAccess,
   });
   const form = useForm<VehicleFormValues>({
     defaultValues: {
       plate: '',
       type: 'CAR' as VehicleType,
       passengerCapacity: '3',
-      brand: 'Marca Demo',
-      modelYear: '2020',
+      brand: '',
+      modelYear: '',
       color: 'GRIS',
-      soatExpiresAt: '2030-12-31',
+      soatExpiresAt: '',
     },
   });
   const licenseForm = useForm<LicenseFormValues>({
-    defaultValues: { category: 'BOTH', expiresAt: '2030-12-31' },
+    defaultValues: { category: 'CAR', expiresAt: '' },
   });
   const type = useWatch({ control: form.control, name: 'type' });
   const selectedColor = useWatch({ control: form.control, name: 'color' });
@@ -63,12 +135,20 @@ export function VehiclesScreen() {
         method: 'POST',
         body: {
           ...values,
+          energyProfile: energy && {
+            ...energy,
+            unit: energy.average === undefined ? undefined : energy.unit,
+          },
           passengerCapacity: Number(values.passengerCapacity),
           modelYear: Number(values.modelYear),
           soatExpiresAt: `${values.soatExpiresAt}T23:59:59-05:00`,
         },
       }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['vehicles'] }),
+    onSuccess: () => {
+      setEnergy(undefined);
+      void client.invalidateQueries({ queryKey: ['vehicles'] });
+      void client.invalidateQueries({ queryKey: ['me'] });
+    },
   });
   const saveLicense = useMutation({
     mutationFn: (values: LicenseFormValues) =>
@@ -82,10 +162,16 @@ export function VehiclesScreen() {
     },
   });
   return (
-    <ProtectedPage title="Vehículos y licencia DEMO">
+    <ProtectedPage
+      title="Vehículos y licencia"
+      requires="driverAccess"
+      allowOnboarding
+    >
       <Text style={s.text}>
-        Usa datos inventados. Las fechas declaradas no son una consulta oficial
-        de SOAT o licencia. Todo registro nuevo queda pendiente de revisión.
+        Declara únicamente vehículos propios o con autorización de uso. La
+        vigencia declarada no acredita verificación oficial de licencia o SOAT.
+        Las pruebas de desarrollo sólo habilitan documentos sintéticos; la
+        verificación autorizada sigue pendiente.
       </Text>
       <View style={s.section}>
         <Text role="heading" aria-level={2} style={s.title}>
@@ -101,16 +187,12 @@ export function VehiclesScreen() {
           <Text style={s.text}>Aún no tienes vehículos.</Text>
         )}
         {vehicles.data?.map((vehicle) => (
-          <Text key={vehicle.id} style={s.text}>
-            {vehicle.plate} · {vehicle.type === 'CAR' ? 'Automóvil' : 'Moto'} ·{' '}
-            {vehicle.passengerCapacity} plazas de pasajeros ·{' '}
-            {vehicle.reviewStatus} · DEMO
-          </Text>
+          <SoatRenewal key={vehicle.id} vehicle={vehicle} />
         ))}
       </View>
       <View style={s.section}>
         <Text role="heading" aria-level={2} style={s.title}>
-          Registrar vehículo DEMO
+          Registrar vehículo
         </Text>
         {(['CAR', 'MOTORCYCLE'] as const).map((value) => (
           <Pressable
@@ -127,7 +209,7 @@ export function VehiclesScreen() {
             <Text>{value === 'CAR' ? 'Automóvil' : 'Motocicleta'}</Text>
           </Pressable>
         ))}
-        <Field control={form.control} name="plate" label="Placa sintética" />
+        <Field control={form.control} name="plate" label="Placa" />
         <Field control={form.control} name="brand" label="Marca" />
         <Field control={form.control} name="modelYear" label="Año del modelo" />
         <Field
@@ -153,8 +235,26 @@ export function VehiclesScreen() {
         <Field
           control={form.control}
           name="soatExpiresAt"
-          label="Vencimiento SOAT DEMO (AAAA-MM-DD)"
+          label="Vencimiento SOAT (AAAA-MM-DD)"
         />
+        {energy ? (
+          <>
+            <EnergyFields value={energy} change={setEnergy} />
+            <Button
+              secondary
+              title="Continuar sin declarar energía"
+              onPress={() => setEnergy(undefined)}
+            />
+          </>
+        ) : (
+          <Button
+            secondary
+            title="Añadir datos energéticos (opcional)"
+            onPress={() =>
+              setEnergy({ propulsion: 'COMBUSTION', source: 'OTHER' })
+            }
+          />
+        )}
         {save.error && (
           <Text accessibilityRole="alert" style={s.error}>
             {save.error.message}
@@ -162,12 +262,19 @@ export function VehiclesScreen() {
         )}
         {save.isSuccess && (
           <Text accessibilityLiveRegion="polite">
-            Vehículo DEMO registrado; revisión pendiente.
+            Vehículo registrado con información declarada; no es verificación
+            oficial.
           </Text>
         )}
         <Button
           title={save.isPending ? 'Registrando…' : 'Registrar vehículo'}
-          disabled={save.isPending}
+          disabled={
+            save.isPending ||
+            (energy?.average !== undefined &&
+              (!Number.isFinite(energy.average) ||
+                energy.average < 0.01 ||
+                energy.average > 300))
+          }
           onPress={() => {
             void form.handleSubmit((values) => save.mutate(values))();
           }}
@@ -175,7 +282,7 @@ export function VehiclesScreen() {
       </View>
       <View style={s.section}>
         <Text role="heading" aria-level={2} style={s.title}>
-          Licencia de conducción DEMO
+          Licencia de conducción
         </Text>
         {license.isPending && <Text>Cargando licencia…</Text>}
         {license.error && (
@@ -185,21 +292,21 @@ export function VehiclesScreen() {
         )}
         <Text style={s.text}>
           {license.data
-            ? `${license.data.category} · ${license.data.reviewStatus} · vence ${new Date(license.data.expiresAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`
-            : 'Sin licencia DEMO registrada.'}
+            ? `${licenseLabels[license.data.category]} · ${documentLabels[license.data.verificationStatus]} · vence ${new Date(license.data.expiresAt).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`
+            : 'Sin licencia registrada.'}
         </Text>
-        {['CAR', 'MOTORCYCLE', 'BOTH'].map((value) => (
+        {(['CAR', 'MOTORCYCLE', 'BOTH'] as const).map((value) => (
           <Pressable
             key={value}
             accessibilityRole="radio"
-            accessibilityLabel={`Licencia ${value}`}
+            accessibilityLabel={`Licencia ${licenseLabels[value]}`}
             accessibilityState={{ checked: category === value }}
             onPress={() => licenseForm.setValue('category', value)}
             style={[s.choice, category === value && s.selected]}
           >
             <Text>
               {value === 'BOTH'
-                ? 'Auto y moto (categoría sintética)'
+                ? 'Auto y moto (alcance declarado)'
                 : value === 'CAR'
                   ? 'Automóvil'
                   : 'Moto'}
@@ -209,7 +316,7 @@ export function VehiclesScreen() {
         <Field
           control={licenseForm.control}
           name="expiresAt"
-          label="Vencimiento licencia DEMO (AAAA-MM-DD)"
+          label="Vencimiento licencia (AAAA-MM-DD)"
         />
         {saveLicense.error && (
           <Text accessibilityRole="alert" style={s.error}>
@@ -217,10 +324,10 @@ export function VehiclesScreen() {
           </Text>
         )}
         {saveLicense.isSuccess && (
-          <Text>Licencia DEMO enviada; requiere revisión.</Text>
+          <Text>Licencia declarada guardada; no es verificación oficial.</Text>
         )}
         <Button
-          title="Enviar licencia DEMO a revisión"
+          title="Guardar licencia declarada"
           disabled={saveLicense.isPending}
           onPress={() => {
             void licenseForm.handleSubmit((values) =>

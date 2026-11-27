@@ -12,4 +12,7 @@ export class CampusController {
   @Get('destinations') destinations() {
     return this.campus.destinations();
   }
+  @Get('meeting-points') meetingPoints() {
+    return this.campus.meetingPoints();
+  }
 }

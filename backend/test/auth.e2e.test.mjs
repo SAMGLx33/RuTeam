@@ -42,7 +42,7 @@ describe('API y PostgreSQL reales', () => {
       demo: true,
     });
   });
-  test.each(['ana', 'diego', 'admin'])(
+  test.each(['ana', 'diego', 'sara'])(
     'login activo %s, perfil y logout revocable',
     async (identity) => {
       const token = await tokenFor(identity);
@@ -51,6 +51,7 @@ describe('API y PostgreSQL reales', () => {
         .auth(token, { type: 'bearer' })
         .expect(200);
       expect(res.body.membership.status).toBe('ACTIVE');
+      expect(res.headers['cache-control']).toBe('no-store');
       expect(res.body.demo).toBe(true);
       expect(res.body).not.toHaveProperty('sessions');
       await request(app.getHttpServer())
@@ -75,6 +76,41 @@ describe('API y PostgreSQL reales', () => {
     expect(
       await db.verificationAttempt.count({ where: { outcome: 'DENIED' } }),
     ).toBeGreaterThan(0);
+  });
+  test('identidad administrativa eliminada del login y contrato sin rol', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/demo/login')
+      .set(header)
+      .send({ identity: 'admin' })
+      .expect(400);
+    const token = await tokenFor('ana');
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/auth/me')
+      .auth(token, { type: 'bearer' })
+      .expect(200);
+    expect(res.body).not.toHaveProperty('role');
+    expect(res.body.membership.group).toBe('STUDENT');
+  });
+  test('cambio de estamento revoca acceso protegido sin reclasificar usuario', async () => {
+    const token = await tokenFor('ana');
+    const user = await db.user.findUniqueOrThrow({
+      where: { demoIdentity: 'ana' },
+    });
+    await db.institutionalMembership.update({
+      where: { userId: user.id },
+      data: { group: 'TEACHER' },
+    });
+    try {
+      await request(app.getHttpServer())
+        .get('/api/v1/auth/me')
+        .auth(token, { type: 'bearer' })
+        .expect(403);
+    } finally {
+      await db.institutionalMembership.update({
+        where: { userId: user.id },
+        data: { group: 'STUDENT' },
+      });
+    }
   });
   test('rechaza identidad desconocida y campos extra', async () => {
     await request(app.getHttpServer())

@@ -1,216 +1,166 @@
+import { EmergencyContactSettings } from '../safety/emergency-contacts';
 import { Link } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CurrentUser, CampusDestination } from '@ruteam/contracts';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Text, View } from 'react-native';
+import { useForm } from 'react-hook-form';
+import type { Account, ReputationSummary } from '@ruteam/contracts';
+import { Field } from '../../components/forms/field';
+import { Button } from '../../components/ui/button';
+import {
+  ProtectedPage,
+  formStyles as s,
+} from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
-import { Button } from '../../components/ui/button';
-import { colors } from '../../theme/tokens';
-const schema = z.object({
-  displayName: z
-    .string()
-    .trim()
-    .min(2, 'Escribe al menos dos caracteres.')
-    .max(80, 'Máximo 80 caracteres.'),
-});
-const groups: Record<string, string> = {
-  STUDENT: 'Estudiante',
-  TEACHER: 'Docente',
-  ADMINISTRATIVE: 'Administrativo',
-  WORKER: 'Trabajador',
-  OTHER: 'Otro estamento',
-};
-export function ProfileScreen({ user }: { user: CurrentUser }) {
-  const { signOut } = useSession();
-  const client = useQueryClient();
-  const [logoutError, setLogoutError] = useState<string | null>(null);
-  const [leaving, setLeaving] = useState(false);
-  const form = useForm({
-    resolver: zodResolver(schema),
+import { AccountFeedback, useAccountAction } from './login-screen';
+import { ReputationLabel } from '../ratings/reputation-label';
+import { eligibilityLabels } from './account-screens';
+
+function ProfileSettings({ user }: { user: Account }) {
+  const { refresh, saveOnboarding, signOut } = useSession();
+  const action = useAccountAction();
+  const reputation = useQuery({
+    queryKey: ['ratings', 'reputation', user.id],
+    queryFn: () => api<ReputationSummary[]>('/ratings/reputation'),
+    enabled: user.capabilities.passenger,
+  });
+  const { control, handleSubmit } = useForm({
     defaultValues: { displayName: user.profile.displayName },
   });
-  const { reset } = form;
-  useEffect(() => {
-    reset({ displayName: user.profile.displayName });
-  }, [user.profile.displayName, reset]);
   const save = useMutation({
-    mutationFn: (values: z.infer<typeof schema>) =>
-      api<{ displayName: string }>('/me/profile', {
+    mutationFn: (body: { displayName: string }) =>
+      api('/me/profile', {
         method: 'PATCH',
-        body: values,
+        body: { displayName: body.displayName.trim() },
       }),
-    onSuccess: (profile) =>
-      client.setQueryData<CurrentUser>(['me'], (old) =>
-        old ? { ...old, profile } : old,
-      ),
+    onSuccess: refresh,
   });
-  const destinations = useQuery({
-    queryKey: ['destinations'],
-    queryFn: () => api<CampusDestination[]>('/campus/destinations'),
-    retry: false,
-  });
-  async function logout() {
-    setLeaving(true);
-    setLogoutError(null);
-    try {
-      await signOut();
-    } catch (error) {
-      setLogoutError(
-        error instanceof Error ? error.message : 'No pudimos cerrar sesión',
-      );
-    } finally {
-      setLeaving(false);
-    }
-  }
+
   return (
-    <View style={styles.content}>
-      <Text role="heading" aria-level={1} style={styles.title}>
-        Hola, {user.profile.displayName}
-      </Text>
-      <Text style={styles.status}>
-        {groups[user.membership.group]} · ACTIVA
-      </Text>
-      <Text style={styles.detail}>{user.email}</Text>
-      <Text style={styles.detail}>
-        Rol: {user.role === 'ADMIN' ? 'Administración' : 'Miembro'}
-        {user.capabilities.driver ? ' · Conductor demo' : ' · Pasajero'}
-      </Text>
-      <Link href="/vehicles" style={styles.label}>
-        Vehículos y licencia DEMO
-      </Link>
-      <Link href="/publish" style={styles.label}>
-        Publicar viaje hacia USC
-      </Link>
-      <Link href="/my-trips" style={styles.label}>
-        Mis viajes publicados
-      </Link>
-      {user.role === 'ADMIN' && (
-        <Link href="/document-reviews" style={styles.label}>
-          Revisar documentos DEMO
+    <>
+      <View style={s.section}>
+        <Text style={s.title}>Tu cuenta</Text>
+        <Text style={s.text}>{user.email}</Text>
+        <Text style={s.text}>
+          {user.synthetic
+            ? 'Cuenta de pruebas'
+            : eligibilityLabels[user.eligibility.status]}
+        </Text>
+        <Field control={control} name="displayName" label="Nombre visible" />
+        <AccountFeedback error={save.error?.message}>
+          {save.isSuccess ? 'Nombre actualizado.' : null}
+        </AccountFeedback>
+        <Button
+          title="Guardar nombre"
+          disabled={save.isPending}
+          onPress={() => {
+            void handleSubmit((value) => save.mutate(value))();
+          }}
+        />
+      </View>
+      <View style={s.section}>
+        <Text style={s.title}>Movilidad</Text>
+        <Link href="/economic-history" style={s.link}>
+          Historial económico
         </Link>
-      )}
-      <Text style={styles.label}>Nombre para mostrar</Text>
-      <Controller
-        name="displayName"
-        control={form.control}
-        render={({ field: { onChange, onBlur, value } }) => (
-          <TextInput
-            accessibilityLabel="Nombre para mostrar"
-            value={value}
-            onChangeText={(text) => {
-              onChange(text);
-              save.reset();
+        <Link href="/mobility-statistics" style={s.link}>
+          Estadísticas de movilidad
+        </Link>
+        <Link href="/mobility" style={s.link}>
+          Preferencias de movilidad
+        </Link>
+      </View>
+      <View style={s.section}>
+        <Text style={s.title}>Conducción</Text>
+        {user.capabilities.driverAccess ? (
+          <>
+            <Text style={s.text}>
+              {user.capabilities.driver
+                ? 'Puedes publicar viajes.'
+                : 'Revisa tu licencia y el estado de los documentos de tu vehículo antes de publicar.'}
+            </Text>
+            <Link href="/vehicles" style={s.link}>
+              Vehículos y licencia
+            </Link>
+            <Link href="/my-trips" style={s.link}>
+              Mis viajes publicados
+            </Link>
+            {user.capabilities.driver && (
+              <Link href="/publish" style={s.link}>
+                Publicar viaje
+              </Link>
+            )}
+            {user.usagePreference === 'DRIVER_AND_PASSENGER' && (
+              <Button
+                title="Cambiar mi preferencia a pasajero"
+                secondary
+                disabled={action.busy}
+                onPress={() => {
+                  void action.run(() =>
+                    saveOnboarding({
+                      step: user.onboarding.step,
+                      usagePreference: 'PASSENGER',
+                    }),
+                  );
+                }}
+              />
+            )}
+          </>
+        ) : (
+          <Button
+            title="Convertirme en conductor"
+            secondary
+            disabled={action.busy}
+            onPress={() => {
+              void action.run(() =>
+                saveOnboarding({
+                  step: user.onboarding.step,
+                  usagePreference: 'DRIVER_AND_PASSENGER',
+                }),
+              );
             }}
-            onBlur={onBlur}
-            maxLength={80}
-            style={styles.input}
-            autoCapitalize="words"
           />
         )}
-      />
-      {form.formState.errors.displayName && (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {form.formState.errors.displayName.message}
-        </Text>
-      )}
-      {save.error && (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {save.error.message}
-        </Text>
-      )}
-      {save.isSuccess && (
-        <Text accessibilityLiveRegion="polite" style={styles.success}>
-          Perfil guardado en PostgreSQL.
-        </Text>
-      )}
-      <Button
-        title={save.isPending ? 'Guardando…' : 'Guardar perfil'}
-        disabled={save.isPending || leaving}
-        onPress={() => {
-          void form.handleSubmit((values) => save.mutate(values))();
-        }}
-      />
-      <Button
-        title={leaving ? 'Cerrando sesión…' : 'Cerrar sesión'}
-        disabled={leaving || save.isPending}
-        secondary
-        onPress={() => {
-          void logout();
-        }}
-      />
-      {logoutError && (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {logoutError}
-        </Text>
-      )}
-      <View style={styles.catalog}>
-        <Text style={styles.label}>Destino de la comunidad</Text>
-        {destinations.isPending && (
-          <Text style={styles.detail}>Consultando catálogo USC…</Text>
-        )}
-        {destinations.error && (
-          <Text accessibilityRole="alert" style={styles.error}>
-            {destinations.error.message}
-          </Text>
-        )}
-        {destinations.data?.length === 0 && (
-          <Text style={styles.detail}>No hay puntos disponibles.</Text>
-        )}
-        {destinations.data?.map((point) => (
-          <Text key={point.id} style={styles.detail}>
-            {point.name}
-            {point.demo ? ' · DEMO' : ''}
-          </Text>
-        ))}
-        <Text style={styles.note}>
-          Reservas, recorrido y compensaciones están planificados para fases
-          posteriores.
-        </Text>
       </View>
-    </View>
+      <View style={s.section}>
+        <Text style={s.title}>Tu reputación</Text>
+        {reputation.data?.map((summary) => (
+          <ReputationLabel key={summary.capacity} summary={summary} />
+        ))}
+        <Link href="/ratings" style={s.link}>
+          Mi reputación y calificaciones
+        </Link>
+        <Link href="/incidents" style={s.link}>
+          Mis incidencias
+        </Link>
+        <Link href="/account-settings" style={s.link}>
+          Configuración · Cuenta y privacidad
+        </Link>
+        <Link href="/privacy" style={s.link}>
+          Privacidad y condiciones de uso
+        </Link>
+        <AccountFeedback error={action.error} />
+        <Button
+          title="Cerrar sesión"
+          secondary
+          disabled={action.busy}
+          onPress={() => {
+            void action.run(signOut);
+          }}
+        />
+      </View>
+    </>
   );
 }
-const styles = StyleSheet.create({
-  content: {
-    maxWidth: 530,
-    width: '100%',
-    alignSelf: 'center',
-    paddingTop: 30,
-    gap: 18,
-  },
-  title: { color: colors.ink, fontSize: 32, fontWeight: '800' },
-  status: {
-    color: colors.primary,
-    backgroundColor: colors.selected,
-    alignSelf: 'flex-start',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    fontWeight: '700',
-    fontSize: 17,
-  },
-  detail: { color: colors.muted, fontSize: 16, lineHeight: 24 },
-  label: { color: colors.ink, fontWeight: '700', fontSize: 17, marginTop: 12 },
-  input: {
-    color: colors.ink,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 9,
-    padding: 15,
-    fontSize: 18,
-    minHeight: 54,
-  },
-  error: { color: colors.danger, lineHeight: 23 },
-  success: { color: colors.success },
-  catalog: {
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    paddingTop: 16,
-    gap: 12,
-  },
-  note: { color: colors.muted, fontSize: 14, lineHeight: 21 },
-});
+
+export function ProfileScreen() {
+  const { user } = useSession();
+  return (
+    <ProtectedPage title="Perfil">
+      {user && <ProfileSettings key={user.id} user={user} />}
+      {user?.capabilities.passenger && (
+        <EmergencyContactSettings key={user.id} userId={user.id} />
+      )}
+    </ProtectedPage>
+  );
+}

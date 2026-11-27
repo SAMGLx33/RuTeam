@@ -225,3 +225,58 @@ recargado, inactiva403 y ausencia de mensaje de conexión en desktop1280x900/mó
 Original de perfil restaurado tras la comprobación. Sin pageerror o fallos de red; sólo
 identidades sintéticas existentes. Capturas inspeccionadas fueraGit en review-artifacts/
 2026-11-14-postgresql-recovery bajo /home/darik/RuTeam. No prueba de dispositivo nativo.
+
+## Corte de itinerarios y reservas — 2026-11-24
+
+El [informe de entrega](../reviews/DRIVER_DEFINED_ROUTES_DELIVERY.md) registra cada comando y alcance comprobado. Playwright usa Chromium en escritorio y viewport iPhone 13 y dos sesiones separadas para observar la aceptación. Las capturas sintéticas se escriben en `/tmp/ruteam-driver-routes-desktop.png` y `/tmp/ruteam-driver-routes-mobile-web.png`. Su comprobación web no prueba Expo Go físico, cartografía oficial ni verificación del dispositivo.
+
+Capturas del panel de geometría de los recorridos de prueba en `/tmp/ruteam-route-geometry-desktop.png` y `/tmp/ruteam-route-geometry-mobile-web.png`. El mapa base optativo no se configuró en este escenario.
+
+## 25 de noviembre de 2026 — Redefinición de producto
+
+Resultados del corte local en `task/driver-defined-routes` sobre `72a31d7`.
+Prevalecen las pruebas del informe nuevo para las reglas redefinidas.
+
+- Jest, 12 suites y 117 pruebas aprobadas, con Supertest y PostgreSQL test real.
+  Último cupo 201/409, reintento conserva el ID, y retiro e inicio/cancelación
+  concurrentes preservan ocupación. La geometría y los cupos quedan iguales al
+  aceptar una recogida. El abordaje registra presencia una sola vez.
+- Playwright, cuatro casos aprobados en escritorio y viewport móvil. Login de
+  desarrollo, perfil persistente, registro de vehículo, mapa, alternativas,
+  vista previa, viaje desde USC, recarga, confirmación y retiro. Para el mapa y
+  alternativas se controló la respuesta del proveedor. El backend y la BD son
+  reales en estas pruebas. Capturas sintéticas guardadas fuera del checkout.
+- Smoke en desarrollo 6/6, health con base disponible y Swagger con 25 rutas.
+  La revisión administrativa quedó ausente de Swagger.
+- Una primera pasada Playwright dio 2/4 por coordenadas del clic no
+  proporcionadas por React Native Web. La adaptación al evento del navegador
+  corrigió ambas publicaciones. La restricción de abordaje desde USC también
+  requirió un segmento válido distinto en una prueba de conflicto.
+- Nueve migraciones verificadas en cada base. Desarrollo se respaldó localmente
+  antes de migrar. Los conteos de filas de tablas previas se conservaron antes
+  del seed. Los viajes y reservas anteriores tenían cero filas en desarrollo.
+
+[Informe y resultados](../reviews/PRODUCT_REDEFINITION_DELIVERY.md).
+
+## 25/11/2026 | Evidencia de transformación de producto
+
+Recorridos de cuenta, verificación, onboarding, navegación, publicación a recomendación
+y participación sobre Nest + `ruteam_test`, en Chromium de escritorio y tamaño móvil.
+Se guardaron capturas con datos de prueba fuera de Git. La
+[revisión de entrega](../reviews/PRODUCT_TRANSFORMATION_DELIVERY.md) enumera
+las pruebas, los estados y los límites de la validación. Los registros anteriores se conservan.
+
+## 26/11/2026 · Continuidad operativa local
+
+La [revisión del corte](../reviews/PRODUCT_CONTINUITY.md) registra la línea base
+repetida, las migraciones y la ejecución final con PostgreSQL. Capturas de prueba
+de mapa web, recomendación y chat en escritorio y viewport móvil, además de logs
+duraderos, en la carpeta local de continuidad. Prueba física Expo Go pendiente.
+
+## 26/11/2026 · Consolidación del producto
+
+La [revisión consolidada](../reviews/PRODUCT_CONSOLIDATION.md) vincula los
+recorridos de calificación, grupos, geolocalización web controlada y las
+comprobaciones PostgreSQL. La [restauración](../reviews/POSTGRESQL_RESTORE_DRILL.md)
+se verificó en una base aislada. La comprobación de cámara y GPS físicos
+permanece pendiente.

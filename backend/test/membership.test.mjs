@@ -4,7 +4,24 @@ describe('afiliación activa con vigencia', () => {
   const now = new Date('2026-11-13T12:00:00Z');
   test.each([
     [null, false],
-    [{ status: 'ACTIVE', validUntil: new Date('2026-11-14T12:00:00Z') }, true],
+    [
+      {
+        status: 'ACTIVE',
+        group: 'STUDENT',
+        validUntil: new Date('2026-11-14T12:00:00Z'),
+      },
+      true,
+    ],
+    ...['TEACHER', 'WORKER', 'ADMINISTRATIVE', 'OTHER', undefined].map(
+      (group) => [
+        {
+          status: 'ACTIVE',
+          group,
+          validUntil: new Date('2026-11-14T12:00:00Z'),
+        },
+        false,
+      ],
+    ),
     [
       { status: 'INACTIVE', validUntil: new Date('2026-11-14T12:00:00Z') },
       false,
