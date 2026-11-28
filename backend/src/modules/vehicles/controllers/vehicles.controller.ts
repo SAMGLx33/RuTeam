@@ -8,8 +8,10 @@ import {
   Post,
   Put,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   SessionGuard,
@@ -48,8 +50,9 @@ export class VehiculoController {
   ) {
     return this.service.updateEnergy(req.principal.userId, id, data.profile);
   }
-  @Get('driver-eligibility') licencia(@Req() req: AuthenticatedRequest) {
-    return this.service.licencia(req.principal.userId);
+  @Get('driver-eligibility')
+  async licencia(@Req() req: AuthenticatedRequest, @Res() response: Response) {
+    response.json(await this.service.licencia(req.principal.userId));
   }
   @Post('driver-eligibility') registrarLicencia(
     @Req() req: AuthenticatedRequest,

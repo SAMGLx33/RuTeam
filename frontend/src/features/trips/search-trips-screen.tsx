@@ -31,7 +31,7 @@ import { GroupInvitationForm } from '../groups/group-invitations';
 import { Choice } from './itinerary-form';
 import { RoutePreview, travelTime } from './route-preview';
 import { MeetingMapPicker, type Coordinates } from './meeting-map-picker';
-import { PickupProposalForm } from './pickup-proposals';
+import { PickupProposalHistory } from './pickup-proposals';
 
 interface SearchForm {
   from: string;
@@ -60,16 +60,22 @@ export function ReserveTrip({
   const [pickupId, setPickup] = useState(trip.match?.pickupId ?? '');
   const [dropoffId, setDropoff] = useState(trip.match?.dropoffId ?? '');
   const stops = trip.itinerary.stops;
-  const pickup = stops.find((stop) => stop.id === pickupId);
+  const direction = trip.itinerary.direction;
   const canDrop = (access: string) => access === 'DROPOFF' || access === 'BOTH';
-  const dropoffs = stops.filter(
-    (stop) => pickup && stop.position > pickup.position && canDrop(stop.access),
+  const dropoffStops = stops.filter(
+    (stop) =>
+      canDrop(stop.access) &&
+      (direction !== 'HACIA_USC' || stop === stops.at(-1)),
   );
   const pickups = stops.filter(
     (stop) =>
-      (trip.itinerary.direction !== 'DESDE_USC' || stop === stops[0]) &&
+      (!direction || stop === stops[0]) &&
       (stop.access === 'PICKUP' || stop.access === 'BOTH') &&
-      stops.some((end) => end.position > stop.position && canDrop(end.access)),
+      dropoffStops.some((end) => end.position > stop.position),
+  );
+  const pickup = pickups.find((stop) => stop.id === pickupId) ?? pickups[0];
+  const dropoffs = dropoffStops.filter(
+    (stop) => pickup && stop.position > pickup.position,
   );
   const selectedDropoffId = dropoffs.some((stop) => stop.id === dropoffId)
     ? dropoffId
@@ -91,8 +97,8 @@ export function ReserveTrip({
     },
   });
   const submit = () => {
-    if (!pickupId || !selectedDropoffId) return;
-    send.mutate({ pickupId, dropoffId: selectedDropoffId });
+    if (!pickup || !selectedDropoffId) return;
+    send.mutate({ pickupId: pickup.id, dropoffId: selectedDropoffId });
   };
   if (send.isSuccess) return null;
   return (
@@ -102,7 +108,7 @@ export function ReserveTrip({
         <Choice
           key={stop.id}
           label={`Encuentro · ${stop.label}`}
-          checked={pickupId === stop.id}
+          checked={pickup?.id === stop.id}
           onPress={() => setPickup(stop.id)}
         />
       ))}
@@ -130,10 +136,10 @@ export function ReserveTrip({
           void submit();
         }}
       />
-      {groupCapacity >= 2 && (
+      {groupCapacity >= 2 && pickup && (
         <GroupInvitationForm
           tripId={trip.id}
-          pickupId={pickupId}
+          pickupId={pickup.id}
           dropoffId={selectedDropoffId}
           offeredSeats={groupCapacity}
         />
@@ -462,7 +468,7 @@ export function SearchTripsScreen() {
                     onConfirmed={() => setConfirmed(true)}
                   />
                 )}
-                <PickupProposalForm trip={trip} />
+                <PickupProposalHistory trip={trip} />
               </>
             )}
           </View>

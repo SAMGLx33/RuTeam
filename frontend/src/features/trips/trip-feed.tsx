@@ -82,7 +82,7 @@ function TripCard({
       </View>
       <Text style={styles.date}>{tripDate(trip.departureAt)}</Text>
       {trip.estimatedDepartureAt && (
-        <Text style={[styles.kind, styles.potential]}>
+        <Text style={[styles.kind, styles.delay]}>
           Retrasado · Salida estimada {tripDate(trip.estimatedDepartureAt)}
         </Text>
       )}
@@ -125,17 +125,8 @@ function TripCard({
           {trip.rules.map(({ description }) => description).join(' · ')}
         </Text>
       )}
-      {recommendation && (
-        <Text
-          style={[
-            styles.kind,
-            recommendation.type === 'POTENTIAL' && styles.potential,
-          ]}
-        >
-          {recommendation.type === 'DIRECT'
-            ? 'Recogida compatible'
-            : 'Puedes proponer una recogida'}
-        </Text>
+      {recommendation?.type === 'DIRECT' && (
+        <Text style={styles.kind}>Recogida compatible</Text>
       )}
       {recommendation?.pickupEstimatedAt &&
         recommendation.pickupEstimatedAt !== trip.departureAt && (
@@ -175,7 +166,7 @@ export function TripCards({
 
 export function TripFeedScreen() {
   const { user } = useSession();
-  const [tab, setTab] = useState<FeedTab>('FOR_YOU');
+  const [tab, setTab] = useState<FeedTab>('ALL');
   const [mode, setMode] = useState<'list' | 'map'>('list');
   const [vehicleType, setVehicleType] = useState<VehicleType | 'all'>('all');
   const [selected, setSelected] = useState<string | null>(null);
@@ -208,6 +199,15 @@ export function TripFeedScreen() {
 
   return (
     <ProtectedPage title="Viajes disponibles">
+      {user?.capabilities.driver ? (
+        <Link href="/publish" style={s.link}>
+          Publicar viaje
+        </Link>
+      ) : user?.capabilities.driverAccess ? (
+        <Link href="/vehicles" style={s.link}>
+          Completar configuración de conductor
+        </Link>
+      ) : null}
       <Link href="/saved-trips" style={s.link}>
         Mis viajes guardados
       </Link>
@@ -290,6 +290,18 @@ export function TripFeedScreen() {
           </Text>
         )}
       </View>
+      {(vehicleType !== 'all' || contribution || tab !== 'ALL') && (
+        <Button
+          title="Restablecer filtros"
+          secondary
+          onPress={() => {
+            setTab('ALL');
+            setVehicleType('all');
+            setContribution('');
+            setSelected(null);
+          }}
+        />
+      )}
       {query.isPending && <Text style={s.text}>Cargando viajes…</Text>}
       {query.error && (
         <View style={s.section}>
@@ -348,7 +360,9 @@ export function TripFeedScreen() {
           <Text style={s.title}>
             {tab === 'FOR_YOU'
               ? 'Todavía no hay recomendaciones'
-              : 'No hay viajes con plazas'}
+              : tab !== 'ALL' || vehicleType !== 'all' || contribution
+                ? 'No hay viajes con estos filtros'
+                : 'No hay viajes disponibles'}
           </Text>
           <Text style={s.text}>
             {tab === 'FOR_YOU'
@@ -458,7 +472,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  potential: { backgroundColor: colors.banner, color: colors.bannerText },
+  delay: { backgroundColor: colors.banner, color: colors.bannerText },
   seats: {
     color: colors.primary,
     fontWeight: '800',

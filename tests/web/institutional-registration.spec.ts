@@ -221,16 +221,41 @@ test('dos cuentas nuevas usan dominio USC declarado sin correo ni acreditación'
     await expect(
       driverPage.getByRole('heading', { name: 'Vehículos y licencia' }),
     ).toBeVisible();
+    await expect(
+      driverPage.getByText('Sin licencia registrada.'),
+    ).toBeVisible();
+    await expect(
+      driverPage.getByText(/No pudimos conectar con RuTeam/),
+    ).toHaveCount(0);
     const expiry = new Date();
     expiry.setUTCFullYear(expiry.getUTCFullYear() + 1);
     const date = expiry.toISOString().slice(0, 10);
     const plate = `QA${String.fromCharCode(65 + (Number.parseInt(stamp.slice(0, 2), 16) % 26))}${String(Number.parseInt(stamp.slice(2, 8), 16) % 1000).padStart(3, '0')}`;
-    await driverPage
-      .getByRole('textbox', { name: 'Vencimiento licencia (AAAA-MM-DD)' })
-      .fill(date);
-    await driverPage
-      .getByRole('button', { name: 'Guardar licencia declarada' })
-      .click();
+    const licenseInput = driverPage.getByRole('textbox', {
+      name: 'Vencimiento licencia (AAAA-MM-DD)',
+    });
+    const saveLicense = driverPage.getByRole('button', {
+      name: 'Guardar licencia declarada',
+    });
+    await licenseInput.fill('31/02/2099');
+    await saveLicense.click();
+    await expect(
+      driverPage
+        .getByRole('alert')
+        .filter({ hasText: /Indica una fecha válida/ }),
+    ).toBeVisible();
+    await licenseInput.fill(date.split('-').reverse().join('/'));
+    const declared = driverPage.waitForResponse(
+      (response) =>
+        response.url().endsWith('/driver-eligibility') &&
+        response.request().method() === 'POST',
+    );
+    await saveLicense.click();
+    const savedLicense = await declared;
+    expect(savedLicense.status()).toBe(201);
+    expect((await savedLicense.json()).expiresAt).toBe(
+      new Date(date + 'T23:59:59.999-05:00').toISOString(),
+    );
     await expect(
       driverPage.getByText(/Licencia declarada guardada/),
     ).toBeVisible();

@@ -13,7 +13,7 @@ import { Link, Text, View } from '../../theme/primitives';
 import { EconomicTerms } from '../expenses/economic-terms';
 import { ReputationLabel } from '../ratings/reputation-label';
 import { cancellationLabel } from './cancellation-reasons';
-import { PickupProposalForm } from './pickup-proposals';
+import { PickupProposalHistory } from './pickup-proposals';
 import { PublicStopDirections } from './public-stop-directions';
 import { RoutePreview, travelTime } from './route-preview';
 import { ReserveTrip } from './search-trips-screen';
@@ -114,12 +114,6 @@ function DetailContent({
                   )}
               </View>
             )}
-            {trip.recommendation?.type === 'POTENTIAL' && (
-              <Text style={s.text}>
-                La ruta pasa cerca de tu zona habitual. El conductor debe
-                aceptar una nueva recogida antes de que puedas elegir ese punto.
-              </Text>
-            )}
             {(confirmed || trip.isDriver) && (
               <View style={ui.separated}>
                 <Link
@@ -167,16 +161,13 @@ function DetailContent({
                 </Link>
               </View>
             )}
-            {!trip.isDriver &&
-              !confirmed &&
-              !trip.acceptsParticipation &&
-              !trip.acceptsPickupProposal && (
-                <Text style={s.text}>
-                  {trip.status === 'PROGRAMADO' && !hasSeats
-                    ? 'Este viaje se llenó.'
-                    : 'Este viaje ya no admite participaciones.'}
-                </Text>
-              )}
+            {!trip.isDriver && !confirmed && !trip.acceptsParticipation && (
+              <Text style={s.text}>
+                {trip.status === 'PROGRAMADO' && !hasSeats
+                  ? 'Este viaje se llenó.'
+                  : 'Este viaje ya no admite participaciones.'}
+              </Text>
+            )}
           </View>
           {canParticipate && trip.match && (
             <ReserveTrip
@@ -185,9 +176,7 @@ function DetailContent({
               onConfirmed={() => setConfirmation(true)}
             />
           )}
-          {!confirmed && trip.acceptsPickupProposal && (
-            <PickupProposalForm trip={trip} />
-          )}
+          <PickupProposalHistory trip={trip} />
           {direction && trip.status === 'PROGRAMADO' && !trip.expiredAt && (
             <PublicStopDirections stops={trip.itinerary.stops} />
           )}

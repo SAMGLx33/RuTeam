@@ -302,15 +302,16 @@ export function StopAccessEditor({
   direction: TripDirection;
 }) {
   const { field } = useController({ control, name: `stops.${index}.access` });
+  if (direction === 'HACIA_USC')
+    return (
+      <Text style={s.text}>
+        Sólo paso. Los pasajeros abordan en el origen y descienden en la USC.
+      </Text>
+    );
   return (
     <View style={{ gap: 8 }}>
       {(Object.keys(accessLabel) as StopAccess[])
-        .filter(
-          (access) =>
-            direction === 'HACIA_USC' ||
-            access === 'DROPOFF' ||
-            access === 'WAYPOINT',
-        )
+        .filter((access) => access === 'DROPOFF' || access === 'WAYPOINT')
         .map((access) => (
           <Choice
             key={access}

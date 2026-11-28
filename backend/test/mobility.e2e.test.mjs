@@ -363,7 +363,7 @@ test('lleno y cancelado salen del feed; aviso y detalle muestran estado actual s
   ).toBe(false);
 });
 
-test('proximidad a geometría produce potencial sin pickup ni plaza; preferencias editadas se reflejan al instante', async () => {
+test('la ruta cercana queda en exploración general y sólo permite tomar plaza desde su origen', async () => {
   const potential = await publish(650);
   const date = new Date(potential.departureAt);
   const marker = {
@@ -381,16 +381,21 @@ test('proximidad a geometría produce potencial sin pickup ni plaza; preferencia
       .query({ tab: 'FOR_YOU' })
       .expect(200)
   ).body;
-  expect(feed.items.find(({ id }) => id === potential.id)).toMatchObject({
-    recommendation: { type: 'POTENTIAL', pickupId: null, distanceKm: null },
-  });
+  expect(feed.items.find(({ id }) => id === potential.id)).toBeUndefined();
+  const all = (
+    await call('get', '/trips/feed', 'sara').query({ tab: 'ALL' }).expect(200)
+  ).body;
+  expect(all.items.find(({ id }) => id === potential.id)).toBeDefined();
   expect(
     (await call('get', `/trips/${potential.id}`, 'sara').expect(200)).body,
   ).toMatchObject({
-    match: null,
-    acceptsParticipation: false,
-    acceptsPickupProposal: true,
-    recommendation: { type: 'POTENTIAL' },
+    match: {
+      pickupId: potential.itinerary.stops[0].id,
+      dropoffId: potential.itinerary.stops.at(-1).id,
+    },
+    acceptsParticipation: true,
+    acceptsPickupProposal: false,
+    recommendation: null,
   });
   expect(
     (await db.trip.findUnique({ where: { id: potential.id } })).occupiedSeats,

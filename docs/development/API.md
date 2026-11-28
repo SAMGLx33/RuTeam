@@ -441,3 +441,19 @@ La aplicación calcula localmente la proyección y, si la señal y la secuencia
 de maniobras identifican la próxima parada sin ambigüedad, estima un ETA con
 el tiempo vial restante. La lectura de ubicación sigue autorizada por recurso.
 Al confirmar el descenso, la consulta en vivo queda revocada para ese pasajero.
+
+### Cierre del flujo de movilidad del MVP
+
+`POST /driver-eligibility`, `POST /vehicles` y `PATCH /vehicles/:id/soat`
+aceptan la vigencia calendario en `AAAA-MM-DD`. Nest la interpreta hasta el
+último milisegundo de ese día en Colombia. Las fechas ISO con hora conservan
+el instante enviado por los clientes existentes. La UI acepta también
+`DD/MM/AAAA` y envía la fecha calendario normalizada.
+
+En DESDE_USC se aborda en el origen y se desciende en una parada autorizada.
+En HACIA_USC las paradas de pasajeros son el origen externo y el destino USC.
+Los puntos intermedios de HACIA_USC se publican como `WAYPOINT`. Los endpoints
+de opciones viales, publicación y participación aplican la misma regla.
+`POST /trips/:tripId/pickup-proposals` responde 409 y la decisión de aceptar
+una propuesta pendiente también responde 409. Se conservan la consulta de
+propuestas históricas, la decisión de rechazo y los datos operativos existentes.

@@ -36,9 +36,9 @@ atómicos; idempotencia y último cupo probados sobre PostgreSQL real. Retiro pe
 libera plazas y conserva filas; viaje lleno no equivale a iniciado. Grupo sólo con
 consentimiento de cada estudiante, sin UUID como invitación ni retención indefinida.
 
-Propuesta de recogida separada de participación, sólo HACIA_USC; propietario acepta
-punto compatible sin alterar geometría/condiciones ni ocupar plazas. Revalidar estado,
-orden y duplicados bajo lock. Abordaje requiere confirmación y no descuenta dos veces.
+En HACIA_USC las nuevas participaciones conectan el origen publicado con la USC.
+Las propuestas históricas conservan su lectura y estado. Bloquear nuevas propuestas
+y aceptaciones. Abordaje requiere confirmación y no descuenta dos veces.
 
 Prisma 7.10.1 actual: prisma.config.ts, generator prisma-client ESM, output ignorado
 src/generated/prisma y adapter-pg. No cambiar versiones sin evaluar impacto.

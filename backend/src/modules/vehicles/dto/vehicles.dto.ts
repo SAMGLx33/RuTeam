@@ -38,7 +38,10 @@ export class RegisterVehicleDto {
   modelYear!: number;
   @ApiProperty({ enum: VEHICLE_COLORS }) @IsIn(VEHICLE_COLORS) color!: string;
   @ApiProperty({ format: 'date-time' })
-  @IsDateString({ strict: true })
+  @IsDateString(
+    { strict: true },
+    { message: 'Indica una fecha de vencimiento de SOAT válida' },
+  )
   soatExpiresAt!: string;
 
   @ApiPropertyOptional({ type: VehicleEnergyDto })
@@ -53,11 +56,17 @@ export class RegisterLicenseDto {
   @IsIn(['CAR', 'MOTORCYCLE', 'BOTH'])
   category!: 'CAR' | 'MOTORCYCLE' | 'BOTH';
   @ApiProperty({ format: 'date-time' })
-  @IsDateString({ strict: true })
+  @IsDateString(
+    { strict: true },
+    { message: 'Indica una fecha de vencimiento de licencia válida' },
+  )
   expiresAt!: string;
 }
 export class UpdateSoatDto {
   @ApiProperty({ format: 'date-time' })
-  @IsDateString({ strict: true })
+  @IsDateString(
+    { strict: true },
+    { message: 'Indica una fecha de vencimiento de SOAT válida' },
+  )
   soatExpiresAt!: string;
 }

@@ -134,6 +134,13 @@ export async function resolveRouteStops(
       'El viaje debe conectar un extremo USC del catálogo y un extremo externo, en el sentido seleccionado',
     );
   if (
+    direction === 'HACIA_USC' &&
+    stops.slice(1, -1).some(({ access }) => access !== 'WAYPOINT')
+  )
+    throw new DomainPolicyError(
+      'Hacia la USC sólo se aborda en el origen y se desciende en la USC. Los puntos intermedios son sólo de paso',
+    );
+  if (
     direction === 'DESDE_USC' &&
     stops
       .slice(1, -1)

@@ -82,6 +82,14 @@ export async function api<T>(
       requestEvents?.('unauthorized');
     if (response.status === 204) return undefined as T;
     const payload: unknown = await response.json().catch((error: unknown) => {
+      if (response.ok && error instanceof SyntaxError) {
+        if (isWrite) requestEvents?.('unknown-write');
+        throw new ApiError(
+          'RuTeam devolvió una respuesta inválida. Consulta el estado actualizado.',
+          response.status,
+          isWrite ? 'unknown' : 'rejected',
+        );
+      }
       if (response.ok) throw error;
       return null;
     });

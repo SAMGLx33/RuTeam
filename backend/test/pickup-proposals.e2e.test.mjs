@@ -141,100 +141,46 @@ test('exige USC en un extremo y acepta nombre de encuentro libre sin coordenadas
   expect(matching.body.items.map(({ id }) => id)).toContain(inbound.body.id);
 });
 
-test('sólo el conductor incorpora una recogida compatible sin reservar ni cambiar geometría', async () => {
-  const { body: trip, status } = await publish('HACIA_USC', 76);
+test('HACIA_USC conserva el punto de paso y bloquea nuevas recogidas', async () => {
+  for (const access of ['PICKUP', 'DROPOFF', 'BOTH'])
+    expect(
+      (
+        await publish('HACIA_USC', 76, {
+          stops: [
+            { ...point, instructions: 'Punto público histórico', access },
+          ],
+        })
+      ).status,
+    ).toBe(400);
+  const { body: trip, status } = await publish('HACIA_USC', 76, {
+    stops: [
+      { ...point, instructions: 'Punto de paso público', access: 'WAYPOINT' },
+    ],
+  });
   expect(status).toBe(201);
   const path = `/trips/${trip.id}/pickup-proposals`;
-  await requestAt('post', path, 'ana')
-    .send({ ...point, latitude: 5 })
-    .expect(400);
-  await requestAt('post', path).send(point).expect(403);
-  const proposed = await requestAt('post', path, 'ana').send(point).expect(201);
-  expect(proposed.body.status).toBe('PENDING');
   await requestAt('post', path, 'ana').send(point).expect(409);
-  const decision = `${path}/${proposed.body.id}/decision`;
-  await requestAt('post', decision, 'sara')
-    .send({ decision: 'ACCEPT' })
-    .expect(403);
-  expect((await requestAt('get', path, 'sara').expect(200)).body).toEqual([]);
-  const { body: seat } = await requestAt(
-    'post',
-    `/trips/${trip.id}/participations`,
-    'sara',
-  )
-    .send({
-      pickupId: trip.itinerary.stops[0].id,
-      dropoffId: trip.itinerary.stops.at(-1).id,
-    })
+  expect((await requestAt('get', path, 'ana').expect(200)).body).toEqual([]);
+  const [origin, middle, usc] = trip.itinerary.stops;
+  const participants = `/trips/${trip.id}/participations`;
+  await requestAt('post', participants, 'ana')
+    .send({ pickupId: middle.id, dropoffId: usc.id })
+    .expect(400);
+  await requestAt('post', participants, 'ana')
+    .send({ pickupId: origin.id, dropoffId: middle.id })
+    .expect(400);
+  await requestAt('post', participants, 'ana')
+    .send({ pickupId: origin.id, dropoffId: usc.id })
     .expect(201);
-  await requestAt('post', decision).send({ decision: 'ACCEPT' }).expect(409);
-  expect(
-    (
-      await db.pickupProposal.findUniqueOrThrow({
-        where: { id: proposed.body.id },
-      })
-    ).status,
-  ).toBe('PENDING');
-  const withdrawn = await requestAt(
-    'post',
-    `/participations/${seat.id}/cancel`,
-    'sara',
-  ).expect(200);
-  expect(withdrawn.body.status).toBe('CANCELLED');
-  const accepted = await requestAt('post', decision)
-    .send({ decision: 'ACCEPT' })
-    .expect(200);
-  expect(
-    (await requestAt('post', decision).send({ decision: 'ACCEPT' }).expect(200))
-      .body,
-  ).toEqual(accepted.body);
   const stored = await db.trip.findUniqueOrThrow({
     where: { id: trip.id },
     include: { stops: { orderBy: { position: 'asc' } } },
   });
   expect(stored.routeGeometry).toEqual(trip.itinerary.geometry);
-  expect(stored.occupiedSeats).toBe(0);
-  expect(stored.stops.map(({ id }) => id)).toEqual([
-    trip.itinerary.stops[0].id,
-    accepted.body.acceptedStopId,
-    trip.itinerary.stops.at(-1).id,
+  expect(stored.occupiedSeats).toBe(1);
+  expect(stored.stops.map(({ access }) => access)).toEqual([
+    'PICKUP',
+    'WAYPOINT',
+    'DROPOFF',
   ]);
-  await requestAt('post', `/trips/${trip.id}/participations`, 'ana')
-    .send({
-      pickupId: accepted.body.acceptedStopId,
-      dropoffId: trip.itinerary.stops.at(-1).id,
-    })
-    .expect(201);
-  expect(
-    (await db.trip.findUniqueOrThrow({ where: { id: trip.id } })).occupiedSeats,
-  ).toBe(1);
-});
-
-test('rechazo, cierre e itinerarios DESDE_USC bloquean las incorporaciones', async () => {
-  const outbound = await publish('DESDE_USC', 80);
-  expect(outbound.status).toBe(201);
-  await requestAt('post', `/trips/${outbound.body.id}/pickup-proposals`, 'ana')
-    .send(point)
-    .expect(400);
-  const inbound = await publish('HACIA_USC', 84);
-  expect(inbound.status).toBe(201);
-  const path = `/trips/${inbound.body.id}/pickup-proposals`;
-  const rejected = await requestAt('post', path, 'ana').send(point).expect(201);
-  const row = await requestAt('post', `${path}/${rejected.body.id}/decision`)
-    .send({ decision: 'REJECT' })
-    .expect(200);
-  expect(row.body).toMatchObject({ status: 'REJECTED', acceptedStopId: null });
-  const pending = await requestAt('post', path, 'sara').send(point).expect(201);
-  await requestAt('post', `/trips/${inbound.body.id}/transition`)
-    .send({ action: 'CANCEL' })
-    .expect(200);
-  await requestAt('post', `${path}/${pending.body.id}/decision`)
-    .send({ decision: 'ACCEPT' })
-    .expect(409);
-  expect(
-    (await requestAt('get', path, 'sara').expect(200)).body[0].status,
-  ).toBe('EXPIRED');
-  expect(
-    await db.pickupProposal.findUnique({ where: { id: pending.body.id } }),
-  ).toMatchObject({ status: 'EXPIRED', decidedAt: expect.any(Date) });
 });

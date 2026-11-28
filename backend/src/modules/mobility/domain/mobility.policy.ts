@@ -10,11 +10,8 @@ import type {
   TripDirection,
   VehicleType,
 } from '@ruteam/contracts';
-import { DomainPolicyError } from '../../../common/errors/domain-policy.error.js';
 import {
   matchStops,
-  pickupInsertionPosition,
-  passesNear,
   tripDirection,
 } from '../../trips/domain/models/driver-route.js';
 export interface MobilityProfile {
@@ -125,32 +122,7 @@ export function matchMobility(
         pickupInstant(trip.departureAt, pickup)?.toISOString() ?? null,
     };
   }
-  if (
-    direction !== 'HACIA_USC' ||
-    !withinSchedule(trip.departureAt, profile) ||
-    !trip.geometry ||
-    !passesNear(trip.geometry, place, profile.radiusKm)
-  )
-    return null;
-  try {
-    // Una cercanía visual no garantiza una recogida incorporable. Usa la misma regla de propuestas.
-    pickupInsertionPosition(trip.geometry, trip.stops, place);
-  } catch (error) {
-    if (!(error instanceof DomainPolicyError)) throw error;
-    return null;
-  }
-  return {
-    type: 'POTENTIAL',
-    reasons: [
-      'ROUTE_NEARBY',
-      'PICKUP_REQUIRES_DRIVER_DECISION',
-      'DEPARTURE_WINDOW',
-    ],
-    pickupId: null,
-    dropoffId: campusStop.id,
-    distanceKm: null,
-    pickupEstimatedAt: null,
-  };
+  return null;
 }
 
 export type RecommendationAccess = AccessConfiguration;

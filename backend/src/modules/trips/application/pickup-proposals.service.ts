@@ -5,15 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { RouteGeometry } from '@ruteam/contracts';
-import {
-  pickupInsertionPosition,
-  tripDirection,
-} from '../domain/models/driver-route.js';
-import type {
-  PickupDecisionDto,
-  PickupProposalDto,
-} from '../dto/pickup-proposal.dto.js';
+import { tripDirection } from '../domain/models/driver-route.js';
+import type { PickupDecisionDto } from '../dto/pickup-proposal.dto.js';
 import {
   PickupProposalsRepository,
   proposalView,
@@ -30,7 +23,7 @@ async function openRoute(unit: ProposalUnit) {
     );
   if (trip.status !== 'PROGRAMADO' || trip.departureAt <= new Date())
     throw new ConflictException('El viaje está cerrado a propuestas');
-  return { trip, stops, geometry: trip.routeGeometry as RouteGeometry | null };
+  return trip;
 }
 
 @Injectable()
@@ -41,35 +34,10 @@ export class PickupProposalsService {
     return this.repository.list(actorId, tripId);
   }
 
-  propose(actorId: string, tripId: string, input: PickupProposalDto) {
-    const point = {
-      ...input,
-      label: input.label.trim(),
-      instructions: input.instructions?.trim() || undefined,
-    };
-    if (point.label.length < 2)
-      throw new BadRequestException('Escribe una referencia pública');
-    return this.repository.withTrip(tripId, async (unit) => {
-      if (!(await unit.activeRequester(actorId)))
-        throw new ForbiddenException('La cuenta está desactivada');
-      const { trip, stops, geometry } = await openRoute(unit);
-      if (trip.driverId === actorId)
-        throw new ForbiddenException('El conductor ya define sus paradas');
-      if (!geometry)
-        throw new ConflictException(
-          'Hace falta geometría publicada para comprobar la propuesta',
-        );
-      pickupInsertionPosition(geometry, stops, point);
-      if (await unit.pendingFor(actorId))
-        throw new ConflictException(
-          'Ya tienes una propuesta pendiente en este viaje',
-        );
-      if ((await unit.pendingCount()) >= 50)
-        throw new ConflictException(
-          'El viaje alcanzó su límite de propuestas pendientes',
-        );
-      return proposalView(await unit.create(actorId, point, trip.driverId));
-    });
+  propose(): never {
+    throw new ConflictException(
+      'La recogida se realiza en el origen publicado del viaje.',
+    );
   }
 
   decide(
@@ -79,7 +47,7 @@ export class PickupProposalsService {
     decision: PickupDecisionDto['decision'],
   ) {
     return this.repository.withTrip(tripId, async (unit) => {
-      const { trip, stops, geometry } = await openRoute(unit);
+      const trip = await openRoute(unit);
       if (trip.driverId !== actorId)
         throw new ForbiddenException(
           'Sólo el conductor decide sobre esta propuesta',
@@ -90,22 +58,11 @@ export class PickupProposalsService {
       if (row.status === next) return proposalView(row);
       if (row.status !== 'PENDING')
         throw new ConflictException('La propuesta ya fue resuelta');
-      const now = new Date();
-      if (decision === 'REJECT')
-        return proposalView(await unit.reject(proposalId, now));
-      if (trip.occupiedSeats >= trip.offeredSeats)
+      if (decision === 'ACCEPT')
         throw new ConflictException(
-          'No hay plazas disponibles para esta recogida',
+          'La recogida se realiza en el origen publicado del viaje.',
         );
-      if (!geometry)
-        throw new ConflictException(
-          'Hace falta geometría publicada para incorporar la propuesta',
-        );
-      const position = pickupInsertionPosition(geometry, stops, {
-        latitude: Number(row.latitude),
-        longitude: Number(row.longitude),
-      });
-      return proposalView(await unit.accept(row, position, now, actorId));
+      return proposalView(await unit.reject(proposalId, new Date()));
     });
   }
 }

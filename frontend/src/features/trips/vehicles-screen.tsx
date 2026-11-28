@@ -3,7 +3,7 @@ import type { VehicleEnergyInput } from '@ruteam/contracts';
 import { EnergyFields, VehicleEnergyEditor } from '../mobility/vehicle-energy';
 import { useSession } from '../../providers/session-provider';
 import { StyleSheet } from 'react-native';
-import { Pressable, Text, View } from '../../theme/primitives';
+import { Link, Pressable, Text, View } from '../../theme/primitives';
 import { useForm, useWatch } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
@@ -48,6 +48,31 @@ const licenseLabels = {
   MOTORCYCLE: 'Motocicleta',
   BOTH: 'Auto y moto',
 } as const;
+function calendarDate(value: string) {
+  const text = value.trim();
+  const local = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text);
+  const date = local
+    ? `${local[3]}-${local[2].padStart(2, '0')}-${local[1].padStart(2, '0')}`
+    : text;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const utc = new Date(`${date}T00:00:00Z`);
+  return Number.isFinite(+utc) && utc.toISOString().slice(0, 10) === date
+    ? date
+    : null;
+}
+
+const expiryRules = {
+  required: 'Indica la fecha de vencimiento.',
+  validate: (value: string) => {
+    const date = calendarDate(value);
+    if (!date) return 'Indica una fecha válida en AAAA-MM-DD o DD/MM/AAAA.';
+    return (
+      Date.parse(`${date}T23:59:59.999-05:00`) > Date.now() ||
+      'El documento está vencido. Indica una vigencia actual.'
+    );
+  },
+};
+
 function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
   const client = useQueryClient();
   const form = useForm<{ soatExpiresAt: string }>({
@@ -57,12 +82,13 @@ function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
     mutationFn: ({ soatExpiresAt }: { soatExpiresAt: string }) =>
       api<VehicleSummary>(`/vehicles/${vehicle.id}/soat`, {
         method: 'PATCH',
-        body: { soatExpiresAt: `${soatExpiresAt}T23:59:59-05:00` },
+        body: { soatExpiresAt: calendarDate(soatExpiresAt) },
       }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ['vehicles'] });
-      void client.invalidateQueries({ queryKey: ['me'] });
-    },
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: ['vehicles'] }),
+        client.invalidateQueries({ queryKey: ['me'] }),
+      ]),
   });
   return (
     <View style={[ui.subdued, styles.vehicle]} testID={`vehicle-${vehicle.id}`}>
@@ -88,6 +114,7 @@ function SoatRenewal({ vehicle }: { vehicle: VehicleSummary }) {
       <Field
         control={form.control}
         name="soatExpiresAt"
+        rules={expiryRules}
         label={`Nueva vigencia SOAT ${vehicle.plate} (AAAA-MM-DD)`}
       />
       {save.error && (
@@ -160,26 +187,53 @@ export function VehiclesScreen() {
           },
           passengerCapacity: Number(values.passengerCapacity),
           modelYear: Number(values.modelYear),
-          soatExpiresAt: `${values.soatExpiresAt}T23:59:59-05:00`,
+          soatExpiresAt: calendarDate(values.soatExpiresAt),
         },
       }),
-    onSuccess: () => {
+    onSuccess: async () => {
       setEnergy(undefined);
-      void client.invalidateQueries({ queryKey: ['vehicles'] });
-      void client.invalidateQueries({ queryKey: ['me'] });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ['vehicles'] }),
+        client.invalidateQueries({ queryKey: ['me'] }),
+      ]);
     },
   });
   const saveLicense = useMutation({
     mutationFn: (values: LicenseFormValues) =>
       api<DemoLicense>('/driver-eligibility', {
         method: 'POST',
-        body: { ...values, expiresAt: `${values.expiresAt}T23:59:59-05:00` },
+        body: { ...values, expiresAt: calendarDate(values.expiresAt) },
       }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ['license'] });
-      void client.invalidateQueries({ queryKey: ['me'] });
+    onSuccess: async (saved) => {
+      client.setQueryData(['license'], saved);
+      await client.invalidateQueries({ queryKey: ['me'] });
     },
   });
+  const requirements: string[] = [];
+  if (license.isSuccess && vehicles.isSuccess && !user?.capabilities.driver) {
+    const doc = license.data;
+    if (!doc) requirements.push('Declara tu licencia de conducción.');
+    else if (doc.verificationStatus === 'EXPIRED')
+      requirements.push('Actualiza el vencimiento de la licencia.');
+    else if (doc.verificationStatus === 'UNVERIFIED')
+      requirements.push(
+        'La licencia necesita verificación en el modo de acceso actual.',
+      );
+    if (!vehicles.data.length)
+      requirements.push('Registra un vehículo con SOAT vigente.');
+    else if (!vehicles.data.some(({ eligibleNow }) => eligibleNow))
+      requirements.push('Actualiza el SOAT de al menos un vehículo.');
+    else if (
+      doc &&
+      !vehicles.data.some(
+        ({ eligibleNow, type }) =>
+          eligibleNow && (doc.category === 'BOTH' || doc.category === type),
+      )
+    )
+      requirements.push(
+        'La categoría de la licencia debe cubrir un vehículo con SOAT vigente.',
+      );
+  }
   return (
     <ProtectedPage
       title="Vehículos y licencia"
@@ -190,6 +244,20 @@ export function VehiclesScreen() {
         Declara vehículos propios o con autorización de uso. Consulta el estado
         de verificación de la licencia y el SOAT en cada registro.
       </Text>
+      <Text style={s.text}>
+        Puedes escribir las fechas en AAAA-MM-DD o DD/MM/AAAA. La vigencia se
+        evalúa en hora de Colombia.
+      </Text>
+      {requirements.map((requirement) => (
+        <Text key={requirement} style={s.text}>
+          {requirement}
+        </Text>
+      ))}
+      {user?.capabilities.driver && user.onboarding.completed && (
+        <Link href="/publish" style={s.link}>
+          Publicar viaje
+        </Link>
+      )}
       <TripColumns
         main={
           <>
@@ -282,6 +350,7 @@ export function VehiclesScreen() {
               <Field
                 control={form.control}
                 name="soatExpiresAt"
+                rules={expiryRules}
                 label="Vencimiento SOAT (AAAA-MM-DD)"
               />
               {energy ? (
@@ -372,6 +441,7 @@ export function VehiclesScreen() {
             <Field
               control={licenseForm.control}
               name="expiresAt"
+              rules={expiryRules}
               label="Vencimiento licencia (AAAA-MM-DD)"
             />
             {saveLicense.error && (

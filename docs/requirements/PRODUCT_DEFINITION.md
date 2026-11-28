@@ -81,6 +81,8 @@ Sin funcionalidades disponibles se informa su estado; no inventar estadísticas 
   HACIA_USC parte fuera y termina en la USC. Un punto intermedio universitario
   no habilita un viaje entre dos puntos externos. Desde USC se aborda en el
   encuentro de origen. Las paradas adicionales son de descenso o de paso.
+  Hacia la USC se aborda en el origen externo publicado y se desciende en la
+  USC. Los puntos intermedios de ese sentido sólo son de paso.
 - **RN-VIAJE-03.** El conductor selecciona el itinerario, fecha, horario,
   vehículo, condiciones y paradas. Los puntos de paso y las paradas autorizadas
   tienen funciones distintas. La geometría vial publicada se conserva.
@@ -99,9 +101,9 @@ Sin funcionalidades disponibles se informa su estado; no inventar estadísticas 
   obligatorio, coordenadas manuales ni publicación de solicitudes de transporte.
 - **RN-RECOMENDACION-01.** Matching permanente recomienda viajes publicados según
   preferencias activas, sentido/campus/fecha/horario, proximidad/calidad, paradas, estado,
-  capacidad y elegibilidad. Distinguir compatible para participar, potencial HACIA_USC
-  para proponer recogida y no compatible. Texto/proximidad no autorizan abordaje;
-  no inventar ETA intermedia. Sin modificación del recorrido ni ocupación automática.
+  capacidad y elegibilidad. Una recomendación debe corresponder a un segmento
+  de pasajeros autorizado. La exploración general permite consultar y tomar
+  viajes elegibles aunque no coincidan con las preferencias.
 - **RN-FEED-01.** «Viajes disponibles» ofrece Para ti, Desde USC, Hacia USC y listado
   general con datos del backend. Sin preferencias o sin coincidencias, permitir descubrir
   otros viajes. Detalle explica conductor/reputación existente, vehículo, horario, encuentro,
@@ -130,9 +132,10 @@ Sin funcionalidades disponibles se informa su estado; no inventar estadísticas 
   ocupa plazas. El organizador confirma todas las plazas del segmento escogido
   en una operación. Cada integrante recibe su participación individual y puede
   retirarse según la regla ordinaria. Conservar el historial anterior.
-- **RN-PARADA-01.** Una propuesta de recogida pertenece a un viaje HACIA_USC.
-  El propietario decide si incorpora el punto compatible con su recorrido.
-  La decisión no altera la geometría, no reserva plazas y no confirma participación.
+- **RN-PARADA-01.** El MVP bloquea nuevas propuestas de recogida y sus
+  aceptaciones. Conserva el historial y las participaciones autorizadas
+  anteriormente. El propietario puede rechazar propuestas históricas pendientes
+  mientras el viaje admita esa operación.
 - **RN-ABORDAJE-01.** Abordaje sólo con participación confirmada. Registra presencia
   con autorización del conductor y sin consumir una segunda plaza. El pasajero
   puede mostrar un QR opaco de dos minutos. El titular lo escanea desde móvil

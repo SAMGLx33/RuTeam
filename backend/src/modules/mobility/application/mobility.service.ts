@@ -135,10 +135,7 @@ export function bestMobilityMatch(
     const match = matchMobility(candidate, preferenceProfile(row));
     if (
       match &&
-      (!best ||
-        (match.type === 'DIRECT' && best.type === 'POTENTIAL') ||
-        (match.type === best.type &&
-          (match.distanceKm ?? Infinity) < (best.distanceKm ?? Infinity)))
+      (!best || (match.distanceKm ?? Infinity) < (best.distanceKm ?? Infinity))
     )
       best = match;
   }
@@ -315,26 +312,20 @@ export class MobilityService {
       ? bestMobilityMatch(trip, await this.repository.profiles(actorId, true))
       : null;
     const match =
-      recommendation?.type === 'POTENTIAL'
-        ? null
-        : recommendation?.type === 'DIRECT'
-          ? {
-              pickupId: recommendation.pickupId!,
-              dropoffId: recommendation.dropoffId!,
-              distanceKm: recommendation.distanceKm ?? 0,
-            }
-          : available
-            ? allowed
-            : null;
+      recommendation?.type === 'DIRECT'
+        ? {
+            pickupId: recommendation.pickupId!,
+            dropoffId: recommendation.dropoffId!,
+            distanceKm: recommendation.distanceKm ?? 0,
+          }
+        : available
+          ? allowed
+          : null;
     const mayJoin =
       available &&
       !isDriver &&
       (await this.repository.confirmedTrips(actorId, [trip.id])).length === 0;
     const acceptsParticipation = mayJoin && match !== null;
-    const acceptsPickupProposal =
-      mayJoin &&
-      tripDirection(presentStops(trip)) === 'HACIA_USC' &&
-      trip.routeGeometry !== null;
     const [card] = await this.trips.attachDriverReputations([
       { driverId: trip.driverId, card: presentAvailable(trip, allowed) },
     ]);
@@ -343,7 +334,7 @@ export class MobilityService {
       match,
       recommendation,
       acceptsParticipation,
-      acceptsPickupProposal,
+      acceptsPickupProposal: false,
       canSaveInterest: !isDriver && inMarket,
       status: trip.status,
       terminationReason: trip.terminationReason,

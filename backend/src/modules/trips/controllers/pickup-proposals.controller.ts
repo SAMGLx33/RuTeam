@@ -15,10 +15,7 @@ import {
   type AuthenticatedRequest,
 } from '../../../common/guards/session.guard.js';
 import { PickupProposalsService } from '../application/pickup-proposals.service.js';
-import {
-  PickupDecisionDto,
-  PickupProposalDto,
-} from '../dto/pickup-proposal.dto.js';
+import { PickupDecisionDto } from '../dto/pickup-proposal.dto.js';
 
 @ApiTags('pickup-proposals')
 @ApiBearerAuth()
@@ -37,12 +34,8 @@ export class PickupProposalsController {
   }
 
   @Post()
-  propose(
-    @Req() req: AuthenticatedRequest,
-    @Param('tripId', ParseUUIDPipe) tripId: string,
-    @Body() input: PickupProposalDto,
-  ) {
-    return this.service.propose(req.principal.userId, tripId, input);
+  propose() {
+    return this.service.propose();
   }
 
   @Post(':id/decision')

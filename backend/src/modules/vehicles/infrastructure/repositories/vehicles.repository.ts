@@ -25,6 +25,7 @@ export class VehiculoRepository {
   registrar(
     ownerId: string,
     data: RegisterVehicleDto,
+    soatExpiresAt: Date,
     energy?: VehicleEnergyProfile,
   ) {
     return this.db.$transaction(async (tx) => {
@@ -47,7 +48,7 @@ export class VehiculoRepository {
           demo,
           document: {
             create: {
-              expiresAt: new Date(data.soatExpiresAt),
+              expiresAt: soatExpiresAt,
               demo,
               verificationSource: 'SELF_DECLARED',
               kind: 'SOAT',
@@ -61,7 +62,11 @@ export class VehiculoRepository {
   licencia(userId: string) {
     return this.db.driverEligibility.findUnique({ where: { userId } });
   }
-  registrarLicencia(userId: string, data: RegisterLicenseDto) {
+  registrarLicencia(
+    userId: string,
+    category: RegisterLicenseDto['category'],
+    expiresAt: Date,
+  ) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
       const owner = await tx.user.findUniqueOrThrow({
@@ -73,14 +78,14 @@ export class VehiculoRepository {
         where: { userId },
         create: {
           userId,
-          category: data.category,
-          expiresAt: new Date(data.expiresAt),
+          category,
+          expiresAt,
           demo,
           verificationSource: 'SELF_DECLARED',
         },
         update: {
-          category: data.category,
-          expiresAt: new Date(data.expiresAt),
+          category,
+          expiresAt,
           demo,
           verificationSource: 'SELF_DECLARED',
           reviewStatus: 'PENDING',

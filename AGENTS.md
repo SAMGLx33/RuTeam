@@ -54,8 +54,9 @@ recorrido E2E/visual son parte del DoD, no basta endpoint o prueba aislada.
   Una confirmación ordinaria válida ocupa plaza directamente, sin aprobación del conductor.
   Sin duplicados ni participación en viaje propio. Cupos por viaje completo: auto≤4,
   moto≤1; concurrencia e idempotencia en PostgreSQL real, también frente a cancelaciones.
-- Propuestas de recogida sólo HACIA_USC y sobre recorrido compatible. Decide el conductor
-  propietario. Aceptarlas no cambia geometría, no reserva y no confirma participación.
+- En HACIA_USC se aborda en el origen externo publicado y se desciende en la USC.
+  Los puntos intermedios sólo son de paso. Conservar las propuestas históricas y
+  deshabilitar nuevas solicitudes o incorporaciones.
 - Encuentro libre por texto, incluido interior/piso/sótano, vinculado al campus.
   Ubicación general aproximada y punto exacto son distintos. No exigir coordenadas
   propias al encuentro interior ni inventarlas. UI sin latitud/longitud/GeoJSON/UUID manuales.

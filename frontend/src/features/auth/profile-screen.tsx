@@ -158,7 +158,9 @@ function ProfileSettings({ user }: { user: Account }) {
               </Text>
               <View style={styles.linkList}>
                 <Link href="/vehicles" style={styles.settingLink}>
-                  Vehículos y licencia
+                  {user.capabilities.driver
+                    ? 'Vehículos y licencia'
+                    : 'Completar configuración de conductor'}
                 </Link>
                 <Link href="/my-trips" style={styles.settingLink}>
                   Mis viajes publicados

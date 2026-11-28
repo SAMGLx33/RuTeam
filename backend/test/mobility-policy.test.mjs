@@ -86,19 +86,14 @@ test('texto de lugar por sí solo no simula comprobación geográfica', () => {
     }),
   ).toBeNull();
 });
-test('cercanía a geometría sin pickup autorizado es POTENTIAL sólo hacia USC', () => {
+test('cercanía a la ruta sin recogida en el origen no recomienda el viaje', () => {
   const preference = {
     ...profile,
     latitude: 3.42,
     longitude: -76.535,
     radiusKm: 0.1,
   };
-  expect(matchMobility(trip, preference)).toMatchObject({
-    type: 'POTENTIAL',
-    pickupId: null,
-    dropoffId: 'usc',
-    distanceKm: null,
-  });
+  expect(matchMobility(trip, preference)).toBeNull();
   expect(matchMobility({ ...trip, geometry: null }, preference)).toBeNull();
   expect(matchMobility(trip, { ...preference, latitude: 3.6 })).toBeNull();
 });
@@ -184,35 +179,26 @@ test('recomendaciones sólo usan actor verificado y fuente sintética explícita
     ).toBe(false);
 });
 
-test('recogida intermedia con hora vial se evalúa en el día de Colombia en que ocurre', () => {
-  const departs = new Date('2026-12-01T04:50:00Z'); // lunes 23:50
-  const stop = point('pickup', 1, 3.44, -76.52, 'PICKUP');
+test('una recogida histórica intermedia no se recomienda aunque coincida el horario', () => {
   const inbound = {
     ...trip,
-    departureAt: departs,
-    geometry: null,
+    departureAt: new Date('2026-12-01T04:50:00Z'),
     stops: [
       point('start', 0, 3.45, -76.51, 'PICKUP'),
-      { ...stop, estimatedOffsetSeconds: 1200 },
+      {
+        ...point('legacy', 1, 3.44, -76.52, 'PICKUP'),
+        estimatedOffsetSeconds: 1200,
+      },
       { ...trip.stops.at(-1), position: 2 },
     ],
   };
-  const afterMidnight = {
-    ...profile,
-    days: [2],
-    startMinute: 0,
-    endMinute: 15,
-  };
-  expect(matchMobility(inbound, afterMidnight)).toMatchObject({
-    type: 'DIRECT',
-    pickupId: 'pickup',
-    pickupEstimatedAt: '2026-12-01T05:10:00.000Z',
-  });
   expect(
-    matchMobility(
-      { ...inbound, stops: [inbound.stops[0], stop, inbound.stops[2]] },
-      afterMidnight,
-    ),
+    matchMobility(inbound, {
+      ...profile,
+      days: [2],
+      startMinute: 0,
+      endMinute: 15,
+    }),
   ).toBeNull();
 });
 

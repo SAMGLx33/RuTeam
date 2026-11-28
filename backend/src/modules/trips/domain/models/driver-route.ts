@@ -86,7 +86,7 @@ export function matchStops(
   let match: StopMatch | null = null;
   const direction = tripDirection(stops);
   for (const pickup of stops) {
-    if (direction === 'DESDE_USC' && pickup !== stops[0]) continue;
+    if (direction && pickup !== stops[0]) continue;
     if (
       (pickup.access !== 'PICKUP' && pickup.access !== 'BOTH') ||
       !matchesText(pickup, preferences.fromText) ||
@@ -97,6 +97,7 @@ export function matchStops(
     if (from > preferences.radiusKm) continue;
     for (const dropoff of stops) {
       if (
+        (direction === 'HACIA_USC' && dropoff !== stops.at(-1)) ||
         !matchesText(dropoff, preferences.toText) ||
         dropoff.position <= pickup.position ||
         (dropoff.access !== 'DROPOFF' && dropoff.access !== 'BOTH')
@@ -124,10 +125,12 @@ export function allowsSegment(
 ): boolean {
   const pickup = stops.find((stop) => stop.id === pickupId);
   const dropoff = stops.find((stop) => stop.id === dropoffId);
+  const direction = tripDirection(stops);
   return (
     !!pickup &&
     !!dropoff &&
-    (tripDirection(stops) !== 'DESDE_USC' || pickup === stops[0]) &&
+    (!direction || pickup === stops[0]) &&
+    (direction !== 'HACIA_USC' || dropoff === stops.at(-1)) &&
     pickup.position < dropoff.position &&
     (pickup.access === 'PICKUP' || pickup.access === 'BOTH') &&
     (dropoff.access === 'DROPOFF' || dropoff.access === 'BOTH')

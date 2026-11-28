@@ -145,11 +145,11 @@ test('distingue sedes y persiste la geometría seleccionada con estimación inte
     destination: { campusPointId: meeting.id, label: 'Junto al acceso' },
     stops: [
       {
-        label: 'Recogida pública intermedia',
+        label: 'Punto de paso público',
         latitude: 3.44,
         longitude: -76.52,
         instructions: 'Punto público',
-        access: 'PICKUP',
+        access: 'WAYPOINT',
       },
     ],
   };
@@ -226,17 +226,17 @@ test('distingue sedes y persiste la geometría seleccionada con estimación inte
     ),
   ).toEqual([0, 1200, 2400]);
   expect(published.itinerary.stops[2].campusSiteId).toBe(campus.id);
-  const pickupAt = new Date(departureAt.getTime() + 1200 * 1000);
+  const localDay = new Date(+departureAt - 5 * 3600_000).getUTCDay() || 7;
   const routine = {
-    label: 'Recogida de madrugada',
+    label: 'Salida nocturna',
     campusPointId: palmira.id,
     direction: 'HACIA_USC',
-    days: [pickupAt.getUTCDay() || 7],
-    startMinute: 0,
-    endMinute: 15,
+    days: [localDay],
+    startMinute: 1420,
+    endMinute: 1439,
     placeLabel: 'Punto habitual de prueba',
-    latitude: 3.44,
-    longitude: -76.52,
+    latitude: 3.46,
+    longitude: -76.5,
     radiusKm: 0.25,
     vehicleTypes: ['CAR'],
     notificationsEnabled: true,
@@ -259,8 +259,8 @@ test('distingue sedes y persiste la geometría seleccionada con estimación inte
   )?.recommendation;
   expect(match).toMatchObject({
     type: 'DIRECT',
-    pickupId: published.itinerary.stops[1].id,
-    pickupEstimatedAt: pickupAt.toISOString(),
+    pickupId: published.itinerary.stops[0].id,
+    pickupEstimatedAt: departureAt.toISOString(),
   });
   const { RecommendationWorker } =
     await import('../dist/src/modules/mobility/application/recommendation.worker.js');

@@ -161,17 +161,27 @@ test('dos cuentas ordinarias publican, encuentran y operan un viaje con document
   await onboarding(driver.token, 'DRIVER_AND_PASSENGER');
   await onboarding(rider.token, 'PASSENGER');
   expect(driver.account.capabilities.driver).toBe(false);
+  await call('get', '/driver-eligibility', driver.token)
+    .expect(200)
+    .expect('Content-Type', /json/)
+    .expect('null');
   const expiry = new Date(Date.now() + 15 * 24 * 3600_000).toISOString();
+  const day = expiry.slice(0, 10);
+  for (const expiresAt of ['31/02/2099', '2099-02-29', '2000-01-01'])
+    await call('post', '/driver-eligibility', driver.token)
+      .send({ category: 'CAR', expiresAt })
+      .expect(400);
   const { body: license } = await call(
     'post',
     '/driver-eligibility',
     driver.token,
   )
-    .send({ category: 'CAR', expiresAt: expiry })
+    .send({ category: 'CAR', expiresAt: day })
     .expect(201);
   expect(license).toMatchObject({
     demo: false,
     verificationStatus: 'DECLARED',
+    expiresAt: new Date(day + 'T23:59:59.999-05:00').toISOString(),
   });
   const { body: vehicle } = await call('post', '/vehicles', driver.token)
     .send({
@@ -181,12 +191,13 @@ test('dos cuentas ordinarias publican, encuentran y operan un viaje con document
       brand: 'Marca de prueba',
       modelYear: 2020,
       color: 'GRIS',
-      soatExpiresAt: expiry,
+      soatExpiresAt: day,
     })
     .expect(201);
   expect(vehicle).toMatchObject({
     demo: false,
     eligibleNow: true,
+    soatExpiresAt: license.expiresAt,
     verificationStatus: 'DECLARED',
   });
   const campus = await db.campusDestination.findUniqueOrThrow({

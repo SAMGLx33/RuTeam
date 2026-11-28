@@ -48,7 +48,7 @@ test('Inicio, mapa, navegación, contexto y apariencia mantienen el acceso conve
   ).toBeVisible();
   await page.getByRole('tab', { name: 'Pasajero', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Explorar viajes' }),
+    page.getByRole('button', { name: 'Buscar viaje' }),
   ).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Publicar viaje', exact: true }),
@@ -80,11 +80,11 @@ test('Inicio, mapa, navegación, contexto y apariencia mantienen el acceso conve
   if (info.project.name === 'mobile-web') {
     await page.getByRole('button', { name: 'Plegar Próximo viaje' }).click();
     await expect(
-      page.getByRole('button', { name: 'Explorar viajes' }),
+      page.getByRole('button', { name: 'Buscar viaje' }),
     ).toHaveCount(0);
     await page.getByRole('button', { name: 'Expandir Próximo viaje' }).click();
     await expect(
-      page.getByRole('button', { name: 'Explorar viajes' }),
+      page.getByRole('button', { name: 'Buscar viaje' }),
     ).toBeVisible();
   }
   await page.getByRole('tab', { name: 'Conductor', exact: true }).click();

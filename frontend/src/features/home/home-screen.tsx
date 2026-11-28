@@ -47,6 +47,10 @@ export function HomeScreen({ user }: { user: Account }) {
       : 'passenger',
   );
   const driving = user.capabilities.driver && context === 'driver';
+  const needsDriverSetup =
+    user.usagePreference === 'DRIVER_AND_PASSENGER' &&
+    user.capabilities.driverAccess &&
+    !user.capabilities.driver;
   const recommended = useTripFeed('FOR_YOU', user.id);
   const next = useQuery({
     queryKey: ['my-reservations', user.id],
@@ -307,18 +311,27 @@ export function HomeScreen({ user }: { user: Account }) {
             )}
             {active && operationHref && !currentQuery.error ? (
               <Link href={operationHref} style={styles.cta}>
-                {driving ? 'Continuar operación' : 'Seguir mi viaje'}
+                Continuar viaje
               </Link>
             ) : driving ? (
               <Link href="/publish" style={styles.cta}>
                 Publicar viaje
               </Link>
+            ) : needsDriverSetup ? (
+              <Link href="/vehicles" style={styles.cta}>
+                Completar configuración de conductor
+              </Link>
             ) : (
               <Button
-                title="Explorar viajes"
+                title="Buscar viaje"
                 icon="search"
                 onPress={() => router.push('/available-trips')}
               />
+            )}
+            {needsDriverSetup && !active && (
+              <Link href="/available-trips" style={s.link}>
+                Buscar viaje
+              </Link>
             )}
             {!active && operationHref && !currentQuery.error && (
               <Link href={operationHref} style={s.link}>

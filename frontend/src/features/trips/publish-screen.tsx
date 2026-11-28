@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CampusMeetingPoint,
   CompensationMethod,
+  DemoLicense,
   TripEconomicsPreview,
   TripEditInput,
   MeetingPointInput,
@@ -112,9 +113,9 @@ function routePoints(
     stops: values.stops.map((stop, index) => ({
       ...pointInput(`Parada ${index + 1}`, stop),
       access:
-        values.direction === 'DESDE_USC' && stop.access !== 'WAYPOINT'
-          ? 'DROPOFF'
-          : stop.access,
+        values.direction === 'HACIA_USC' || stop.access === 'WAYPOINT'
+          ? 'WAYPOINT'
+          : 'DROPOFF',
     })),
     publicMeetingPoints: true,
   };
@@ -477,9 +478,20 @@ function PublishForm({
     enabled: !!user?.capabilities.driver,
   });
   const catalog = points.data ?? emptyCatalog;
+  const license = useQuery({
+    queryKey: ['license'],
+    queryFn: () => api<DemoLicense | null>('/driver-eligibility'),
+    enabled: !!user?.capabilities.driver,
+  });
+  const covers = (vehicle: VehicleSummary) =>
+    license.data?.category === 'BOTH' ||
+    license.data?.category === vehicle.type;
+  const canPublishWith = (vehicle: VehicleSummary) =>
+    vehicle.eligibleNow && covers(vehicle);
   const selected =
     vehicles.data?.find((item) => item.id === vehicleId) ??
-    vehicles.data?.find((item) => item.eligibleNow);
+    vehicles.data?.find(canPublishWith);
+  const selectedEligible = !!selected && canPublishWith(selected);
   const direction = useWatch({ control: form.control, name: 'direction' });
   const stops = useFieldArray({ control: form.control, name: 'stops' });
   const save = useMutation({
@@ -597,7 +609,7 @@ function PublishForm({
 
   function continueSchedule() {
     const values = form.getValues();
-    if (!selected?.eligibleNow) {
+    if (!selectedEligible) {
       setInputError('Elige un vehículo habilitado para publicar.');
       return;
     }
@@ -671,7 +683,7 @@ function PublishForm({
   }
 
   const review = form.handleSubmit(async (values) => {
-    if (!selected) return;
+    if (!selected || !selectedEligible) return;
     setInputError('');
     save.reset();
     try {
@@ -781,7 +793,7 @@ function PublishForm({
     inputError ||
     (step === 'route' && options.error?.message) ||
     (step === 'review' && save.error?.message);
-  const catalogs = [vehicles, points, rules];
+  const catalogs = [vehicles, license, points, rules];
   const failedCatalogs = catalogs.filter((query) => query.isError);
 
   return (
@@ -853,7 +865,8 @@ function PublishForm({
                     Vehículo propio
                   </Text>
                   {vehicles.data &&
-                    !vehicles.data.some(({ eligibleNow }) => eligibleNow) && (
+                    license.isSuccess &&
+                    !vehicles.data.some(canPublishWith) && (
                       <Text>
                         Registra un vehículo y consulta los requisitos vigentes
                         para conducir.
@@ -862,14 +875,15 @@ function PublishForm({
                   {vehicles.data?.map((item) => (
                     <Choice
                       key={item.id}
-                      label={`Vehículo ${item.plate} · ${item.passengerCapacity} plazas · ${item.verificationStatus === 'VERIFIED' ? 'verificado' : item.verificationStatus === 'DECLARED' ? 'declarado' : 'sin vigencia verificada'}`}
+                      label={`Vehículo ${item.plate} · ${item.passengerCapacity} plazas · ${!covers(item) ? 'categoría de licencia incompatible' : item.verificationStatus === 'VERIFIED' ? 'verificado' : item.verificationStatus === 'DECLARED' ? 'declarado' : 'SOAT sin vigencia habilitante'}`}
                       checked={selected?.id === item.id}
                       onPress={() => setVehicleId(item.id)}
                     />
                   ))}
-                  {vehicles.data && selected && !selected.eligibleNow && (
+                  {vehicles.data && selected && !selectedEligible && (
                     <Text style={w.note}>
-                      Este vehículo no está habilitado para publicar.
+                      Selecciona un vehículo con SOAT vigente y categoría
+                      cubierta por tu licencia.
                     </Text>
                   )}
                   <Link href="/vehicles" style={s.link}>
@@ -1044,7 +1058,8 @@ function PublishForm({
                   onPress={() =>
                     stops.append({
                       ...emptyPoint,
-                      access: direction === 'DESDE_USC' ? 'DROPOFF' : 'PICKUP',
+                      access:
+                        direction === 'DESDE_USC' ? 'DROPOFF' : 'WAYPOINT',
                     })
                   }
                 />
@@ -1072,9 +1087,7 @@ function PublishForm({
                     }
                     secondary
                     disabled={
-                      !selected?.eligibleNow ||
-                      !routingConsent ||
-                      options.isPending
+                      !selectedEligible || !routingConsent || options.isPending
                     }
                     onPress={() => {
                       void suggest();
@@ -1318,10 +1331,7 @@ function PublishForm({
                           : 'Revisar viaje'
                       }
                       disabled={
-                        !selected?.eligibleNow ||
-                        !rules.data ||
-                        !points.data ||
-                        busy
+                        !selectedEligible || !rules.data || !points.data || busy
                       }
                       onPress={() => void review()}
                     />

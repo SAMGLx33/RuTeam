@@ -202,3 +202,8 @@ conductor presenta maniobras de la ruta firmada y avance GPS estimado.
   `task/trip-operations`. Selección vial, cámara privada, ETA por maniobras,
   coincidencia tras demora y chat durante reconexión.
   [Handoff de cartografía y operación](../handoffs/2026-11-28_task-trip-operations_cartografia-y-operacion.md).
+
+- 2026-11-28 — Cierre local de habilitación, publicación y participación en
+  `task/trip-operations`. Vigencias calendario, acceso de conductor,
+  catálogo general y reglas definitivas de ida y regreso.
+  [Handoff del cierre MVP](../handoffs/2026-11-28_task-trip-operations_cierre-mvp-conductores.md).

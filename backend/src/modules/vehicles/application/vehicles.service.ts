@@ -40,15 +40,21 @@ export class VehiculoService {
     );
   }
   private futureDate(value: string): Date {
-    const date = new Date(value);
-    if (!(date.getTime() > Date.now()))
-      throw new BadRequestException('La vigencia declarada debe ser futura');
+    const date = new Date(
+      /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T23:59:59.999-05:00` : value,
+    );
+    if (!Number.isFinite(date.getTime()))
+      throw new BadRequestException('Indica una fecha de vencimiento válida');
+    if (date.getTime() <= Date.now())
+      throw new BadRequestException(
+        'El documento está vencido. Indica una vigencia actual',
+      );
     return date;
   }
   async registrarVehiculo(userId: string, data: RegisterVehicleDto) {
     VehiculoPolicy.validarCapacidad(data.type, data.passengerCapacity);
     VehiculoPolicy.validarPlaca(data.type, data.plate);
-    this.futureDate(data.soatExpiresAt);
+    const soatExpiresAt = this.futureDate(data.soatExpiresAt);
     if (data.brand.trim().length < 2)
       throw new BadRequestException('Marca inválida');
     try {
@@ -56,6 +62,7 @@ export class VehiculoService {
         await this.repository.registrar(
           userId,
           data,
+          soatExpiresAt,
           data.energyProfile ? normalizeEnergy(data.energyProfile) : undefined,
         ),
       );
@@ -96,9 +103,12 @@ export class VehiculoService {
     return this.presentLicense(await this.repository.licencia(userId));
   }
   async registrarLicencia(userId: string, data: RegisterLicenseDto) {
-    this.futureDate(data.expiresAt);
     return this.presentLicense(
-      await this.repository.registrarLicencia(userId, data),
+      await this.repository.registrarLicencia(
+        userId,
+        data.category,
+        this.futureDate(data.expiresAt),
+      ),
     );
   }
   private presentLicense(

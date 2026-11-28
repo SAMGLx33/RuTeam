@@ -273,3 +273,15 @@ La cartografía se configura con `GEOCODING_BASE_URL`, `ROUTING_BASE_URL` y
 `EXPO_PUBLIC_ROUTE_TILE_URL` con `EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION`. Usar
 servicios autorizados. Definir `ROUTING_SELECTION_SECRET` en todas las réplicas
 si se comparten alternativas firmadas. Consultar [mapas](MAP_EXPERIENCE.md).
+
+### Habilitación de una sede USC para la demostración
+
+El responsable del catálogo debe validar con una fuente autorizada un punto
+geográfico público de encuentro y registrar latitud, longitud y su fuente en
+la fila activa correspondiente de `CampusDestination`. Identifica la sede
+por `USC-CALI-PAMPALINDA`, `USC-CALI-CENTRO` o `USC-PALMIRA`. Verifica
+la referencia en `GET /campus/meeting-points` con una sesión vigente y en
+el selector de Publicar viaje. El conductor puede escribir el encuentro
+interior usando esa referencia del campus. Los tres códigos siguen sin
+coordenadas en esta instalación. La sede sintética del ensayo pertenece
+únicamente a `TEST_DATABASE_URL`.
