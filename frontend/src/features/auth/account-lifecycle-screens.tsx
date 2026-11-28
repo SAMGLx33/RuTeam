@@ -19,6 +19,7 @@ import { AccountFeedback, AccountField } from './login-screen';
 import { travelTime } from '../trips/route-preview';
 import { CancellationReasons } from '../trips/cancellation-reasons';
 import { Choice } from '../trips/itinerary-form';
+import { RecoveryContactSettings } from './otp-recovery';
 
 function Status({ status }: { status: AccountLifecycleStatus }) {
   const request = status.deletionRequest;
@@ -151,6 +152,9 @@ export function AccountSettingsScreen() {
       <Link href="/privacy" style={s.link}>
         Consultar privacidad y condiciones de uso
       </Link>
+      {user && !user.synthetic && (
+        <RecoveryContactSettings key={user.id} userId={user.id} />
+      )}
       {settings.isPending && <Text style={s.text}>Consultando tu cuenta…</Text>}
       {settings.data && (
         <>

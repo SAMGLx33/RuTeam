@@ -13,6 +13,7 @@
     "test": "npm run build && node --env-file=../.env --experimental-vm-modules ../node_modules/jest/bin/jest.js --runInBand"
   },
   "dependencies": {
+    "libphonenumber-js": "1.13.16",
     "@nestjs/common": "^11.1.9",
     "@nestjs/core": "^11.1.9",
     "@nestjs/platform-express": "^11.1.9",

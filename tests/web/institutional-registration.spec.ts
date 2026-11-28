@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../backend/src/generated/prisma/client';
-import { submitLoginForm } from './support/fixture-login';
 
 async function register(
   page: Page,
@@ -54,24 +53,26 @@ async function register(
   await expect(terms).toBeChecked();
   await expect(submit).toBeDisabled();
   await email.fill(identity.email);
+  await page
+    .getByRole('textbox', { name: 'Dirección de correo personal' })
+    .fill(identity.email.split('@')[0] + '@example.test');
   await expect(submit).toBeEnabled();
   const response = page.waitForResponse(
     (result) =>
       result.url().endsWith('/auth/register') &&
       result.request().method() === 'POST',
   );
+  const loginResponse = page.waitForResponse(
+    (result) =>
+      result.url().endsWith('/auth/login') &&
+      result.request().method() === 'POST',
+  );
   await submit.click();
   expect((await response).status()).toBe(202);
-  await expect(page.getByText(/Ya puedes iniciar sesión/)).toBeVisible();
-  await page.getByRole('link', { name: 'Volver a iniciar sesión' }).click();
-  await page
-    .getByRole('textbox', { name: 'Correo institucional' })
-    .fill(identity.email);
-  await page
-    .locator('input[aria-label="Contraseña"]:visible')
-    .fill(identity.password);
-  const login = await submitLoginForm(page);
+  const login = await loginResponse;
   expect(login.status()).toBe(200);
+  await page.getByRole('button', { name: 'Omitir por ahora' }).click();
+  await page.getByRole('button', { name: 'Continuar sin confirmar' }).click();
   expect((await login.json()).account).toMatchObject({
     email: identity.email.toLowerCase(),
     synthetic: false,

@@ -137,3 +137,16 @@ viajes se entregan a estudiantes autorizados a ver el viaje.
 
 Las maniobras se proyectan al conductor propietario. La estimación GPS conserva
 las autorizaciones y las acciones manuales de llegada.
+
+### Recuperación OTP en acceso declarado
+
+| Operación                                                     | Autorización                                                                                        |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Ver el medio enmascarado, solicitar o validar su confirmación | Sólo sesión propia vigente.                                                                         |
+| Configurar o cambiar el medio                                 | Sesión propia y contraseña actual. El medio confirmado sigue vigente hasta confirmar el nuevo.      |
+| Solicitar recuperación                                        | Público, sólo correo USC. Respuesta genérica y límites por cuenta, contacto e IP.                   |
+| Validar un OTP de recuperación                                | OTP vigente y propio de la cuenta y del propósito. Concede un permiso temporal de restablecimiento. |
+| Cambiar la contraseña                                         | Permiso opaco de un solo uso. Revoca las sesiones anteriores.                                       |
+
+Los perfiles públicos nunca incluyen el medio de recuperación. La consola
+local no verifica la titularidad ni concede acreditación USC.

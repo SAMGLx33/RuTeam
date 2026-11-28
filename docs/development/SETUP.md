@@ -97,7 +97,30 @@ formulario usa el correo `ana@student-fixtures.ruteam.invalid` para pasajera,
 `laura@student-fixtures.ruteam.invalid` para cuenta sin permiso de viajes.
 La ruta legacy `/auth/demo/login` sólo existe operativamente con `NODE_ENV=test`.
 
-Para enviar confirmación y recuperación, configurar en backend `AUTH_TOKEN_SECRET`
+Para habilitar OTP por consola en el modo académico, ejecuta en la terminal del
+backend, desde la raíz y con PostgreSQL local operativo:
+
+```bash
+npm run db:migrate
+export NODE_ENV=development INSTITUTIONAL_ACCESS_MODE=DECLARED_DOMAIN
+export RECOVERY_OTP_TRANSPORT=console
+export RECOVERY_OTP_SECRET="$(node -p 'require("node:crypto").randomBytes(32).toString("hex")')"
+npm run dev:api
+```
+
+Usa un secreto estable mientras haya códigos activos. Guarda el secreto sólo
+en el entorno local del backend. Busca `[RUTEAM OTP - DEVELOPMENT]` en esa
+terminal y toma el código del propósito indicado, `CONTACT_CONFIRMATION` o
+`PASSWORD_RESET`. El transporte está deshabilitado en producción y en modo
+`OFFICIAL`. La confirmación por consola no comprueba titularidad por correo o
+SMS. El registro académico inicia sesión y abre la confirmación de inmediato.
+Si se omite, el contacto queda pendiente y la recuperación permanece inactiva.
+En la terminal, `Resultado: ISSUED` incluye un código y
+`Resultado: SKIPPED` indica el motivo interno sin datos de la cuenta. Conserva
+el mismo secreto OTP al reiniciar el servidor. Las cuentas anteriores pueden configurar su medio en Perfil → Cuenta y
+privacidad utilizando su contraseña actual.
+
+Para enviar enlaces de confirmación y recuperación, configurar en backend `AUTH_TOKEN_SECRET`
 (aleatorio, mínimo 32 caracteres), `AUTH_PUBLIC_URL` (HTTPS o HTTP loopback fuera de
 producción), `SMTP_HOST`, `MAIL_FROM` y, cuando corresponda, `SMTP_USER` con
 `SMTP_PASSWORD`. `SMTP_SECURE=true` por defecto, puerto implícito 465.

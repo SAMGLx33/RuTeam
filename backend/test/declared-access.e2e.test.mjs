@@ -24,6 +24,10 @@ const register = (address, role = 'PASSENGER') =>
     name: 'Cuenta de prueba',
     password,
     usagePreference: role,
+    recoveryContact: {
+      channel: 'EMAIL',
+      contact: address.split('@')[0] + '@example.test',
+    },
   });
 
 async function login(address) {

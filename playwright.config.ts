@@ -34,7 +34,9 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npm run dev:api',
+      command: process.env.RUTEAM_OTP_TEST_LOG
+        ? `bash -o pipefail -c 'npm run dev:api | tee "$RUTEAM_OTP_TEST_LOG"'`
+        : 'npm run dev:api',
       url: 'http://localhost:3100/api/v1/health',
       timeout: 60000,
       reuseExistingServer: false,
@@ -46,7 +48,7 @@ export default defineConfig({
         NODE_ENV: 'development',
         PORT: '3100',
         CORS_ORIGINS: 'http://localhost:8082',
-        DEMO_MODE: 'true',
+        DEMO_MODE: process.env.RUTEAM_OTP_TEST_LOG ? 'false' : 'true',
         VERIFICATION_PROVIDER: 'demo',
         INSTITUTIONAL_ACCESS_MODE: 'DECLARED_DOMAIN',
         // Browser coverage uses seeded, verified accounts and never real SMTP.

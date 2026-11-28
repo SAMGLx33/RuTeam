@@ -83,3 +83,31 @@ export interface RegistrationReceipt {
   institutionalAccess: InstitutionalAccessMode;
   emailDeliveryAvailable: boolean;
 }
+
+export type RecoveryChannel = 'EMAIL' | 'PHONE';
+export interface RecoveryContactInput {
+  channel: RecoveryChannel;
+  contact: string;
+}
+export interface RecoveryContactStatus {
+  confirmed: {
+    channel: RecoveryChannel;
+    masked: string;
+    confirmedAt: string;
+    transport: 'CONSOLE';
+  } | null;
+  pending: { channel: RecoveryChannel; masked: string } | null;
+  confirmationTiming: {
+    expiresAt: string | null;
+    resendAt: string;
+    serverTime: string;
+  } | null;
+  localDelivery: boolean;
+}
+export interface RecoveryTiming {
+  expiresInSeconds: number;
+  resendAfterSeconds: number;
+}
+export interface PasswordResetAuthorization {
+  token: string;
+}

@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "libphonenumber-js": "1.13.16",
     "expo": "~54.0.38",
     "expo-camera": "~17.0.10",
     "expo-router": "~6.0.23",

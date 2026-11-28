@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  Optional,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -16,6 +17,8 @@ import {
 } from '../infrastructure/repositories/auth.repository.js';
 import { AuthService } from './auth.service.js';
 import { EmailDelivery } from '../infrastructure/email-delivery.js';
+import { RecoveryService } from './recovery.service.js';
+import { normalizeRecoveryContact } from '../domain/recovery-policy.js';
 import { hashPassword, verifyPassword } from '../domain/password.js';
 import {
   normalizeAccountEmail,
@@ -35,6 +38,7 @@ export class AccountService {
     private readonly auth: AuthService,
     private readonly email: EmailDelivery,
     @Inject(ENVIRONMENT) private readonly env: Environment,
+    @Optional() private readonly recovery?: RecoveryService,
   ) {}
 
   emailAvailable(): boolean {
@@ -67,8 +71,16 @@ export class AccountService {
     const email = normalizeAccountEmail(input.email);
     const name = input.name.trim();
     if (name.length < 2) throw new BadRequestException('Escribe tu nombre');
-    const passwordHash = await hashPassword(input.password);
     const declared = declaredAccessEnabled(this.env);
+    if (declared && !input.recoveryContact)
+      throw new BadRequestException(
+        'Configura un correo personal o número de teléfono para recuperar tu cuenta.',
+      );
+    const contact =
+      declared && input.recoveryContact
+        ? normalizeRecoveryContact(input.recoveryContact, email)
+        : undefined;
+    const passwordHash = await hashPassword(input.password);
     const institutionalAccess = declared ? 'DECLARED_DOMAIN' : 'OFFICIAL';
     const user = await this.repository.createAccount(
       email,
@@ -76,7 +88,9 @@ export class AccountService {
       name,
       input.usagePreference,
       declared,
+      contact,
     );
+    if (user && contact) await this.recovery?.registrationCode(user.id);
     if (declared)
       return {
         institutionalAccess,

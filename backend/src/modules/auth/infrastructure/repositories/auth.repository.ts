@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { StudentEligibilityStatus } from '@ruteam/contracts';
+import type {
+  RecoveryContactInput,
+  StudentEligibilityStatus,
+} from '@ruteam/contracts';
 import { recordInboxNotice } from '../../../mobility/infrastructure/trip-notices.js';
 import { Injectable } from '@nestjs/common';
 import { ForbiddenException } from '@nestjs/common';
@@ -73,6 +76,7 @@ export class AuthRepository {
     name: string,
     usagePreference: 'PASSENGER' | 'DRIVER_AND_PASSENGER',
     declaredAccess = false,
+    recoveryContact?: RecoveryContactInput,
   ) {
     return this.db.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${email}))`;
@@ -89,6 +93,9 @@ export class AuthRepository {
           usagePreference,
           declaredDomainAccessAt: declaredAccess ? new Date() : undefined,
           profile: { create: { displayName: name } },
+          recoveryContacts: recoveryContact
+            ? { create: { ...recoveryContact, pending: true } }
+            : undefined,
         },
         include: userInclude,
       });
@@ -215,6 +222,13 @@ export class AuthRepository {
           data: { consumedAt: now },
         });
       }
+      await tx.recoveryContact.deleteMany({
+        where: { userId: user.id, pending: true },
+      });
+      await tx.recoveryOtp.updateMany({
+        where: { userId: user.id, consumedAt: null },
+        data: { consumedAt: now },
+      });
       return true;
     });
   }

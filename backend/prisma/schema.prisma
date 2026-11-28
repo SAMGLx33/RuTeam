@@ -18,6 +18,7 @@ enum UsagePreference {
 enum AccountTokenPurpose {
   EMAIL_CONFIRMATION
   PASSWORD_RESET
+  OTP_PASSWORD_RESET
 }
 enum InstitutionalGroup {
   STUDENT
@@ -48,6 +49,8 @@ model User {
   onboardingStep Int @default(0)
   onboardingCompletedAt DateTime? @db.Timestamptz(3)
   accountTokens AccountToken[]
+  recoveryContacts RecoveryContact[]
+  recoveryOtps RecoveryOtp[]
   deletionRequests AccountDeletionRequest[]
   mobilityPreferences MobilityPreference[]
   tripNotifications TripNotification[]
@@ -737,4 +740,40 @@ model FrequentPlace {
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, createdAt])
+}
+
+enum RecoveryChannel {
+  EMAIL
+  PHONE
+}
+enum RecoveryOtpPurpose {
+  CONTACT_CONFIRMATION
+  PASSWORD_RESET
+}
+enum RecoveryTransport {
+  CONSOLE
+}
+model RecoveryContact {
+  userId String @db.Uuid
+  pending Boolean
+  channel RecoveryChannel
+  contact String @db.VarChar(254)
+  confirmedAt DateTime? @db.Timestamptz(3)
+  transport RecoveryTransport?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([userId, pending])
+}
+model RecoveryOtp {
+  id String @id @db.Uuid
+  userId String @db.Uuid
+  purpose RecoveryOtpPurpose
+  contactKey String @db.Char(64)
+  digest String @db.Char(64)
+  createdAt DateTime @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  attempts Int @default(0)
+  consumedAt DateTime? @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+  @@index([contactKey, createdAt])
 }

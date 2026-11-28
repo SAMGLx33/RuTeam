@@ -1,4 +1,6 @@
 import { useState, type KeyboardEvent } from 'react';
+import { useRouter } from 'expo-router';
+import { useSession } from '../../providers/session-provider';
 import { Platform, StyleSheet } from 'react-native';
 import type { RegistrationReceipt, UsagePreference } from '@ruteam/contracts';
 import {
@@ -18,6 +20,13 @@ import {
   useAccountAction,
 } from './login-screen';
 
+import {
+  emptyRecoveryContact,
+  RecoveryContactFields,
+  RecoveryContactSettings,
+  recoveryContactEntered,
+} from './otp-recovery';
+
 function isInstitutionalEmail(email: string) {
   const [local, domain, extra] = email.trim().toLowerCase().split('@');
   const atom = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+$/;
@@ -32,6 +41,10 @@ function isInstitutionalEmail(email: string) {
 
 export function RegisterScreen() {
   const access = useAccessConfiguration();
+  const { user, signIn } = useSession();
+  const router = useRouter();
+  const [registered, setRegistered] = useState(false);
+  const [contact, setContact] = useState(emptyRecoveryContact);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,17 +75,38 @@ export function RegisterScreen() {
         email: email.trim(),
         password,
         usagePreference,
+        recoveryContact: declared ? contact : undefined,
       },
     });
-    setPassword('');
-    action.setMessage(
-      result.institutionalAccess === 'DECLARED_DOMAIN'
-        ? 'Ya puedes iniciar sesión. Si ya tenías una cuenta, usa tu contraseña habitual de RuTeam.'
-        : result.emailDeliveryAvailable
+    if (result.institutionalAccess === 'DECLARED_DOMAIN') {
+      try {
+        await signIn({ email: email.trim(), password });
+        setRegistered(true);
+      } catch {
+        action.setMessage(
+          'Solicitud recibida. Inicia sesión con tus credenciales para confirmar tu medio de recuperación en el perfil.',
+        );
+      }
+    } else {
+      action.setMessage(
+        result.emailDeliveryAvailable
           ? 'Si el correo puede recibir la verificación, encontrarás un enlace en tu bandeja.'
           : 'La confirmación por correo está temporalmente indisponible en esta instalación.',
-    );
+      );
+    }
+    setPassword('');
   }
+
+  if (registered && user)
+    return (
+      <AccountPage title="Confirma tu medio de recuperación">
+        <RecoveryContactSettings
+          userId={user.id}
+          registration
+          onContinue={() => router.replace('/')}
+        />
+      </AccountPage>
+    );
 
   return (
     <AccountPage title="Crear cuenta">
@@ -116,6 +150,13 @@ export function RegisterScreen() {
       <Text style={s.text}>Usa entre 12 y 128 caracteres.</Text>
       <Text style={s.label}>Preferencia de movilidad</Text>
       <UsageChoices value={usagePreference} onChange={setUsage} />
+      {declared && (
+        <RecoveryContactFields
+          value={contact}
+          onChange={setContact}
+          disabled={action.busy}
+        />
+      )}
       <View style={styles.termsGroup}>
         <Link href="/privacy" style={s.link}>
           Leer las condiciones de uso y privacidad
@@ -149,6 +190,8 @@ export function RegisterScreen() {
           name.trim().length < 2 ||
           !institutionalEmail ||
           !validPassword ||
+          (declared && !recoveryContactEntered(contact)) ||
+          !access.data ||
           !agreed
         }
         onPress={() => {

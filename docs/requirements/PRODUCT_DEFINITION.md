@@ -50,9 +50,12 @@ Sin funcionalidades disponibles se informa su estado; no inventar estadísticas 
   contraseña propia de RuTeam, nunca contraseña del sistema USC. Decisión técnica del
   incremento: hash scrypt con sal aleatoria y parámetros justificados, comparación segura,
   sin claves/tokens reutilizables en texto plano. Sesión opaca revocable con expiración;
-  cookie HttpOnly web y SecureStore móvil. Verificación de correo y recuperación mediante
-  tokens impredecibles, limitados, expirables y de uso único cuando se implementan.
-  SMTP/transporte real y provider académico tienen estados de integración separados.
+  cookie HttpOnly web y SecureStore móvil. El registro académico requiere un correo
+  personal o teléfono privado. Puede usarse la cuenta antes de confirmar ese contacto.
+  La recuperación requiere un OTP del contacto confirmado y un permiso temporal de
+  uso único. La confirmación por consola de desarrollo no verifica la titularidad ni
+  acredita a la persona ante la USC. La acreditación institucional y los transportes
+  externos siguen sus propios flujos.
 - **RN-AUTH-02.** El login normal no muestra selectores de identidades, botones de
   desarrollo o proveedores institucionales inexistentes. Las cuentas de prueba usan el
   mismo formulario y ciclo de sesión; entrega de correo y acreditación sintéticas sólo

@@ -27,16 +27,16 @@ históricos incompatibles están deshabilitados y sus sesiones revocadas.
 
 ## Cuentas y onboarding
 
-| Operación                   | Entrada y resultado                                                                                                                                                        |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST /auth/register         | `{name,email,password,usagePreference}`. Correo USC normalizado; 202 genérico con `institutionalAccess` y `emailDeliveryAvailable`. El acceso académico funciona sin SMTP. |
-| POST /auth/login            | `{email,password}`; 200 con `account,expiresAt`, cookie web o token sólo nativo. Credenciales inválidas devuelven 401 sin distinguir cuenta inexistente.                   |
-| GET /auth/account           | `Account` privado para una sesión de cuenta, incluso pendiente o no elegible.                                                                                              |
-| PATCH /auth/onboarding      | `{step,usagePreference?,complete?}`; permite avanzar de 0 a 4 y retomar. Completar requiere la política de acceso vigente. Devuelve `Account`.                             |
-| POST /auth/email/request    | `{email}`; 202 genérico, 503 si el transporte no está configurado.                                                                                                         |
-| POST /auth/email/confirm    | `{token,password}`; el dueño del buzón elige su contraseña, confirma correo y revoca sesiones/enlaces anteriores. 200 o 400 por enlace inválido, vencido o consumido.      |
-| POST /auth/password/request | `{email}`; 202 genérico, 503 sin correo disponible.                                                                                                                        |
-| POST /auth/password/reset   | `{token,password}`; 200 revoca las sesiones anteriores, 400 por enlace inválido, vencido o consumido.                                                                      |
+| Operación                   | Entrada y resultado                                                                                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| POST /auth/register         | `{name,email,password,usagePreference,recoveryContact?}`. En `DECLARED_DOMAIN` exige `recoveryContact: {channel,contact}`. Correo USC normalizado; 202 genérico con `institutionalAccess` y `emailDeliveryAvailable`. El acceso académico funciona sin SMTP. |
+| POST /auth/login            | `{email,password}`; 200 con `account,expiresAt`, cookie web o token sólo nativo. Credenciales inválidas devuelven 401 sin distinguir cuenta inexistente.                                                                                                     |
+| GET /auth/account           | `Account` privado para una sesión de cuenta, incluso pendiente o no elegible.                                                                                                                                                                                |
+| PATCH /auth/onboarding      | `{step,usagePreference?,complete?}`; permite avanzar de 0 a 4 y retomar. Completar requiere la política de acceso vigente. Devuelve `Account`.                                                                                                               |
+| POST /auth/email/request    | `{email}`; 202 genérico, 503 si el transporte no está configurado.                                                                                                                                                                                           |
+| POST /auth/email/confirm    | `{token,password}`; el dueño del buzón elige su contraseña, confirma correo y revoca sesiones/enlaces anteriores. 200 o 400 por enlace inválido, vencido o consumido.                                                                                        |
+| POST /auth/password/request | `{email}`; 202 genérico, 503 sin correo disponible.                                                                                                                                                                                                          |
+| POST /auth/password/reset   | `{token,password}`; 200 revoca las sesiones anteriores, 400 por enlace inválido, vencido o consumido.                                                                                                                                                        |
 
 `Account` expone correo propio, nombre, preferencia, avance, comprobación de correo, estado
 institucional y capacidades `passenger`, `driverAccess` y `driver`. Un guard de sesión de
@@ -387,7 +387,43 @@ la geometría prevista y devuelve la procedencia del descenso en resultados nuev
 `institutionalAccess: DECLARED_DOMAIN | OFFICIAL`. `DECLARED` expresa acceso
 por dominio sin fuente acreditada. `GET /auth/me` devuelve `membership: null`
 en ese caso. Los enlaces de confirmación quedan fuera del acceso declarado.
-En ese modo la recuperación por correo requiere un buzón previamente verificado.
+En ese modo las cuentas pueden recuperar su contraseña mediante un contacto personal
+confirmado localmente. Los enlaces anteriores conservan sus protecciones.
+
+### Recuperación de contraseña por OTP
+
+Rutas bajo `/api/v1/auth/recovery`. `channel` admite `EMAIL` o `PHONE`.
+
+| Operación               | Acceso y cuerpo                             | Resultado                                                                                                                   |
+| ----------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `GET /availability`     | Público                                     | `{localDelivery}`, disponibilidad de consola.                                                                               |
+| `GET /contact`          | Sesión propia                               | Contactos vigente y pendiente enmascarados, fecha y transporte de confirmación, tiempos del código pendiente cuando existe. |
+| `PUT /contact`          | Sesión propia, `{channel,contact,password}` | Guarda un contacto pendiente con la contraseña actual.                                                                      |
+| `POST /contact/request` | Sesión propia, sin cuerpo                   | Emite/reenvía el OTP de confirmación. 429 si todavía no puede emitir.                                                       |
+| `POST /contact/confirm` | Sesión propia, `{code}`                     | Confirma el contacto nuevo, sustituye al anterior e invalida recuperaciones pendientes.                                     |
+| `POST /request`         | Público, `{email}` institucional            | 200 genérico, con política de tiempos. La respuesta es idéntica si se emite o se omite el OTP y no acredita un envío.       |
+| `POST /verify`          | Público, `{email,code}`                     | `{token}` opaco de uso único, con vigencia de 10 min. 400 genérico si falla.                                                |
+| `POST /reset`           | Público, `{token,password}`                 | Consume el permiso, cambia la contraseña y revoca las sesiones en una transacción.                                          |
+
+El cliente académico inicia una sesión por el login normal tras registrar la
+cuenta y ofrece confirmar el contacto antes del onboarding. Omitir conserva el
+contacto pendiente y se puede retomar desde el perfil. Los teléfonos se
+normalizan a E.164 en el cliente y NestJS comprueba el prefijo y la longitud por
+plan de numeración. La API conserva `{channel,contact}`.
+
+Volver a guardar el mismo contacto pendiente conserva el código vigente. Si
+cambia el medio, el código anterior se invalida y la espera sigue aplicando.
+`confirmationTiming` informa `serverTime`, `resendAt` y `expiresAt` (nulo si
+todavía no hay código vigente para el contacto pendiente). Los rechazos de
+reenvío distinguen `OTP_RESEND_COOLDOWN` y `OTP_EMISSION_LIMIT`. La
+confirmación distingue `OTP_INCORRECT`, `OTP_EXPIRED`,
+`OTP_ATTEMPTS_EXHAUSTED` y `OTP_UNAVAILABLE`.
+
+Los OTP duran 5 min, admiten 5 intentos y se reenvían tras 60 s. Se limitan a 5
+emisiones en 15 min por cuenta o contacto, además del límite HTTP por IP. Los
+endpoints que requieren transporte responden 503 si está deshabilitado. El OTP
+se muestra exclusivamente en la terminal de desarrollo y su confirmación no
+acredita la identidad ni verifica el correo institucional.
 
 `POST /trips/route-options` puede devolver `maneuvers` junto con la alternativa
 firmada. La publicación o edición presenta el mismo conjunto y Nest valida su

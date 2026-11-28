@@ -26,6 +26,8 @@ const schema = z.object({
     .max(180)
     .default(30),
   SESSION_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(3600),
+  RECOVERY_OTP_TRANSPORT: z.literal('console').optional(),
+  RECOVERY_OTP_SECRET: z.string().min(32).optional(),
   AUTH_TOKEN_SECRET: z.string().min(32).optional(),
   AUTH_PUBLIC_URL: z.url().optional(),
   SMTP_HOST: z.string().min(1).optional(),
