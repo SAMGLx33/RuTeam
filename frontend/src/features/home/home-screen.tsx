@@ -51,7 +51,10 @@ export function HomeScreen({ user }: { user: Account }) {
     user.usagePreference === 'DRIVER_AND_PASSENGER' &&
     user.capabilities.driverAccess &&
     !user.capabilities.driver;
-  const recommended = useTripFeed('FOR_YOU', user.id);
+  const [feedTab, setFeedTab] = useState<
+    'ALL' | 'DESDE_USC' | 'HACIA_USC' | 'FOR_YOU'
+  >('ALL');
+  const recommended = useTripFeed(feedTab, user.id);
   const next = useQuery({
     queryKey: ['my-reservations', user.id],
     queryFn: () => api<ReservationView[]>('/reservations/my'),
@@ -412,26 +415,54 @@ export function HomeScreen({ user }: { user: Account }) {
       )}
       <View style={styles.sectionTitle}>
         <Text role="heading" aria-level={2} style={s.title}>
-          Viajes para ti
+          Viajes disponibles
         </Text>
         <Link href="/available-trips" style={s.link}>
           Ver todos
         </Link>
       </View>
-      {recommended.isPending && (
-        <Text style={s.text}>Buscando viajes compatibles…</Text>
-      )}
+      <View accessibilityRole="tablist" style={styles.sectionTitle}>
+        {(
+          [
+            ['ALL', 'Todos'],
+            ['DESDE_USC', 'Desde USC'],
+            ['HACIA_USC', 'Hacia USC'],
+            ['FOR_YOU', 'Para ti'],
+          ] as const
+        ).map(([tab, label]) => (
+          <Pressable
+            key={tab}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === feedTab }}
+            onPress={() => setFeedTab(tab)}
+          >
+            <Text
+              style={[styles.modeText, tab === feedTab && styles.modeSelected]}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      {recommended.isPending && <Text style={s.text}>Buscando viajes…</Text>}
       {recommended.error && (
         <Text accessibilityRole="alert" style={s.error}>
           {recommended.error.message}
         </Text>
       )}
       <TripCards trips={matches} savedIds={savedIds} />
-      {!recommended.isPending && !recommended.error && !matches.length && (
-        <Link href="/mobility" style={s.link}>
-          Ajustar preferencias
-        </Link>
-      )}
+      {!recommended.isPending &&
+        !recommended.error &&
+        !matches.length &&
+        (feedTab === 'FOR_YOU' ? (
+          <Link href="/mobility" style={s.link}>
+            Ajustar preferencias
+          </Link>
+        ) : (
+          <Text style={s.text}>
+            No hay viajes disponibles para este filtro.
+          </Text>
+        ))}
       <View style={[styles.body, wide && styles.bodyWide]}>
         <View style={[s.section, wide && styles.secondaryPanel]}>
           <Text style={s.title}>Movilidad este mes</Text>

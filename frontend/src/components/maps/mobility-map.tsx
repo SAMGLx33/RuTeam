@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import {
@@ -6,6 +6,8 @@ import {
   Platform,
   StyleSheet,
   type GestureResponderEvent,
+  type View as NativeView,
+  type ViewStyle,
 } from 'react-native';
 import type { RouteGeometry } from '@ruteam/contracts';
 import { Text, View, Pressable } from '../../theme/primitives';
@@ -97,6 +99,7 @@ export function MobilityMap({
   followPoint?: Coordinates;
 }) {
   const { palette } = useAppearance();
+  const viewport = useRef<NativeView>(null);
   const [width, setWidth] = useState(0);
   const [camera, setCamera] = useState<{
     view: Camera;
@@ -144,6 +147,23 @@ export function MobilityMap({
       privateViewport,
     );
   }, [activeX, activeY, activeZoom, gestures, privateViewport]);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !viewport.current) return;
+    const element = viewport.current as unknown as HTMLElement;
+    const wheel = (event: WheelEvent) => {
+      if (!event.deltaY) return;
+      event.preventDefault();
+      setCamera({
+        view: {
+          center: { x: activeX, y: activeY },
+          zoom: clamp(activeZoom - Math.sign(event.deltaY), 3, 19),
+        },
+        privateViewport,
+      });
+    };
+    element.addEventListener('wheel', wheel, { passive: false });
+    return () => element.removeEventListener('wheel', wheel);
+  }, [activeX, activeY, activeZoom, privateViewport]);
   const count = 2 ** active.zoom;
   const scale = count * tileSize;
   const left = active.center.x * scale - width / 2;
@@ -221,6 +241,11 @@ export function MobilityMap({
     });
   }
 
+  function pick(point: Coordinates) {
+    setCamera({ view: active, privateViewport });
+    onPick?.(point);
+  }
+
   function choose(event: GestureResponderEvent) {
     if (!onPick || gestures.didDrag()) return;
     let { locationX: x, locationY: y } = event.nativeEvent;
@@ -228,8 +253,13 @@ export function MobilityMap({
       const target = event.currentTarget as unknown as HTMLElement;
       const pointer = event.nativeEvent as unknown as MouseEvent;
       const bounds = target.getBoundingClientRect();
-      x = pointer.clientX - bounds.left;
-      y = pointer.clientY - bounds.top;
+      if (
+        Number.isFinite(pointer.clientX) &&
+        Number.isFinite(pointer.clientY)
+      ) {
+        x = pointer.clientX - bounds.left;
+        y = pointer.clientY - bounds.top;
+      }
     }
     if (
       !Number.isFinite(x) ||
@@ -241,9 +271,7 @@ export function MobilityMap({
       !isLoadedAt(x, y)
     )
       return;
-    onPick(
-      coordinatesFromWorld({ x: (left + x) / scale, y: (top + y) / scale }),
-    );
+    pick(coordinatesFromWorld({ x: (left + x) / scale, y: (top + y) / scale }));
   }
 
   async function centerOnMe() {
@@ -282,9 +310,14 @@ export function MobilityMap({
   return (
     <View style={styles.frame}>
       <View
+        ref={viewport}
         accessibilityLabel={onPick ? undefined : label}
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
-        style={[styles.map, { height }]}
+        style={[
+          styles.map,
+          { height },
+          Platform.OS === 'web' && ({ touchAction: 'none' } as ViewStyle),
+        ]}
         {...gestures.panHandlers}
       >
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -484,7 +517,7 @@ export function MobilityMap({
             secondary
             title="Marcar centro del mapa"
             disabled={!centreSelectable}
-            onPress={() => onPick(coordinatesFromWorld(active.center))}
+            onPress={() => pick(coordinatesFromWorld(active.center))}
           />
         </View>
       )}

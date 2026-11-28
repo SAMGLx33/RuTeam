@@ -207,3 +207,7 @@ conductor presenta maniobras de la ruta firmada y avance GPS estimado.
   `task/trip-operations`. Vigencias calendario, acceso de conductor,
   catálogo general y reglas definitivas de ida y regreso.
   [Handoff del cierre MVP](../handoffs/2026-11-28_task-trip-operations_cierre-mvp-conductores.md).
+
+- 2026-11-28 — Incremento local de publicación en una pantalla,
+  Pampalinda automática y confirmación breve en `task/trip-operations`.
+  [Handoff de publicación y participación](../handoffs/2026-11-28_task-trip-operations_publicacion-rapida.md).

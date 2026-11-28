@@ -125,6 +125,8 @@ test('dos cuentas nuevas usan dominio USC declarado sin correo ni acreditación'
   const context = await browser.newContext({
     viewport: page.viewportSize() ?? undefined,
     baseURL,
+    hasTouch: info.project.name === 'mobile-web',
+    isMobile: info.project.name === 'mobile-web',
   });
   const driverPage = await context.newPage();
   const stamp = randomUUID().replaceAll('-', '').slice(0, 20);

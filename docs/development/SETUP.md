@@ -274,14 +274,26 @@ La cartografía se configura con `GEOCODING_BASE_URL`, `ROUTING_BASE_URL` y
 servicios autorizados. Definir `ROUTING_SELECTION_SECRET` en todas las réplicas
 si se comparten alternativas firmadas. Consultar [mapas](MAP_EXPERIENCE.md).
 
-### Habilitación de una sede USC para la demostración
+### Referencia de publicación de Ciudadela Pampalinda
 
-El responsable del catálogo debe validar con una fuente autorizada un punto
-geográfico público de encuentro y registrar latitud, longitud y su fuente en
-la fila activa correspondiente de `CampusDestination`. Identifica la sede
-por `USC-CALI-PAMPALINDA`, `USC-CALI-CENTRO` o `USC-PALMIRA`. Verifica
-la referencia en `GET /campus/meeting-points` con una sesión vigente y en
-el selector de Publicar viaje. El conductor puede escribir el encuentro
-interior usando esa referencia del campus. Los tres códigos siguen sin
-coordenadas en esta instalación. La sede sintética del ensayo pertenece
-únicamente a `TEST_DATABASE_URL`.
+Ejecuta el siguiente comando desde la raíz del repositorio.
+
+```bash
+node --env-file=.env scripts/configure-pampalinda.mjs
+```
+
+El comando completa únicamente las coordenadas vacías de la fila activa
+`USC-CALI-PAMPALINDA` y registra su fuente. Una segunda ejecución conserva
+la referencia existente. La USC identifica la sede en Calle 5 # 62-00. La
+ubicación pública aproximada de campus usada para el mapa es 3.403412,
+−76.547719. El conductor describe por texto el encuentro interior.
+[Dirección de la USC](https://www.usc.edu.co/preguntas-frecuentes/) ·
+[Coordenada pública](https://www.wikidata.org/wiki/Q5575968).
+
+Verifica la sede en `GET /campus/publication-point` con una sesión vigente.
+El catálogo de `GET /campus/meeting-points` sigue disponible para las
+funciones que usan varias sedes.
+
+Para una base aislada ya migrada, usa el mismo comando con `--test`.
+`npm run db:test:setup` lo aplica durante la preparación de la base de
+pruebas. El entorno oficial sigue exigiendo su política de acreditación.

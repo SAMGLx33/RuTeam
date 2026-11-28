@@ -1,20 +1,7 @@
-import type { RecurringTripTemplate } from '@ruteam/contracts';
-import { useEffect, useRef, useState } from 'react';
-import {
-  AccessibilityInfo,
-  findNodeHandle,
-  Platform,
-  useWindowDimensions,
-  type ScrollView,
-  type View as ViewInstance,
-} from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import {
-  useForm,
-  useFieldArray,
-  useWatch,
-  type Control,
-} from 'react-hook-form';
+import { useState } from 'react';
+import { StyleSheet, useWindowDimensions } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   CampusMeetingPoint,
@@ -26,10 +13,9 @@ import type {
   PublishTripInput,
   RouteOption,
   RecurrenceInput,
+  RecurringTripTemplate,
   RecurringTripView,
   RouteOptionsInput,
-  StopAccess,
-  TripPoint,
   TripRule,
   TripSummary,
   VehicleSummary,
@@ -39,88 +25,27 @@ import { api } from '../../services/api/client';
 import { Field } from '../../components/forms/field';
 import { Button } from '../../components/ui/button';
 import { Link, Text, View } from '../../theme/primitives';
-import { breakpoints } from '../../theme/tokens';
+import { breakpoints, colors, radii } from '../../theme/tokens';
 import {
   ProtectedPage,
   formStyles as s,
 } from '../../components/ui/protected-page';
-import {
-  Choice,
-  emptyPoint,
-  PointEditor,
-  pointInput,
-  StopAccessEditor,
-  type PublishFormValues,
-} from './itinerary-form';
+import { Choice, emptyPoint, type PublishFormValues } from './itinerary-form';
 import {
   EconomicTerms,
-  EconomicsPreview,
   expenseConcepts,
   methodLabel,
 } from '../expenses/economic-terms';
-import { maneuverInstruction, RoutePreview } from './route-preview';
-import { BottomSheet } from '../../components/ui/bottom-sheet';
-import {
-  PublishProgress,
-  PublishSummary,
-  publishSteps,
-  publishStyles as w,
-  type PublishStep,
-} from './publish-wizard';
+import { RouteGeometryPreview, travelTime } from './route-preview';
+import { TripPlacePicker } from './trip-place-picker';
+import { TripDeparturePicker, colombiaDay } from './trip-departure-picker';
 
-type Draft = PublishTripInput;
-type PreviewAlternative = Pick<RouteOption, 'geometry' | 'durationMinutes'> &
-  Partial<
-    Pick<RouteOption, 'routingSelection' | 'maneuvers' | 'distanceMeters'>
-  >;
-const emptyCatalog: CampusMeetingPoint[] = [];
-function previewPoint(
-  point: MeetingPointInput,
-  catalog: CampusMeetingPoint[],
-): TripPoint & { instructions?: string } {
-  if (!('campusPointId' in point)) return point;
-  const entry = catalog.find(({ id }) => id === point.campusPointId);
-  if (!entry || entry.latitude === null || entry.longitude === null)
-    throw new Error('Elige un punto del catálogo con coordenadas.');
-  return {
-    label: point.label || entry.name,
-    latitude: entry.latitude,
-    longitude: entry.longitude,
-    instructions: [entry.description, entry.accessReference, point.instructions]
-      .filter(Boolean)
-      .join(' · '),
-  };
-}
-
-function routePoints(
-  values: Pick<
-    PublishFormValues,
-    'direction' | 'origin' | 'destination' | 'stops'
-  >,
-): RouteOptionsInput {
-  return {
-    direction: values.direction,
-    origin: pointInput(
-      'Origen',
-      values.origin,
-      values.direction === 'DESDE_USC',
-    ),
-    destination: pointInput(
-      'Destino',
-      values.destination,
-      values.direction === 'HACIA_USC',
-    ),
-    stops: values.stops.map((stop, index) => ({
-      ...pointInput(`Parada ${index + 1}`, stop),
-      access:
-        values.direction === 'HACIA_USC' || stop.access === 'WAYPOINT'
-          ? 'WAYPOINT'
-          : 'DROPOFF',
-    })),
-    publicMeetingPoints: true,
-  };
-}
-
+type Alternative = Pick<
+  RouteOption,
+  'geometry' | 'durationMinutes' | 'maneuvers' | 'routingSelection'
+> &
+  Partial<Pick<RouteOption, 'distanceMeters'>>;
+type Point = PublishFormValues['origin'];
 const weekdays = [
   'Lunes',
   'Martes',
@@ -130,139 +55,52 @@ const weekdays = [
   'Sábado',
   'Domingo',
 ];
+const methodsAvailable = ['NEQUI', 'DAVIPLATA', 'CASH'] as const;
 
-const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-const routeFields = ['direction', 'origin', 'destination', 'stops'] as const;
+function formPoint(point: MeetingPointInput): Point {
+  return 'campusPointId' in point
+    ? {
+        campusPointId: point.campusPointId,
+        label: point.label ?? '',
+        instructions: point.instructions ?? '',
+      }
+    : {
+        campusPointId: '',
+        label: point.label,
+        instructions: point.instructions ?? '',
+        coordinates: { latitude: point.latitude, longitude: point.longitude },
+      };
+}
 
-function isCalendarDate(value: string) {
+function external(point: Point) {
+  return point.coordinates && point.label.trim().length >= 2
+    ? {
+        ...point.coordinates,
+        label: point.label.trim(),
+        instructions: point.instructions.trim() || undefined,
+      }
+    : undefined;
+}
+
+function coordinatesKey(route: RouteOptionsInput) {
+  return JSON.stringify([
+    route.direction,
+    [route.origin, ...route.stops, route.destination].map((point) =>
+      'campusPointId' in point
+        ? point.campusPointId
+        : [point.longitude, point.latitude],
+    ),
+  ]);
+}
+
+function calendarDay(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return (
-    Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value
-  );
+  const date = new Date(value + 'T00:00:00Z');
+  return Number.isFinite(+date) && date.toISOString().slice(0, 10) === value;
 }
 
-function previewStops(route: RouteOptionsInput, catalog: CampusMeetingPoint[]) {
-  return [
-    { ...previewPoint(route.origin, catalog), access: 'PICKUP' as const },
-    ...route.stops.map((stop) => ({
-      ...previewPoint(stop, catalog),
-      access: stop.access,
-    })),
-    { ...previewPoint(route.destination, catalog), access: 'DROPOFF' as const },
-  ];
-}
-
-function RouteAlternatives({
-  control,
-  catalog,
-  selectionKey,
-  selected,
-  requested,
-  options,
-  onChoose,
-}: {
-  control: Control<PublishFormValues>;
-  catalog: CampusMeetingPoint[];
-  selectionKey?: string;
-  selected?: PreviewAlternative;
-  requested?: RouteOptionsInput;
-  options?: RouteOption[];
-  onChoose: (option: RouteOption) => void;
-}) {
-  const [direction, origin, destination, routeStops] = useWatch({
-    control,
-    name: routeFields,
-  });
-  let key: string | undefined;
-  let stops: ReturnType<typeof previewStops> = [];
-  try {
-    const route = routePoints({
-      direction,
-      origin,
-      destination,
-      stops: routeStops,
-    });
-    stops = previewStops(route, catalog);
-    key = JSON.stringify(route);
-  } catch {
-    // The selected alternative no longer describes these points.
-  }
-  const matches = !!selected && selectionKey === key;
-  const currentOptions =
-    key && requested && JSON.stringify(requested) === key ? options : undefined;
-  const displayed = matches ? selected : currentOptions?.[0];
-  const displayedIndex =
-    currentOptions?.findIndex((option) => displayed === option) ?? -1;
-  const title =
-    displayedIndex >= 0
-      ? `Alternativa vial ${displayedIndex + 1}`
-      : 'Alternativa vial seleccionada';
-  return (
-    <>
-      {!!selected && (
-        <Text
-          style={matches ? w.success : w.note}
-          accessibilityLiveRegion="polite"
-        >
-          {matches
-            ? 'Alternativa vial seleccionada'
-            : 'Los puntos cambiaron. Consulta otra alternativa vial para este recorrido.'}
-        </Text>
-      )}
-      {currentOptions?.map((option, index) => (
-        <View key={index} style={w.group}>
-          <Text style={s.text}>
-            Alternativa {index + 1} ·{' '}
-            {(option.distanceMeters / 1000).toFixed(1)} km ·{' '}
-            {option.durationMinutes} min
-          </Text>
-          <Button
-            secondary={!matches || selected !== option}
-            title={`Elegir alternativa ${index + 1}`}
-            disabled={matches && selected === option}
-            onPress={() => onChoose(option)}
-          />
-        </View>
-      ))}
-      {displayed && (
-        <>
-          <RoutePreview
-            key={displayedIndex}
-            geometry={displayed.geometry}
-            stops={stops}
-            description={`${title} · ${displayed.durationMinutes} minutos estimados`}
-            distanceMeters={displayed.distanceMeters}
-          />
-          {!!displayed.maneuvers?.length && (
-            <BottomSheet title="Indicaciones viales">
-              {displayed.maneuvers.map((maneuver) => (
-                <Text key={maneuver.order} style={s.text}>
-                  {maneuverInstruction(maneuver)}
-                  {maneuver.street ? ' · ' + maneuver.street : ''}
-                </Text>
-              ))}
-            </BottomSheet>
-          )}
-        </>
-      )}
-    </>
-  );
-}
-
-function formPoint(point: MeetingPointInput): PublishFormValues['origin'] {
-  if ('campusPointId' in point)
-    return {
-      campusPointId: point.campusPointId,
-      label: point.label ?? '',
-      instructions: point.instructions ?? '',
-    };
-  return {
-    campusPointId: '',
-    label: point.label,
-    coordinates: { latitude: point.latitude, longitude: point.longitude },
-    instructions: point.instructions ?? '',
-  };
+function hasDepartureWindow(value: string) {
+  return Date.parse(value) > Date.now() + 30 * 60_000;
 }
 
 export function PublishScreen() {
@@ -361,37 +199,15 @@ function PublishForm({
   edited?: TripSummary;
 }) {
   const { user } = useSession();
+  const router = useRouter();
   const client = useQueryClient();
+  const wide = useWindowDimensions().width >= breakpoints.columns;
   const template = schedule?.template ?? prior;
-  const { width } = useWindowDimensions();
-  const wide = width >= breakpoints.columns;
-  const [step, setStep] = useState<PublishStep>('schedule');
-  const previousStep = useRef(step);
-  const scroll = useRef<ScrollView>(null);
-  const heading = useRef<ViewInstance>(null);
-
-  useEffect(() => {
-    if (previousStep.current === step) return;
-    previousStep.current = step;
-    scroll.current?.scrollTo({ y: 0, animated: false });
-    if (Platform.OS === 'web') {
-      heading.current?.focus();
-    } else {
-      const target = findNodeHandle(heading.current);
-      if (target != null) AccessibilityInfo.setAccessibilityFocus(target);
-    }
-  }, [step]);
-
   const [draftVersion] = useState(edited?.version);
-  const [tomorrow] = useState(() =>
-    new Date(Date.now() + 86400000 - 5 * 3600000)
-      .toISOString()
-      .slice(0, 16)
-      .replace('T', ' '),
-  );
+  const initialDirection = template?.itinerary.direction ?? 'DESDE_USC';
   const form = useForm<PublishFormValues>({
-    shouldUnregister: false,
     defaultValues: {
+      direction: initialDirection,
       origin: template ? formPoint(template.itinerary.origin) : emptyPoint,
       destination: template
         ? formPoint(template.itinerary.destination)
@@ -402,11 +218,11 @@ function PublishForm({
           access: point.access,
         })) ?? [],
       departureAt: edited
-        ? new Date(Date.parse(edited.departureAt) - 5 * 3600000)
+        ? new Date(Date.parse(edited.departureAt) - 5 * 3600_000)
             .toISOString()
             .slice(0, 16)
             .replace('T', ' ')
-        : tomorrow,
+        : colombiaDay(1) + ' 08:00',
       estimatedDurationMinutes: String(
         template?.estimatedDurationMinutes ?? 45,
       ),
@@ -415,98 +231,215 @@ function PublishForm({
       fuelCop: String(template?.economics?.estimate?.fuelCop ?? 0),
       tollsCop: String(template?.economics?.estimate?.tollsCop ?? 0),
       parkingCop: String(template?.economics?.estimate?.parkingCop ?? 0),
-      direction: template?.itinerary.direction ?? 'DESDE_USC',
       recurrenceName: schedule?.name ?? '',
-      startsOn: schedule?.startsOn ?? tomorrow.slice(0, 10),
+      startsOn: schedule?.startsOn ?? colombiaDay(1),
       endsOn: schedule?.endsOn ?? '',
-      time: schedule?.time ?? tomorrow.slice(11),
+      time: schedule?.time ?? '08:00',
     },
   });
-  const [selectedRoute, setSelectedRoute] = useState<
-    | {
-        key: string;
-        option: PreviewAlternative;
-      }
-    | undefined
-  >(
-    () =>
-      template?.itinerary.geometry && {
-        key: JSON.stringify(routePoints(form.getValues())),
-        option: {
-          geometry: template.itinerary.geometry,
-          routingSelection: template.itinerary.routingSelection,
-          maneuvers: template.itinerary.maneuvers,
-          durationMinutes: template.estimatedDurationMinutes,
-        },
-      },
-  );
-  const [isRecurring, setIsRecurring] = useState(!!schedule);
-  const [selectedDays, setSelectedDays] = useState<number[]>(
-    schedule?.weekdays ?? [],
-  );
-  const [withContribution, setWithContribution] = useState(
+  const [advanced, setAdvanced] = useState(!!schedule);
+  const [recurring, setRecurring] = useState(!!schedule);
+  const [days, setDays] = useState(schedule?.weekdays ?? []);
+  const [contribution, setContribution] = useState(
     !!template?.economics?.estimate,
   );
   const [methods, setMethods] = useState<CompensationMethod[]>(
     template?.economics?.compensationMethods ?? [],
   );
   const [vehicleId, setVehicleId] = useState(template?.vehicleId ?? '');
-  const [ruleIds, setRuleIds] = useState<string[]>(template?.ruleIds ?? []);
+  const [ruleIds, setRuleIds] = useState(template?.ruleIds ?? []);
   const [helmet, setHelmet] = useState(template?.providesHelmet ?? false);
-  const [preview, setPreview] = useState<{
-    draft: Draft;
-    recurrence?: RecurrenceInput;
-    economics: TripEconomicsPreview;
-    stops: (ReturnType<typeof previewPoint> & { access: StopAccess })[];
-  }>();
-  const [confirmedPublic, setConfirmedPublic] = useState(false);
-  const [routingConsent, setRoutingConsent] = useState(false);
-  const [inputError, setInputError] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [publicPoints, setPublicPoints] = useState(false);
+  const [manualKey, setManualKey] = useState<string>();
+  const [refreshKey, setRefreshKey] = useState<string>();
+  const [choice, setChoice] = useState<{ key: string; index: number }>();
+  const [showChoices, setShowChoices] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [completedSchedule, setCompletedSchedule] = useState(false);
+
+  const values = useWatch({ control: form.control }) as PublishFormValues;
+  const stops = useFieldArray({ control: form.control, name: 'stops' });
+  const fromUsc = values.direction === 'DESDE_USC';
+  const campusField = fromUsc ? 'origin' : 'destination';
+  const externalField = fromUsc ? 'destination' : 'origin';
+  const externalTitle = fromUsc ? 'Destino' : 'Origen';
+  const externalPoint = external(values[externalField]);
+  const enabled = !!user?.capabilities.driver;
+  const points = useQuery({
+    queryKey: ['publication-campus', user?.id, edited?.id],
+    queryFn: ({ signal }) =>
+      edited
+        ? api<CampusMeetingPoint[]>('/campus/meeting-points', { signal })
+        : api<CampusMeetingPoint>('/campus/publication-point', { signal }).then(
+            (point) => [point],
+          ),
+    enabled,
+  });
+  const editedCampusId = edited?.itinerary?.stops.find(
+    (point) => point.campusPointId,
+  )?.campusPointId;
+  const campus = editedCampusId
+    ? points.data?.find((point) => point.id === editedCampusId)
+    : points.data?.[0];
   const vehicles = useQuery({
     queryKey: ['vehicles', user?.id],
     queryFn: () => api<VehicleSummary[]>('/vehicles'),
-    enabled: !!user?.capabilities.driver,
+    enabled,
   });
-  const points = useQuery({
-    queryKey: ['meeting-points'],
-    queryFn: () => api<CampusMeetingPoint[]>('/campus/meeting-points'),
-    enabled: !!user?.capabilities.driver,
+  const license = useQuery({
+    queryKey: ['license'],
+    queryFn: () => api<DemoLicense | null>('/driver-eligibility'),
+    enabled,
   });
   const rules = useQuery({
     queryKey: ['trip-rules'],
     queryFn: () => api<TripRule[]>('/trip-rules'),
-    enabled: !!user?.capabilities.driver,
+    enabled,
   });
-  const catalog = points.data ?? emptyCatalog;
-  const license = useQuery({
-    queryKey: ['license'],
-    queryFn: () => api<DemoLicense | null>('/driver-eligibility'),
-    enabled: !!user?.capabilities.driver,
+  const eligible =
+    vehicles.data?.filter(
+      (vehicle) =>
+        vehicle.eligibleNow &&
+        (license.data?.category === 'BOTH' ||
+          license.data?.category === vehicle.type),
+    ) ?? [];
+  const vehicle = eligible.find((item) => item.id === vehicleId) ?? eligible[0];
+  const seats = Math.max(
+    1,
+    Math.min(vehicle?.passengerCapacity ?? 1, Number(values.offeredSeats) || 1),
+  );
+  const interior = values[campusField].label.trim();
+  const campusPoint = campus && {
+    campusPointId: campus.id,
+    label: interior || undefined,
+  };
+  const visibleStops = values.stops
+    .map((stop, index) => ({ stop, index }))
+    .filter(({ stop }) => fromUsc || stop.access === 'WAYPOINT');
+  const intermediate = visibleStops.flatMap(({ stop }) => {
+    const point = external(stop);
+    return point
+      ? [
+          {
+            ...point,
+            access:
+              fromUsc && stop.access !== 'WAYPOINT'
+                ? ('DROPOFF' as const)
+                : ('WAYPOINT' as const),
+          },
+        ]
+      : [];
   });
-  const covers = (vehicle: VehicleSummary) =>
-    license.data?.category === 'BOTH' ||
-    license.data?.category === vehicle.type;
-  const canPublishWith = (vehicle: VehicleSummary) =>
-    vehicle.eligibleNow && covers(vehicle);
-  const selected =
-    vehicles.data?.find((item) => item.id === vehicleId) ??
-    vehicles.data?.find(canPublishWith);
-  const selectedEligible = !!selected && canPublishWith(selected);
-  const direction = useWatch({ control: form.control, name: 'direction' });
-  const stops = useFieldArray({ control: form.control, name: 'stops' });
+  const geoCampus =
+    campus?.latitude != null && campus.longitude != null
+      ? {
+          label: interior || campus.name,
+          latitude: campus.latitude,
+          longitude: campus.longitude,
+          instructions:
+            'Referencia pública del campus. El encuentro interior se indica mediante texto.',
+        }
+      : undefined;
+  const anchors = [
+    ...(fromUsc ? [geoCampus] : [externalPoint]),
+    ...intermediate,
+    ...(fromUsc ? [externalPoint] : [geoCampus]),
+  ].flatMap((point) => (point ? [point] : []));
+  const route: RouteOptionsInput | undefined =
+    campusPoint &&
+    geoCampus &&
+    externalPoint &&
+    intermediate.length === visibleStops.length
+      ? {
+          direction: values.direction,
+          publicMeetingPoints: true,
+          origin: fromUsc ? campusPoint : externalPoint,
+          destination: fromUsc ? externalPoint : campusPoint,
+          stops: intermediate,
+        }
+      : undefined;
+  // Route signing binds geography and order. Interior wording is resolved before publication.
+  const request = route && {
+    ...route,
+    origin:
+      'campusPointId' in route.origin
+        ? { ...route.origin, label: campus?.name }
+        : route.origin,
+    destination:
+      'campusPointId' in route.destination
+        ? { campusPointId: route.destination.campusPointId }
+        : route.destination,
+  };
+  const key = route ? coordinatesKey(route) : '';
+  const original =
+    template?.itinerary.geometry &&
+    key &&
+    coordinatesKey(template.itinerary) === key
+      ? {
+          geometry: template.itinerary.geometry,
+          durationMinutes: template.estimatedDurationMinutes,
+          maneuvers: template.itinerary.maneuvers,
+          routingSelection: template.itinerary.routingSelection,
+        }
+      : undefined;
+  const routeQuery = useQuery({
+    queryKey: ['publication-route', user?.id, key],
+    enabled:
+      enabled && !!request && consent && (!original || refreshKey === key),
+    queryFn: ({ signal }) =>
+      api<RouteOption[]>('/trips/route-options', {
+        method: 'POST',
+        body: request,
+        signal,
+      }),
+    retry: false,
+    staleTime: 20 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const manual = !!key && manualKey === key;
+  const alternatives = routeQuery.data;
+  const selectedIndex = choice?.key === key ? choice.index : 0;
+  const alternative: Alternative | undefined = manual
+    ? undefined
+    : (alternatives?.[selectedIndex] ??
+      (refreshKey === key ? undefined : original || undefined));
+  const economics = {
+    estimate: contribution
+      ? {
+          fuelCop: Number(values.fuelCop),
+          tollsCop: Number(values.tollsCop),
+          parkingCop: Number(values.parkingCop),
+        }
+      : undefined,
+    compensationMethods: contribution ? methods : [],
+  };
+  const validCosts = expenseConcepts.every(([field]) =>
+    /^\d+$/.test(values[field]),
+  );
+  const economicsPreview = useQuery({
+    queryKey: ['publication-economics', user?.id, seats, economics],
+    enabled: enabled && contribution && validCosts,
+    queryFn: ({ signal }) =>
+      api<TripEconomicsPreview>('/trips/economics-preview', {
+        method: 'POST',
+        body: { offeredSeats: seats, economics },
+        signal,
+      }),
+    retry: false,
+    staleTime: 60_000,
+  });
   const save = useMutation({
     mutationFn: async ({
       draft,
       recurrence,
     }: {
-      draft: Draft;
+      draft: PublishTripInput;
       recurrence?: RecurrenceInput;
     }) => {
       if (edited) {
-        if (draftVersion === undefined)
-          throw new Error('Vuelve a cargar la publicación.');
         const body: TripEditInput = {
-          version: draftVersion,
+          version: draftVersion!,
           publication: draft,
         };
         return {
@@ -525,276 +458,232 @@ function PublishForm({
         };
       const { departureAt, ...tripTemplate } = draft;
       void departureAt;
-      return {
-        schedule: await api<RecurringTripView>(
-          schedule ? '/trip-schedules/' + schedule.id : '/trip-schedules',
-          {
-            method: schedule ? 'PUT' : 'POST',
-            body: { ...recurrence, template: tripTemplate },
-          },
-        ),
-      };
-    },
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ['my-trips'] });
-      void client.invalidateQueries({ queryKey: ['trip-schedules'] });
-      void client.invalidateQueries({ queryKey: ['available-trips'] });
-      void client.invalidateQueries({ queryKey: ['trip-feed'] });
-      void client.invalidateQueries({ queryKey: ['trip-operation'] });
-      void client.invalidateQueries({ queryKey: ['agenda'] });
-    },
-  });
-  const economicsPreview = useMutation({
-    mutationFn: (body: {
-      offeredSeats: number;
-      economics: NonNullable<Draft['economics']>;
-    }) =>
-      api<TripEconomicsPreview>('/trips/economics-preview', {
-        method: 'POST',
-        body,
-      }),
-  });
-  const options = useMutation({
-    mutationFn: (body: RouteOptionsInput) =>
-      api<RouteOption[]>('/trips/route-options', { method: 'POST', body }),
-  });
-  const suggest = form.handleSubmit((values) => {
-    if (!routingConsent) return;
-    setInputError('');
-    options.reset();
-    try {
-      options.mutate(routePoints(values));
-      setRoutingConsent(false);
-    } catch (error) {
-      setInputError(
-        error instanceof Error ? error.message : 'Revisa los puntos del viaje.',
-      );
-    }
-  });
-  function chooseOption(option: RouteOption) {
-    setInputError('');
-    try {
-      if (
-        JSON.stringify(routePoints(form.getValues())) !==
-        JSON.stringify(options.variables)
-      )
-        throw new Error(
-          'Los puntos cambiaron. Consulta las alternativas para el nuevo recorrido.',
-        );
-      setSelectedRoute({ key: JSON.stringify(options.variables), option });
-      if (
-        (!option.routingSelection || edited) &&
-        option.durationMinutes >= 5 &&
-        option.durationMinutes <= 360
-      )
-        form.setValue(
-          'estimatedDurationMinutes',
-          String(option.durationMinutes),
-        );
-    } catch (error) {
-      setInputError(
-        error instanceof Error ? error.message : 'Revisa la alternativa.',
-      );
-    }
-  }
-
-  function visitStep(next: PublishStep) {
-    setInputError('');
-    if (step === 'review' && next !== step) {
-      save.reset();
-      setPreview(undefined);
-    }
-    setStep(next);
-  }
-
-  function continueSchedule() {
-    const values = form.getValues();
-    if (!selectedEligible) {
-      setInputError('Elige un vehículo habilitado para publicar.');
-      return;
-    }
-    if (isRecurring) {
-      const name = values.recurrenceName.trim();
-      const startsOn = values.startsOn.trim();
-      const endsOn = values.endsOn.trim();
-      if (name.length < 2 || name.length > 80) {
-        setInputError(
-          'Indica un nombre para la recurrencia de 2 a 80 caracteres.',
-        );
-        return;
-      }
-      if (
-        !isCalendarDate(startsOn) ||
-        !isCalendarDate(endsOn) ||
-        startsOn > endsOn
-      ) {
-        setInputError(
-          'Indica un rango de fechas válido en formato AAAA-MM-DD.',
-        );
-        return;
-      }
-      if (!timePattern.test(values.time.trim()) || !selectedDays.length) {
-        setInputError(
-          'Indica la hora en formato HH:mm y selecciona al menos un día.',
-        );
-        return;
-      }
-    } else {
-      const [day, hour, extra] = values.departureAt.split(' ');
-      if (
-        extra !== undefined ||
-        !isCalendarDate(day) ||
-        !hour ||
-        !timePattern.test(hour)
-      ) {
-        setInputError('Indica la salida como AAAA-MM-DD HH:mm.');
-        return;
-      }
-    }
-    visitStep('route');
-  }
-
-  function continueRoute() {
-    const values = form.getValues();
-    try {
-      const route = routePoints(values);
-      [route.origin, ...route.stops, route.destination].forEach((point) =>
-        previewPoint(point, catalog),
-      );
-      if (values.description.trim().length < 2)
-        throw new Error('Describe las vías o referencias del recorrido.');
-      const signed =
-        selectedRoute?.key === JSON.stringify(route) &&
-        selectedRoute.option.routingSelection;
-      const duration = Number(values.estimatedDurationMinutes);
-      if (
-        !signed &&
-        (!Number.isInteger(duration) || duration < 5 || duration > 360)
-      )
-        throw new Error('Indica una duración de 5 a 360 minutos enteros.');
-      visitStep('terms');
-    } catch (error) {
-      setInputError(
-        error instanceof Error
-          ? error.message
-          : 'Revisa los datos del recorrido.',
-      );
-    }
-  }
-
-  const review = form.handleSubmit(async (values) => {
-    if (!selected || !selectedEligible) return;
-    setInputError('');
-    save.reset();
-    try {
-      const route = routePoints(values);
-      const chosen =
-        selectedRoute?.key === JSON.stringify(route)
-          ? selectedRoute.option
-          : undefined;
-      const reviewedStops = previewStops(route, catalog);
-      const offeredSeats = Number(values.offeredSeats);
-      if (
-        !Number.isInteger(offeredSeats) ||
-        offeredSeats < 1 ||
-        offeredSeats > selected.passengerCapacity
-      )
-        throw new Error(
-          'Elige de una plaza al máximo permitido por el vehículo.',
-        );
-      if (
-        withContribution &&
-        expenseConcepts.some(([key]) => !/^\d+$/.test(values[key]))
-      )
-        throw new Error('Indica los gastos como pesos colombianos enteros.');
-      const economics = {
-        estimate: withContribution
-          ? {
-              fuelCop: Number(values.fuelCop),
-              tollsCop: Number(values.tollsCop),
-              parkingCop: Number(values.parkingCop),
-            }
-          : undefined,
-        compensationMethods: withContribution ? methods : [],
-      };
-      const calculated = await economicsPreview.mutateAsync({
-        offeredSeats,
-        economics,
-      });
-      const recurrence = isRecurring
-        ? {
-            name: values.recurrenceName.trim(),
-            startsOn: values.startsOn.trim(),
-            endsOn: values.endsOn.trim(),
-            time: values.time.trim(),
-            weekdays: selectedDays.slice().sort((a, b) => a - b),
-          }
-        : undefined;
-      if (
-        recurrence &&
-        (!recurrence.name ||
-          !recurrence.startsOn ||
-          !recurrence.endsOn ||
-          !recurrence.time ||
-          !selectedDays.length)
-      )
-        throw new Error(
-          'Completa el nombre, las fechas, la hora y al menos un día de la recurrencia.',
-        );
-      const submittedMinutes =
-        edited || !chosen?.routingSelection
-          ? Number(values.estimatedDurationMinutes)
-          : chosen.durationMinutes;
-      const routingSelection =
-        chosen?.durationMinutes === submittedMinutes
-          ? chosen.routingSelection
-          : undefined;
-      setConfirmedPublic(false);
-      setPreview({
-        recurrence,
-        economics: calculated,
-        stops: reviewedStops,
-        draft: {
-          vehicleId: selected.id,
-          departureAt: `${values.departureAt.replace(' ', 'T')}:00-05:00`,
-          offeredSeats,
-          economics,
-          estimatedDurationMinutes: submittedMinutes,
-          ruleIds,
-          ...(selected.type === 'MOTORCYCLE' && { providesHelmet: helmet }),
-          itinerary: {
-            ...route,
-            description: values.description.trim(),
-            geometry: chosen?.geometry,
-            routingSelection,
-            maneuvers: routingSelection ? chosen?.maneuvers : undefined,
-          },
+      await api<RecurringTripView>(
+        schedule ? '/trip-schedules/' + schedule.id : '/trip-schedules',
+        {
+          method: schedule ? 'PUT' : 'POST',
+          body: { ...recurrence, template: tripTemplate },
         },
-      });
-      visitStep('review');
-    } catch (error) {
-      setInputError(
-        error instanceof Error ? error.message : 'Revisa los datos del viaje.',
+      );
+      return {};
+    },
+    onSuccess: ({ trip }) => {
+      for (const name of [
+        'my-trips',
+        'trip-schedules',
+        'available-trips',
+        'trip-feed',
+        'trip-operation',
+        'agenda',
+        'trip-detail',
+      ])
+        void client.invalidateQueries({ queryKey: [name] });
+      if (trip)
+        router.replace({
+          pathname: '/trip/[id]',
+          params: { id: trip.id, published: '1' },
+        });
+      else setCompletedSchedule(true);
+    },
+  });
+
+  function changeDirection() {
+    form.setValue('origin', values.destination);
+    form.setValue('destination', values.origin);
+    form.setValue('direction', fromUsc ? 'HACIA_USC' : 'DESDE_USC');
+    setNotice('');
+  }
+
+  function submit() {
+    setNotice('');
+    if (!vehicle) return setNotice('Selecciona un vehículo habilitado.');
+    if (!campus || !geoCampus)
+      return setNotice(
+        'Pampalinda necesita una referencia geográfica configurada.',
+      );
+    if (fromUsc && interior.length < 2)
+      return setNotice('Indica el punto de encuentro dentro de la USC.');
+    if (interior.length === 1)
+      return setNotice(
+        'Completa el nombre del punto de encuentro dentro de la USC.',
+      );
+    if (!externalPoint)
+      return setNotice('Elige el ' + externalTitle.toLowerCase() + ' externo.');
+    if (!route) return setNotice('Completa o elimina la parada sin ubicación.');
+    if (!alternative && !manual)
+      return setNotice('Calcula una ruta o elige un itinerario declarado.');
+    if (!publicPoints)
+      return setNotice('Confirma que los puntos y la ruta son públicos.');
+    const departureAt = values.departureAt.replace(' ', 'T') + ':00-05:00';
+    if (!recurring && !hasDepartureWindow(departureAt))
+      return setNotice(
+        'Programa la salida con más de 30 minutos de anticipación.',
+      );
+    const duration =
+      alternative?.durationMinutes ?? Number(values.estimatedDurationMinutes);
+    if (!Number.isInteger(duration) || duration < 5 || duration > 360)
+      return setNotice('Indica una duración de 5 a 360 minutos enteros.');
+    if (contribution && (!validCosts || !economicsPreview.data))
+      return setNotice(
+        economicsPreview.error?.message ??
+          'Espera el cálculo del aporte o revisa los gastos.',
+      );
+    const recurrence = recurring
+      ? {
+          name: values.recurrenceName.trim(),
+          startsOn: values.startsOn,
+          endsOn: values.endsOn,
+          time: values.time,
+          weekdays: [...days].sort((a, b) => a - b),
+        }
+      : undefined;
+    if (
+      recurrence &&
+      (recurrence.name.length < 2 ||
+        !calendarDay(recurrence.startsOn) ||
+        !calendarDay(recurrence.endsOn) ||
+        recurrence.startsOn > recurrence.endsOn ||
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(recurrence.time) ||
+        !recurrence.weekdays.length)
+    ) {
+      setAdvanced(true);
+      return setNotice(
+        'Completa el nombre, rango de fechas, hora y días de la recurrencia.',
       );
     }
-  });
-  const activeIndex = publishSteps.findIndex(({ id }) => id === step);
-  const activeTitle =
-    step === 'review'
-      ? edited
-        ? 'Resumen de los cambios'
-        : 'Resumen para publicar'
-      : publishSteps[activeIndex].label;
-  const busy = economicsPreview.isPending || save.isPending;
-  const draft = preview?.draft;
-  const previewVehicle =
-    draft && vehicles.data?.find(({ id }) => id === draft.vehicleId);
-  const notice =
-    inputError ||
-    (step === 'route' && options.error?.message) ||
-    (step === 'review' && save.error?.message);
-  const catalogs = [vehicles, license, points, rules];
-  const failedCatalogs = catalogs.filter((query) => query.isError);
+    save.mutate({
+      recurrence,
+      draft: {
+        vehicleId: vehicle.id,
+        departureAt,
+        estimatedDurationMinutes: duration,
+        offeredSeats: seats,
+        economics,
+        ruleIds,
+        providesHelmet: vehicle.type === 'MOTORCYCLE' ? helmet : undefined,
+        itinerary: {
+          ...route,
+          description:
+            values.description.trim() ||
+            (anchors[0].label + ' → ' + anchors.at(-1)!.label).slice(0, 240),
+          geometry: alternative?.geometry,
+          routingSelection: alternative?.routingSelection,
+          maneuvers: alternative?.routingSelection
+            ? alternative.maneuvers
+            : undefined,
+        },
+      },
+    });
+  }
+
+  const map = (
+    <View style={styles.panel}>
+      <Text style={s.title}>Recorrido</Text>
+      <RouteGeometryPreview
+        key={key}
+        geometry={alternative?.geometry ?? null}
+        stops={anchors}
+      />
+      {geoCampus && (
+        <Text style={s.text}>
+          El marcador de la USC representa una referencia pública de Pampalinda.
+        </Text>
+      )}
+      {route && !consent && !alternative && !manual && (
+        <>
+          <Text style={s.text}>
+            Los puntos públicos se enviarán al motor vial para calcular el
+            recorrido.
+          </Text>
+          <Button
+            title="Autorizar y calcular ruta"
+            onPress={() => setConsent(true)}
+          />
+        </>
+      )}
+      {routeQuery.isFetching && (
+        <Text accessibilityLiveRegion="polite" style={s.text}>
+          Calculando recorrido…
+        </Text>
+      )}
+      {routeQuery.error && (
+        <>
+          <Text accessibilityRole="alert" style={s.error}>
+            {routeQuery.error.message}
+          </Text>
+          <Button
+            secondary
+            title="Reintentar ruta"
+            onPress={() => void routeQuery.refetch()}
+          />
+        </>
+      )}
+      {alternative && (
+        <Text style={s.text}>
+          {alternative.distanceMeters != null
+            ? (alternative.distanceMeters / 1000).toFixed(1) + ' km · '
+            : ''}
+          {alternative.durationMinutes} min estimados
+        </Text>
+      )}
+      {alternative && (
+        <Button
+          secondary
+          title="Cambiar ruta"
+          onPress={() => {
+            setConsent(true);
+            setRefreshKey(key);
+            setShowChoices(!showChoices);
+            if (refreshKey === key && !alternatives?.length)
+              void routeQuery.refetch();
+          }}
+        />
+      )}
+      {!manual &&
+        (showChoices || (alternatives?.length ?? 0) > 1) &&
+        alternatives?.map((option, index) => (
+          <Choice
+            key={index}
+            checked={selectedIndex === index}
+            label={
+              'Ruta ' +
+              (index + 1) +
+              ' · ' +
+              (option.distanceMeters / 1000).toFixed(1) +
+              ' km · ' +
+              option.durationMinutes +
+              ' min'
+            }
+            onPress={() => setChoice({ key, index })}
+          />
+        ))}
+      {route &&
+        (manual ? (
+          <>
+            <Text style={s.text}>Itinerario declarado</Text>
+            <Field
+              control={form.control}
+              name="estimatedDurationMinutes"
+              label="Duración declarada (minutos)"
+            />
+            <Button
+              secondary
+              title="Volver al cálculo vial"
+              onPress={() => {
+                setManualKey(undefined);
+                setConsent(true);
+              }}
+            />
+          </>
+        ) : (
+          <Button
+            secondary
+            title="Usar itinerario declarado"
+            onPress={() => setManualKey(key)}
+          />
+        ))}
+    </View>
+  );
 
   return (
     <ProtectedPage
@@ -806,575 +695,450 @@ function PublishForm({
             : 'Publicar viaje'
       }
       requires="driver"
-      scrollRef={scroll}
     >
-      {catalogs.some((query) => query.isPending) && (
-        <Text accessibilityLiveRegion="polite" style={w.note}>
-          Cargando catálogos…
-        </Text>
-      )}
-      {failedCatalogs.length > 0 && (
-        <View style={w.group}>
-          {failedCatalogs.map((query, index) => (
-            <Text key={index} accessibilityRole="alert" style={w.alert}>
-              {query.error?.message}
-            </Text>
-          ))}
-          <Button
-            title="Reintentar catálogos"
-            secondary
-            onPress={() =>
-              failedCatalogs.forEach((query) => void query.refetch())
-            }
-          />
-        </View>
-      )}
-      <View style={[w.layout, wide && w.horizontal]}>
-        <View style={[w.main, wide && w.mainWide]}>
-          <PublishProgress
-            step={step}
-            onStep={visitStep}
-            locked={busy || save.isSuccess}
-            compact={width < 620}
-          />
-          <View style={w.panel}>
-            <View style={w.heading}>
-              <Text nativeID="publish-step-count" style={w.stepCount}>
-                Paso {activeIndex + 1} de {publishSteps.length}
-              </Text>
-              <View
-                ref={heading}
-                tabIndex={-1}
-                accessible={Platform.OS === 'web' ? undefined : true}
-                accessibilityLabel={
-                  Platform.OS === 'web'
-                    ? undefined
-                    : `Paso ${activeIndex + 1} de ${publishSteps.length}. ${activeTitle}`
-                }
-                aria-describedby="publish-step-count"
-                role="heading"
-                aria-level={2}
-              >
-                <Text style={w.title}>{activeTitle}</Text>
-              </View>
+      <View style={[styles.layout, wide && styles.wide]}>
+        <View style={[styles.column, wide && styles.wideColumn]}>
+          <View style={styles.panel}>
+            <View style={styles.row}>
+              <Choice
+                label="Desde la USC"
+                checked={fromUsc}
+                onPress={() => {
+                  if (!fromUsc) changeDirection();
+                }}
+              />
+              <Choice
+                label="Hacia la USC"
+                checked={!fromUsc}
+                onPress={() => {
+                  if (fromUsc) changeDirection();
+                }}
+              />
             </View>
-            {step === 'schedule' && (
+            <Text style={s.title}>
+              {fromUsc ? 'Origen' : 'Destino'} ·{' '}
+              {campus?.name ?? 'Ciudadela Pampalinda'}
+            </Text>
+            {points.error && (
               <>
-                <View style={w.group}>
-                  <Text role="heading" aria-level={3} style={w.groupTitle}>
-                    Vehículo propio
-                  </Text>
-                  {vehicles.data &&
-                    license.isSuccess &&
-                    !vehicles.data.some(canPublishWith) && (
-                      <Text>
-                        Registra un vehículo y consulta los requisitos vigentes
-                        para conducir.
-                      </Text>
-                    )}
-                  {vehicles.data?.map((item) => (
-                    <Choice
-                      key={item.id}
-                      label={`Vehículo ${item.plate} · ${item.passengerCapacity} plazas · ${!covers(item) ? 'categoría de licencia incompatible' : item.verificationStatus === 'VERIFIED' ? 'verificado' : item.verificationStatus === 'DECLARED' ? 'declarado' : 'SOAT sin vigencia habilitante'}`}
-                      checked={selected?.id === item.id}
-                      onPress={() => setVehicleId(item.id)}
-                    />
-                  ))}
-                  {vehicles.data && selected && !selectedEligible && (
-                    <Text style={w.note}>
-                      Selecciona un vehículo con SOAT vigente y categoría
-                      cubierta por tu licencia.
-                    </Text>
-                  )}
-                  <Link href="/vehicles" style={s.link}>
-                    Gestionar vehículos y licencia
-                  </Link>
-                </View>
-
-                <View style={[w.group, w.divider]}>
-                  <Text role="heading" aria-level={3} style={w.groupTitle}>
-                    Programación
-                  </Text>
-                  {!schedule && !edited && (
-                    <View style={w.group}>
-                      <Choice
-                        label="Viaje individual"
-                        checked={!isRecurring}
-                        onPress={() => setIsRecurring(false)}
-                      />
-                      <Choice
-                        label="Viaje recurrente"
-                        checked={isRecurring}
-                        onPress={() => setIsRecurring(true)}
-                      />
-                    </View>
-                  )}
-                  {isRecurring ? (
-                    <View style={w.group}>
-                      <Field
-                        control={form.control}
-                        name="recurrenceName"
-                        label="Nombre de la recurrencia"
-                      />
-                      <Field
-                        control={form.control}
-                        name="startsOn"
-                        label="Fecha inicial (AAAA-MM-DD)"
-                      />
-                      <Field
-                        control={form.control}
-                        name="endsOn"
-                        label="Fecha final (AAAA-MM-DD)"
-                      />
-                      <Field
-                        control={form.control}
-                        name="time"
-                        label="Hora Colombia (HH:mm)"
-                      />
-                      <View style={w.inline}>
-                        {weekdays.map((name, index) => {
-                          const day = index + 1;
-                          return (
-                            <Choice
-                              key={day}
-                              label={name}
-                              checkbox
-                              checked={selectedDays.includes(day)}
-                              onPress={() =>
-                                setSelectedDays((days) =>
-                                  days.includes(day)
-                                    ? days.filter((item) => item !== day)
-                                    : [...days, day],
-                                )
-                              }
-                            />
-                          );
-                        })}
-                      </View>
-                    </View>
-                  ) : (
-                    <Field
-                      control={form.control}
-                      name="departureAt"
-                      label="Salida Colombia (AAAA-MM-DD HH:mm)"
-                    />
-                  )}
-
-                  {!isRecurring && (
-                    <Text style={w.note}>
-                      Programa la salida con más de 30 minutos de anticipación.
-                    </Text>
-                  )}
-                </View>
+                <Text accessibilityRole="alert" style={s.error}>
+                  {points.error.message}
+                </Text>
+                <Button
+                  title="Reintentar sede"
+                  secondary
+                  onPress={() => void points.refetch()}
+                />
               </>
             )}
-            {step === 'route' && (
+            <Field
+              control={form.control}
+              name={
+                (campusField + '.label') as 'origin.label' | 'destination.label'
+              }
+              label={
+                fromUsc
+                  ? 'Punto de encuentro en la USC'
+                  : 'Referencia de llegada en la USC (opcional)'
+              }
+            />
+            <TripPlacePicker
+              key={externalField}
+              title={externalTitle}
+              value={externalPoint}
+              onChange={({ label, latitude, longitude }) =>
+                form.setValue(externalField, {
+                  ...emptyPoint,
+                  label,
+                  coordinates: { latitude, longitude },
+                })
+              }
+            />
+            {(fromUsc || advanced || visibleStops.length > 0) && (
               <>
-                <View style={w.group}>
-                  <Text role="heading" aria-level={3} style={w.groupTitle}>
-                    Sentido del viaje
+                {visibleStops.map(({ stop, index }, order) => (
+                  <View
+                    key={stops.fields[index]?.id ?? index}
+                    style={s.section}
+                  >
+                    <TripPlacePicker
+                      title={
+                        (fromUsc ? 'Parada ' : 'Punto de paso ') + (order + 1)
+                      }
+                      value={external(stop)}
+                      initiallyOpen={!stop.coordinates}
+                      onChange={({ label, latitude, longitude }) =>
+                        form.setValue(`stops.${index}`, {
+                          ...emptyPoint,
+                          label,
+                          coordinates: { latitude, longitude },
+                          access: stop.access,
+                        })
+                      }
+                    />
+                    <View style={styles.row}>
+                      {order > 0 && (
+                        <Button
+                          secondary
+                          title={
+                            (fromUsc
+                              ? 'Subir parada '
+                              : 'Subir punto de paso ') +
+                            (order + 1)
+                          }
+                          onPress={() =>
+                            stops.move(index, visibleStops[order - 1].index)
+                          }
+                        />
+                      )}
+                      <Button
+                        secondary
+                        title={
+                          (fromUsc
+                            ? 'Quitar parada '
+                            : 'Quitar punto de paso ') +
+                          (order + 1)
+                        }
+                        onPress={() => stops.remove(index)}
+                      />
+                    </View>
+                  </View>
+                ))}
+                {(fromUsc || advanced) && (
+                  <Button
+                    secondary
+                    title={
+                      fromUsc ? '+ Añadir parada' : '+ Añadir punto de paso'
+                    }
+                    disabled={stops.fields.length >= 10}
+                    onPress={() =>
+                      stops.append({
+                        ...emptyPoint,
+                        access: fromUsc ? 'DROPOFF' : 'WAYPOINT',
+                      })
+                    }
+                  />
+                )}
+              </>
+            )}
+          </View>
+          {!wide && map}
+          {!recurring && (
+            <View style={styles.panel}>
+              <TripDeparturePicker
+                value={values.departureAt}
+                onChange={(value) => form.setValue('departureAt', value)}
+              />
+            </View>
+          )}
+          <View style={styles.panel}>
+            <Text style={s.title}>Vehículo y plazas</Text>
+            {eligible.length > 1 &&
+              eligible.map((item) => (
+                <Choice
+                  key={item.id}
+                  label={
+                    item.brand +
+                    ' · ' +
+                    item.modelYear +
+                    ' · ' +
+                    item.plate +
+                    ' · ' +
+                    item.passengerCapacity +
+                    ' plazas'
+                  }
+                  checked={vehicle?.id === item.id}
+                  onPress={() => setVehicleId(item.id)}
+                />
+              ))}
+            {eligible.length === 1 && vehicle && (
+              <Text style={s.text}>
+                {vehicle.brand} · {vehicle.modelYear} · {vehicle.plate} ·{' '}
+                {vehicle.passengerCapacity} plazas
+              </Text>
+            )}
+            {!vehicle && (
+              <>
+                <Text style={s.text}>
+                  {vehicles.isPending || license.isPending
+                    ? 'Consultando vehículos…'
+                    : (vehicles.error?.message ??
+                      license.error?.message ??
+                      'Necesitas un vehículo con SOAT vigente y una licencia que cubra su categoría.')}
+                </Text>
+                <Link href="/vehicles" style={s.link}>
+                  Gestionar vehículos y licencia
+                </Link>
+              </>
+            )}
+            {vehicle && (
+              <View style={styles.row}>
+                <Button
+                  secondary
+                  title="−"
+                  accessibilityLabel="Quitar plaza"
+                  disabled={seats <= 1}
+                  onPress={() =>
+                    form.setValue('offeredSeats', String(seats - 1))
+                  }
+                />
+                <Text accessibilityLiveRegion="polite" style={s.title}>
+                  {seats} {seats === 1 ? 'plaza' : 'plazas'}
+                </Text>
+                <Button
+                  secondary
+                  title="+"
+                  accessibilityLabel="Añadir plaza"
+                  disabled={seats >= vehicle.passengerCapacity}
+                  onPress={() =>
+                    form.setValue('offeredSeats', String(seats + 1))
+                  }
+                />
+              </View>
+            )}
+            {vehicle?.type === 'MOTORCYCLE' && (
+              <Choice
+                checkbox
+                label="Casco de pasajero incluido"
+                checked={helmet}
+                onPress={() => setHelmet(!helmet)}
+              />
+            )}
+          </View>
+          <View style={styles.panel}>
+            <Text style={s.title}>Aporte</Text>
+            <View style={styles.row}>
+              <Choice
+                label="Viaje gratuito"
+                checked={!contribution}
+                onPress={() => setContribution(false)}
+              />
+              <Choice
+                label="Calcular aporte voluntario"
+                checked={contribution}
+                onPress={() => setContribution(true)}
+              />
+            </View>
+            {contribution && (
+              <>
+                {expenseConcepts.map(([field, label]) => (
+                  <Field
+                    key={field}
+                    control={form.control}
+                    name={field}
+                    label={label + ' en COP'}
+                  />
+                ))}
+                {methodsAvailable.map((method) => (
+                  <Choice
+                    key={method}
+                    checkbox
+                    label={methodLabel[method]}
+                    checked={methods.includes(method)}
+                    onPress={() =>
+                      setMethods(
+                        methods.includes(method)
+                          ? methods.filter((value) => value !== method)
+                          : [...methods.slice(0, 1), method],
+                      )
+                    }
+                  />
+                ))}
+                {economicsPreview.data && (
+                  <EconomicTerms terms={economicsPreview.data} />
+                )}
+                {economicsPreview.error && (
+                  <Text accessibilityRole="alert" style={s.error}>
+                    {economicsPreview.error.message}
                   </Text>
-                  <Choice
-                    label="Desde la USC"
-                    checked={direction === 'DESDE_USC'}
-                    onPress={() => {
-                      form.setValue('direction', 'DESDE_USC');
-                      form.getValues('stops').forEach(({ access }, index) => {
-                        if (access === 'PICKUP' || access === 'BOTH')
-                          form.setValue(`stops.${index}.access`, 'DROPOFF');
-                      });
-                    }}
-                  />
-                  <Choice
-                    label="Hacia la USC"
-                    checked={direction === 'HACIA_USC'}
-                    onPress={() => form.setValue('direction', 'HACIA_USC')}
-                  />
-                </View>
-                <PointEditor
-                  title="Origen"
-                  institutional={direction === 'DESDE_USC'}
-                  name="origin"
-                  control={form.control}
-                  catalog={catalog}
-                />
-                <PointEditor
-                  title="Destino"
-                  institutional={direction === 'HACIA_USC'}
-                  name="destination"
-                  control={form.control}
-                  catalog={catalog}
-                />
+                )}
+              </>
+            )}
+          </View>
+          <View style={styles.panel}>
+            <Button
+              secondary
+              title={
+                advanced
+                  ? 'Ocultar opciones adicionales'
+                  : 'Opciones adicionales'
+              }
+              onPress={() => setAdvanced(!advanced)}
+            />
+            {advanced && (
+              <>
                 <Field
                   control={form.control}
                   name="description"
-                  label="Vías y referencias del recorrido"
+                  label="Nota del conductor (opcional)"
                 />
-                <Text style={s.text}>
-                  Puedes publicar el itinerario descrito o elegir una
-                  alternativa vial si el proveedor está disponible.
-                </Text>
-                <Text role="heading" aria-level={3} style={w.groupTitle}>
-                  Paradas intermedias
-                </Text>
-                {stops.fields.map((stop, index) => (
-                  <View key={stop.id} style={[w.group, w.divider]}>
-                    <PointEditor
-                      title={`Parada ${index + 1}`}
-                      name={`stops.${index}`}
-                      control={form.control}
-                      catalog={catalog}
+                {rules.data
+                  ?.filter((rule) => rule.code !== 'DEFAULT')
+                  .map((rule) => (
+                    <Choice
+                      key={rule.id}
+                      checkbox
+                      label={rule.description}
+                      checked={ruleIds.includes(rule.id)}
+                      onPress={() =>
+                        setRuleIds(
+                          ruleIds.includes(rule.id)
+                            ? ruleIds.filter((id) => id !== rule.id)
+                            : [...ruleIds, rule.id],
+                        )
+                      }
                     />
-                    <StopAccessEditor
-                      control={form.control}
-                      index={index}
-                      direction={direction}
+                  ))}
+                {fromUsc &&
+                  visibleStops.map(({ stop, index }) => (
+                    <Choice
+                      key={stops.fields[index]?.id ?? index}
+                      checkbox
+                      label={'Parada ' + (index + 1) + ' sólo de paso'}
+                      checked={stop.access === 'WAYPOINT'}
+                      onPress={() =>
+                        form.setValue(
+                          `stops.${index}.access`,
+                          stop.access === 'WAYPOINT' ? 'DROPOFF' : 'WAYPOINT',
+                        )
+                      }
                     />
-                    {index > 0 && (
-                      <Button
-                        title={`Subir parada ${index + 1}`}
-                        secondary
-                        onPress={() => stops.move(index, index - 1)}
-                      />
-                    )}
-                    {index < stops.fields.length - 1 && (
-                      <Button
-                        title={`Bajar parada ${index + 1}`}
-                        secondary
-                        onPress={() => stops.move(index, index + 1)}
-                      />
-                    )}
-                    <Button
-                      title={`Quitar parada ${index + 1}`}
-                      secondary
-                      onPress={() => stops.remove(index)}
-                    />
-                  </View>
-                ))}
-                <Button
-                  title="Añadir parada"
-                  disabled={stops.fields.length >= 10}
-                  secondary
-                  onPress={() =>
-                    stops.append({
-                      ...emptyPoint,
-                      access:
-                        direction === 'DESDE_USC' ? 'DROPOFF' : 'WAYPOINT',
-                    })
-                  }
-                />
-                <Field
-                  control={form.control}
-                  name="estimatedDurationMinutes"
-                  label="Duración declarada (minutos)"
-                />
-
-                <View style={[w.group, w.divider]}>
-                  <Text role="heading" aria-level={3} style={w.groupTitle}>
-                    Alternativas viales
-                  </Text>
+                  ))}
+                {!edited && !schedule && (
                   <Choice
                     checkbox
-                    label="Autorizo enviar las coordenadas de estos puntos públicos al motor vial configurado"
-                    checked={routingConsent}
-                    onPress={() => setRoutingConsent(!routingConsent)}
+                    label="Viaje recurrente"
+                    checked={recurring}
+                    onPress={() => setRecurring(!recurring)}
                   />
-                  <Button
-                    title={
-                      options.isPending
-                        ? 'Consultando rutas…'
-                        : 'Consultar rutas viales'
-                    }
-                    secondary
-                    disabled={
-                      !selectedEligible || !routingConsent || options.isPending
-                    }
-                    onPress={() => {
-                      void suggest();
-                    }}
-                  />
-                  <RouteAlternatives
-                    control={form.control}
-                    catalog={catalog}
-                    selectionKey={selectedRoute?.key}
-                    selected={selectedRoute?.option}
-                    requested={options.variables}
-                    options={options.data}
-                    onChoose={chooseOption}
-                  />
-                </View>
-              </>
-            )}
-            {step === 'terms' && (
-              <>
-                <View style={w.group}>
-                  <Field
-                    control={form.control}
-                    name="offeredSeats"
-                    label="Cupos ofrecidos"
-                  />
-
-                  {selected && (
-                    <Text style={w.note}>
-                      Máximo {selected.passengerCapacity}{' '}
-                      {selected.passengerCapacity === 1 ? 'plaza' : 'plazas'}{' '}
-                      para este vehículo.
-                    </Text>
-                  )}
-                  {selected?.type === 'MOTORCYCLE' && (
-                    <Choice
-                      checkbox
-                      label="Casco de pasajero incluido"
-                      checked={helmet}
-                      onPress={() => setHelmet(!helmet)}
+                )}
+                {recurring && (
+                  <>
+                    <Field
+                      control={form.control}
+                      name="recurrenceName"
+                      label="Nombre de la recurrencia"
                     />
-                  )}
-                </View>
-                <View style={w.group}>
-                  <Text role="heading" aria-level={3} style={w.groupTitle}>
-                    Aporte del viaje
-                  </Text>
-                  <Choice
-                    label="Viaje gratuito"
-                    checked={!withContribution}
-                    onPress={() => setWithContribution(false)}
-                  />
-                  <Choice
-                    label="Calcular aporte con gastos declarados"
-                    checked={withContribution}
-                    onPress={() => setWithContribution(true)}
-                  />
-                  {withContribution && (
-                    <>
-                      {expenseConcepts.map(([name, label]) => (
-                        <Field
-                          key={name}
-                          control={form.control}
-                          name={name}
-                          label={`${label} en COP`}
+                    <TripDeparturePicker
+                      value={values.startsOn + ' ' + values.time}
+                      onChange={(value) => {
+                        const [day, time] = value.split(' ');
+                        form.setValue('startsOn', day);
+                        form.setValue('time', time);
+                      }}
+                    />
+                    <Field
+                      control={form.control}
+                      name="endsOn"
+                      label="Última fecha (AAAA-MM-DD)"
+                    />
+                    <View style={styles.row}>
+                      {weekdays.map((day, index) => (
+                        <Choice
+                          key={day}
+                          checkbox
+                          label={day}
+                          checked={days.includes(index + 1)}
+                          onPress={() =>
+                            setDays(
+                              days.includes(index + 1)
+                                ? days.filter((value) => value !== index + 1)
+                                : [...days, index + 1],
+                            )
+                          }
                         />
                       ))}
-                      <Text style={s.text}>
-                        Selecciona hasta dos métodos si el cálculo produce un
-                        aporte.
-                      </Text>
-                      {(Object.keys(methodLabel) as CompensationMethod[]).map(
-                        (method) => (
-                          <Choice
-                            key={method}
-                            label={methodLabel[method]}
-                            checkbox
-                            checked={methods.includes(method)}
-                            onPress={() =>
-                              setMethods((before) =>
-                                before.includes(method)
-                                  ? before.filter((item) => item !== method)
-                                  : before.length < 2
-                                    ? [...before, method]
-                                    : before,
-                              )
-                            }
-                          />
-                        ),
-                      )}
-                    </>
-                  )}
-                </View>
-                <View style={w.group}>
-                  <Text role="heading" aria-level={3} style={w.groupTitle}>
-                    Reglas de convivencia
-                  </Text>
-                  {rules.data
-                    ?.filter(({ code }) => code !== 'DEFAULT')
-                    .map((rule) => (
-                      <Choice
-                        key={rule.id}
-                        label={rule.description}
-                        checkbox
-                        checked={ruleIds.includes(rule.id)}
-                        onPress={() =>
-                          setRuleIds((ids) =>
-                            ids.includes(rule.id)
-                              ? ids.filter((id) => id !== rule.id)
-                              : [...ids, rule.id],
-                          )
-                        }
-                      />
-                    ))}
-                  <Text style={s.text}>
-                    Sin selección se aplica el acuerdo general del catálogo.
-                  </Text>
-                </View>
-              </>
-            )}
-            {step === 'review' && draft && preview && (
-              <>
-                <View style={w.group}>
-                  {preview.recurrence && (
-                    <Text style={w.groupTitle}>{preview.recurrence.name}</Text>
-                  )}
-                  <Text style={s.text}>
-                    {previewVehicle?.plate} · {draft.offeredSeats}{' '}
-                    {draft.offeredSeats === 1 ? 'plaza' : 'plazas'} ·{' '}
-                    {draft.estimatedDurationMinutes} min
-                  </Text>
-                  {preview.recurrence ? (
-                    <Text style={s.text}>
-                      {preview.recurrence.startsOn} a{' '}
-                      {preview.recurrence.endsOn} · {preview.recurrence.time}{' '}
-                      Colombia
-                      {'\n'}
-                      {preview.recurrence.weekdays
-                        .map((day) => weekdays[day - 1])
-                        .join(', ')}
-                    </Text>
-                  ) : (
-                    <Text style={s.text}>
-                      {draft.departureAt.slice(0, 16).replace('T', ' ')}{' '}
-                      Colombia
-                    </Text>
-                  )}
-                  {previewVehicle?.type === 'MOTORCYCLE' && (
-                    <Text style={s.text}>
-                      {draft.providesHelmet
-                        ? 'Casco incluido'
-                        : 'Cada pasajero debe traer casco'}
-                    </Text>
-                  )}
-                </View>
-                <RoutePreview
-                  geometry={draft.itinerary.geometry ?? null}
-                  description={draft.itinerary.description}
-                  stops={preview.stops}
-                />
-                {!save.data && <EconomicsPreview preview={preview.economics} />}
-                {save.data?.trip && (
-                  <EconomicTerms terms={save.data.trip.economics} />
-                )}
-                <Text style={s.text}>
-                  {rules.data
-                    ?.filter((rule) =>
-                      draft.ruleIds.length
-                        ? draft.ruleIds.includes(rule.id)
-                        : rule.code === 'DEFAULT',
-                    )
-                    .map((rule) => rule.description)
-                    .join(' · ')}
-                </Text>
-                {save.isSuccess ? (
-                  <Text accessibilityLiveRegion="polite" style={w.success}>
-                    {save.data?.schedule
-                      ? 'Recurrencia guardada. Consulta las fechas generadas en Viajes recurrentes.'
-                      : edited
-                        ? 'Cambios guardados en el viaje.'
-                        : 'Viaje publicado. Ya aparece en Mis viajes.'}
-                  </Text>
-                ) : (
-                  <Choice
-                    label="Confirmo que la ruta y los puntos son públicos y no incluyen domicilios ni datos privados"
-                    checkbox
-                    checked={confirmedPublic}
-                    onPress={() => setConfirmedPublic(!confirmedPublic)}
-                  />
+                    </View>
+                  </>
                 )}
               </>
-            )}
-            {notice && (
-              <Text accessibilityRole="alert" style={w.alert}>
-                {notice}
-              </Text>
-            )}
-            {!save.isSuccess && (
-              <View style={[w.actions, w.divider]}>
-                {step !== 'schedule' && (
-                  <View style={w.action}>
-                    <Button
-                      title={
-                        step === 'review'
-                          ? edited
-                            ? 'Volver a editar'
-                            : 'Editar antes de publicar'
-                          : 'Atrás'
-                      }
-                      secondary
-                      disabled={busy}
-                      onPress={() =>
-                        visitStep(publishSteps[activeIndex - 1].id)
-                      }
-                    />
-                  </View>
-                )}
-                {step === 'schedule' && (
-                  <View style={w.action}>
-                    <Button
-                      title="Continuar"
-                      disabled={!vehicles.data}
-                      onPress={continueSchedule}
-                    />
-                  </View>
-                )}
-                {step === 'route' && (
-                  <View style={w.action}>
-                    <Button
-                      title="Continuar"
-                      disabled={!points.data}
-                      onPress={continueRoute}
-                    />
-                  </View>
-                )}
-                {step === 'terms' && (
-                  <View style={w.action}>
-                    <Button
-                      title={
-                        economicsPreview.isPending
-                          ? 'Calculando…'
-                          : 'Revisar viaje'
-                      }
-                      disabled={
-                        !selectedEligible || !rules.data || !points.data || busy
-                      }
-                      onPress={() => void review()}
-                    />
-                  </View>
-                )}
-                {step === 'review' && preview && (
-                  <View style={w.action}>
-                    <Button
-                      title={
-                        save.isPending
-                          ? 'Guardando…'
-                          : preview.recurrence
-                            ? 'Guardar recurrencia'
-                            : edited
-                              ? 'Confirmar cambios'
-                              : 'Confirmar publicación'
-                      }
-                      disabled={!confirmedPublic || busy}
-                      onPress={() => save.mutate(preview)}
-                    />
-                  </View>
-                )}
-              </View>
             )}
           </View>
         </View>
-        <View style={[w.aside, wide && w.asideWide]}>
-          <PublishSummary
-            control={form.control}
-            catalog={catalog}
-            plate={selected?.plate}
-            isRecurring={isRecurring}
-          />
-          <View style={w.group}>
-            <Link href="/recurring-trips" style={s.link}>
-              Viajes recurrentes
-            </Link>
-            <Link href="/my-trips" style={s.link}>
-              Ver mis viajes publicados
-            </Link>
+        <View style={[styles.column, wide && styles.wideColumn]}>
+          {wide && map}
+          <View style={styles.panel}>
+            <Text style={s.title}>Resumen</Text>
+            <Text style={s.text}>
+              {fromUsc ? 'Desde la USC' : 'Hacia la USC'}
+            </Text>
+            <Text style={s.text}>
+              {(fromUsc ? geoCampus?.label : externalPoint?.label) ??
+                'Origen pendiente'}{' '}
+              →{' '}
+              {(fromUsc ? externalPoint?.label : geoCampus?.label) ??
+                'Destino pendiente'}
+            </Text>
+            <Text style={s.text}>
+              {recurring
+                ? 'Recurrente · ' + values.time
+                : travelTime(
+                    values.departureAt.replace(' ', 'T') + ':00-05:00',
+                  )}
+            </Text>
+            <Text style={s.text}>
+              {seats} {seats === 1 ? 'plaza' : 'plazas'} ·{' '}
+              {manual
+                ? 'Itinerario declarado'
+                : alternative
+                  ? 'Ruta calculada'
+                  : 'Ruta pendiente'}
+            </Text>
+            {contribution && economicsPreview.data && (
+              <EconomicTerms terms={economicsPreview.data} />
+            )}
+            {!contribution && <Text style={s.text}>Viaje gratuito</Text>}
+            <Choice
+              checkbox
+              label="Confirmo que la ruta y los puntos son públicos"
+              checked={publicPoints}
+              onPress={() => setPublicPoints(!publicPoints)}
+            />
+            {(notice || save.error) && (
+              <Text accessibilityRole="alert" style={s.error}>
+                {notice || save.error?.message}
+              </Text>
+            )}
+            {completedSchedule ? (
+              <Link href="/recurring-trips" style={s.link}>
+                Recurrencia guardada · Ver mis recurrencias
+              </Link>
+            ) : (
+              <Button
+                title={
+                  save.isPending
+                    ? 'Guardando…'
+                    : recurring
+                      ? 'Guardar recurrencia'
+                      : edited
+                        ? 'Guardar cambios'
+                        : 'Publicar viaje'
+                }
+                loading={save.isPending}
+                disabled={save.isPending}
+                onPress={submit}
+              />
+            )}
           </View>
         </View>
       </View>
     </ProtectedPage>
   );
 }
+
+const styles = StyleSheet.create({
+  layout: { gap: 14 },
+  wide: { flexDirection: 'row', alignItems: 'flex-start' },
+  column: { gap: 14, minWidth: 0 },
+  wideColumn: { flex: 1 },
+  panel: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.panel,
+    padding: 14,
+    gap: 10,
+    minWidth: 0,
+  },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+});

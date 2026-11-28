@@ -42,4 +42,10 @@ for (const task of ['db:migrate', 'db:seed']) {
   });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
+const site = spawnSync(
+  process.execPath,
+  ['scripts/configure-pampalinda.mjs', '--test'],
+  { stdio: 'inherit' },
+);
+if (site.status !== 0) process.exit(site.status ?? 1);
 console.log('BD de prueba preparada sin reset ni borrado.');

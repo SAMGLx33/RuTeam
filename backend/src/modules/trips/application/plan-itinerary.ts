@@ -4,6 +4,7 @@ import type {
   RouteStop,
 } from '@ruteam/contracts';
 import { DomainPolicyError } from '../../../common/errors/domain-policy.error.js';
+import { pampalindaCode } from '../../campus/domain/publication-campus.js';
 import type {
   ItineraryDto,
   MeetingPointDto,
@@ -24,7 +25,11 @@ export interface PlannedItinerary {
   maneuvers?: RouteManeuver[];
 }
 
-async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
+async function resolvePoint(
+  input: MeetingPointDto,
+  unit: PublicationUnit,
+  origin = false,
+) {
   const instructions = input.instructions?.trim() || null;
   if (input.campusPointId) {
     if (
@@ -47,7 +52,7 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
       );
     const label = input.label?.trim();
     if (
-      (point.kind === 'CAMPUS' || input.label !== undefined) &&
+      ((origin && point.kind === 'CAMPUS') || input.label !== undefined) &&
       (!label || label.length < 2)
     )
       throw new DomainPolicyError(
@@ -65,7 +70,11 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
       );
     const access = label
       ? 'Ubicación interna descrita; el mapa usa una referencia del campus'
-      : [point.description, point.accessReference].filter(Boolean).join(' · ');
+      : point.kind === 'CAMPUS'
+        ? 'Referencia pública del campus'
+        : [point.description, point.accessReference]
+            .filter(Boolean)
+            .join(' · ');
     const notes = [access, instructions].filter(Boolean).join(' · ');
     if (notes.length > 240)
       throw new DomainPolicyError(
@@ -89,11 +98,10 @@ async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {
     !input.label ||
     input.label.trim().length < 2 ||
     input.latitude === undefined ||
-    input.longitude === undefined ||
-    !instructions
+    input.longitude === undefined
   )
     throw new DomainPolicyError(
-      'Cada punto personalizado requiere nombre público, coordenadas e instrucciones',
+      'Cada punto personalizado requiere una referencia pública y su ubicación',
     );
   return {
     label: input.label.trim(),
@@ -112,7 +120,7 @@ export async function resolveRouteStops(
 ): Promise<PlannedStop[]> {
   const stops: PlannedStop[] = [
     {
-      ...(await resolvePoint(input.origin, unit)),
+      ...(await resolvePoint(input.origin, unit, true)),
       position: 0,
       access: 'PICKUP',
     },
@@ -150,6 +158,22 @@ export async function resolveRouteStops(
       'En viajes desde la USC se aborda en el punto de encuentro de origen',
     );
   return stops;
+}
+
+export async function assertPublicationCampus(
+  stops: PlannedItinerary['stops'],
+  unit: PublicationUnit,
+  allowDemo: boolean,
+) {
+  const siteId = stops[0]?.campusSiteId ?? stops.at(-1)?.campusSiteId;
+  const site = siteId ? await unit.destination(siteId) : null;
+  if (
+    !site?.active ||
+    !(site.code === pampalindaCode || (allowDemo && site.demo))
+  )
+    throw new DomainPolicyError(
+      'Las nuevas publicaciones se realizan desde o hacia Ciudadela Pampalinda.',
+    );
 }
 
 export async function planItinerary(

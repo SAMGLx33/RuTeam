@@ -262,3 +262,17 @@ funcionan sin confirmación por correo ni acreditación oficial de matrícula.
 La política no demuestra titularidad del correo ni vigencia estudiantil.
 Las cuentas suspendidas o revocadas siguen restringidas. Nest exige titularidad,
 vigencia y condiciones de conducción para publicar.
+
+### Publicación académica desde o hacia Ciudadela Pampalinda
+
+Las nuevas publicaciones vinculan automáticamente la Ciudadela Pampalinda
+como único extremo USC. Los datos y la operación autorizada de los viajes
+históricos de otras sedes se conservan. El origen USC usa un encuentro
+interior libre. Cuando USC es el destino, la referencia interior es opcional.
+El mapa indica que la coordenada de campus es aproximada.
+
+La publicación se realiza en una pantalla con mapa, opciones de ruta bajo
+consentimiento, selector de salida, vehículo, plazas y resumen editable.
+Las paradas intermedias de pasajeros se admiten en DESDE_USC para descenso.
+Confirmar un viaje usa el encuentro publicado y sólo solicita escoger
+descenso cuando hay varias alternativas autorizadas.

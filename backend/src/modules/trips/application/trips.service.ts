@@ -25,6 +25,7 @@ import { calculateEconomics } from '../../expenses/domain/expense-policy.js';
 import type { PublishTripDto } from '../dto/publish-trip.dto.js';
 import {
   planItinerary,
+  assertPublicationCampus,
   resolveRouteStops,
   type PlannedItinerary,
 } from './plan-itinerary.js';
@@ -297,6 +298,11 @@ export class ViajeService {
       );
     const itinerary =
       trustedRoute ?? (await this.prepareRoute(driverId, data, unit));
+    await this.checkPublicationCampus(itinerary, unit);
     return unit.save(data, end, ruleIds, itinerary, economics, energy);
+  }
+
+  checkPublicationCampus(itinerary: PlannedItinerary, unit: PublicationUnit) {
+    return assertPublicationCampus(itinerary.stops, unit, this.env.demo);
   }
 }

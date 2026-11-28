@@ -59,6 +59,7 @@ export function ReserveTrip({
   const client = useQueryClient();
   const [pickupId, setPickup] = useState(trip.match?.pickupId ?? '');
   const [dropoffId, setDropoff] = useState(trip.match?.dropoffId ?? '');
+  const [confirming, setConfirming] = useState(false);
   const stops = trip.itinerary.stops;
   const direction = trip.itinerary.direction;
   const canDrop = (access: string) => access === 'DROPOFF' || access === 'BOTH';
@@ -80,6 +81,7 @@ export function ReserveTrip({
   const selectedDropoffId = dropoffs.some((stop) => stop.id === dropoffId)
     ? dropoffId
     : dropoffs[0]?.id;
+  const dropoff = dropoffs.find((stop) => stop.id === selectedDropoffId);
   const send = useMutation({
     mutationFn: (body: ConfirmParticipationInput) =>
       api<ReservationView>(`/trips/${trip.id}/participations`, {
@@ -94,6 +96,8 @@ export function ReserveTrip({
       onConfirmed();
       void client.invalidateQueries({ queryKey: ['my-reservations'] });
       void client.invalidateQueries({ queryKey: ['available-trips'] });
+      void client.invalidateQueries({ queryKey: ['activity'] });
+      void client.invalidateQueries({ queryKey: ['agenda'] });
     },
   });
   const submit = () => {
@@ -103,39 +107,62 @@ export function ReserveTrip({
   if (send.isSuccess) return null;
   return (
     <View style={s.section}>
-      <Text style={s.title}>Selecciona el punto de encuentro</Text>
-      {pickups.map((stop) => (
-        <Choice
-          key={stop.id}
-          label={`Encuentro · ${stop.label}`}
-          checked={pickup?.id === stop.id}
-          onPress={() => setPickup(stop.id)}
-        />
-      ))}
-      <Text style={s.title}>Selecciona el descenso</Text>
-      {dropoffs.map((stop) => (
-        <Choice
-          key={stop.id}
-          label={`Descenso · ${stop.label}`}
-          checked={selectedDropoffId === stop.id}
-          onPress={() => setDropoff(stop.id)}
-        />
-      ))}
-      <Text style={s.text}>
-        La confirmación individual registra únicamente tu plaza.
-      </Text>
+      {pickup && <Text style={s.text}>Encuentro · {pickup.label}</Text>}
+      {pickups.length > 1 &&
+        pickups.map((stop) => (
+          <Choice
+            key={stop.id}
+            label={`Encuentro · ${stop.label}`}
+            checked={pickup?.id === stop.id}
+            onPress={() => setPickup(stop.id)}
+          />
+        ))}
+      {dropoffs.length > 1 ? (
+        <Text style={s.title}>Selecciona el descenso</Text>
+      ) : (
+        dropoff && <Text style={s.text}>Descenso · {dropoff.label}</Text>
+      )}
+      {dropoffs.length > 1 &&
+        dropoffs.map((stop) => (
+          <Choice
+            key={stop.id}
+            label={`Descenso · ${stop.label}`}
+            checked={selectedDropoffId === stop.id}
+            onPress={() => setDropoff(stop.id)}
+          />
+        ))}
+      {confirming && (
+        <>
+          <Text style={s.text}>
+            {pickup?.label} → {dropoff?.label}
+          </Text>
+          <EconomicTerms terms={trip.economics} />
+        </>
+      )}
       {send.error && (
         <Text accessibilityRole="alert" style={s.error}>
           {send.error.message}
         </Text>
       )}
       <Button
-        title={send.isPending ? 'Confirmando…' : 'Confirmar participación'}
+        title={
+          send.isPending
+            ? 'Confirmando…'
+            : confirming
+              ? 'Confirmar participación'
+              : 'Tomar viaje'
+        }
         disabled={send.isPending || !selectedDropoffId}
-        onPress={() => {
-          void submit();
-        }}
+        onPress={() => (confirming ? submit() : setConfirming(true))}
       />
+      {confirming && (
+        <Button
+          secondary
+          title="Volver"
+          disabled={send.isPending}
+          onPress={() => setConfirming(false)}
+        />
+      )}
       {groupCapacity >= 2 && pickup && (
         <GroupInvitationForm
           tripId={trip.id}

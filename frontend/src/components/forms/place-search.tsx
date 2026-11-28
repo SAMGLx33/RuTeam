@@ -17,9 +17,11 @@ const idle = { status: 'idle' } as const;
 export function PlaceSearch({
   title,
   onSelect,
+  inline = false,
 }: {
   title: string;
   onSelect: (place: GeocodedPlace) => void;
+  inline?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -62,15 +64,19 @@ export function PlaceSearch({
 
   return (
     <View style={styles.search}>
-      <Button
-        secondary
-        title={open ? `Cerrar búsqueda · ${title}` : `Buscar lugar · ${title}`}
-        onPress={() => {
-          if (open) cancel();
-          setOpen(!open);
-        }}
-      />
-      {open && (
+      {!inline && (
+        <Button
+          secondary
+          title={
+            open ? `Cerrar búsqueda · ${title}` : `Buscar lugar · ${title}`
+          }
+          onPress={() => {
+            if (open) cancel();
+            setOpen(!open);
+          }}
+        />
+      )}
+      {(inline || open) && (
         <>
           <Text style={s.text}>
             Escribe un barrio, dirección o referencia pública para consultar el

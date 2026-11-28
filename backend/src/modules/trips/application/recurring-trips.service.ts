@@ -102,6 +102,7 @@ export class RecurringTripsService {
       { ...template, itinerary: { ...itinerary, routingSelection, maneuvers } },
       unit,
     );
+    await this.trips.checkPublicationCampus(planned, unit);
     if (
       !routingSelection &&
       previous &&

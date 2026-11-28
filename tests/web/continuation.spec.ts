@@ -23,16 +23,14 @@ test('el conductor gestiona una recurrencia y abre sus historiales desde la nave
   ).toBeVisible();
 
   const [campuses, vehicles] = await Promise.all([
-    page.request.get(apiUrl + '/campus/meeting-points', {
+    page.request.get(apiUrl + '/campus/publication-point', {
       headers: webHeaders,
     }),
     page.request.get(apiUrl + '/vehicles', { headers: webHeaders }),
   ]);
   expect(campuses.ok()).toBe(true);
   expect(vehicles.ok()).toBe(true);
-  const campus = (await campuses.json()).find(
-    ({ kind }: { kind: string }) => kind === 'PLAZA',
-  );
+  const campus = await campuses.json();
   expect(campus).toBeDefined();
   const vehicle = (await vehicles.json())[0];
   const date = new Date(Date.now() + 60 * 86400000);
@@ -91,14 +89,13 @@ test('el conductor gestiona una recurrencia y abre sus historiales desde la nave
       page.getByRole('heading', { name: 'Editar recurrencia' }),
     ).toBeVisible();
     await expect(page.getByLabel('Nombre de la recurrencia')).toHaveValue(name);
-    await page.getByLabel('Hora Colombia (HH:mm)').fill('18:15');
-    const nextStep = page.getByRole('button', {
-      name: 'Continuar',
-      exact: true,
-    });
-    await nextStep.click();
-    await nextStep.click();
-    await page.getByRole('button', { name: 'Revisar viaje' }).click();
+    await page.getByRole('button', { name: /Hora de salida/ }).click();
+    await page.getByRole('button', { name: 'Horas 18', exact: true }).click();
+    await page.getByRole('button', { name: 'Minutos 15', exact: true }).click();
+    await page.getByRole('button', { name: 'Confirmar hora' }).click();
+    await page
+      .getByRole('button', { name: 'Usar itinerario declarado' })
+      .click();
     await page.getByRole('checkbox', { name: /Confirmo que la ruta/ }).click();
     await page.getByRole('button', { name: 'Guardar recurrencia' }).click();
     await expect(page.getByText(/Recurrencia guardada/)).toBeVisible();

@@ -200,29 +200,51 @@ test('dos cuentas ordinarias publican, encuentran y operan un viaje con document
     soatExpiresAt: license.expiresAt,
     verificationStatus: 'DECLARED',
   });
-  const campus = await db.campusDestination.findUniqueOrThrow({
+  const { body: campus } = await call(
+    'get',
+    '/campus/publication-point',
+    driver.token,
+  ).expect(200);
+  expect(campus).toMatchObject({
+    name: 'Ciudadela Pampalinda',
+    latitude: 3.403412,
+    longitude: -76.547719,
+  });
+  const other = await db.campusDestination.findUniqueOrThrow({
     where: { code: 'USC-DEMO-ENTRADA' },
   });
-  const { body: trip } = await call('post', '/trips', driver.token)
+  const publication = {
+    vehicleId: vehicle.id,
+    offeredSeats: 1,
+    departureAt: new Date(Date.now() + 50 * 60_000).toISOString(),
+    estimatedDurationMinutes: 35,
+    ruleIds: [],
+    itinerary: {
+      publicMeetingPoints: true,
+      description: 'Recorrido sintético de validación',
+      origin: { campusPointId: campus.id, label: 'Plazoleta de los Sabios' },
+      destination: {
+        label: 'Local público de prueba',
+        latitude: 3.45,
+        longitude: -76.51,
+      },
+      stops: [],
+    },
+  };
+  await call('post', '/trips', driver.token)
     .send({
-      vehicleId: vehicle.id,
-      offeredSeats: 1,
-      departureAt: new Date(Date.now() + 50 * 60_000).toISOString(),
-      estimatedDurationMinutes: 35,
-      ruleIds: [],
+      ...publication,
       itinerary: {
-        publicMeetingPoints: true,
-        description: 'Recorrido sintético de validación',
-        origin: { campusPointId: campus.id },
-        destination: {
-          label: 'Local público de prueba',
-          latitude: 3.45,
-          longitude: -76.51,
-          instructions: 'Acceso público',
-        },
-        stops: [],
+        ...publication.itinerary,
+        origin: { campusPointId: other.id },
       },
     })
+    .expect(400)
+    .expect(({ body }) =>
+      expect(body.message).toContain('Ciudadela Pampalinda'),
+    );
+  const { body: trip } = await call('post', '/trips', driver.token)
+    .send(publication)
     .expect(201);
   trips.add(trip.id);
   const root = '/trips/' + trip.id;

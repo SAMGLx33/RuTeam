@@ -15,4 +15,7 @@ export class CampusController {
   @Get('meeting-points') meetingPoints() {
     return this.campus.meetingPoints();
   }
+  @Get('publication-point') publicationPoint() {
+    return this.campus.publicationPoint();
+  }
 }

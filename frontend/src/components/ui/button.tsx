@@ -17,6 +17,7 @@ export function Button({
   secondary = false,
   loading = false,
   icon,
+  accessibilityLabel,
 }: {
   title: string;
   onPress: () => void;
@@ -24,6 +25,7 @@ export function Button({
   secondary?: boolean;
   loading?: boolean;
   icon?: IconName;
+  accessibilityLabel?: string;
 }) {
   const { palette } = useAppearance();
   const [focus, setFocus] = useState(false);
@@ -32,6 +34,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: inactive, busy: loading }}
       onPress={onPress}
       disabled={inactive}

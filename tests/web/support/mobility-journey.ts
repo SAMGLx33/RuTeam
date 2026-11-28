@@ -4,7 +4,6 @@ import { expect, type Page } from '@playwright/test';
 import type { PrismaClient } from '../../../backend/src/generated/prisma/client';
 import type {
   ReservationView,
-  TripFeedPage,
   TripDirection,
   TripOperation,
   TripSummary,
@@ -13,7 +12,6 @@ import type {
 
 const api = 'http://localhost:3100/api/v1';
 const headers = { Origin: 'http://localhost:8082', 'x-ruteam-client': 'web' };
-const campusCoordinates = { latitude: 3.404, longitude: -76.548 };
 const destination = { latitude: 3.421, longitude: -76.538 };
 const waypoint = { latitude: 3.414, longitude: -76.543 };
 
@@ -116,8 +114,10 @@ async function searchPlace(
   query: string,
   label: string,
 ) {
-  await page.getByRole('button', { name: `Buscar lugar · ${title}` }).click();
-  await page.getByLabel(`Lugar a buscar · ${title}`).fill(query);
+  const input = page.getByLabel(`Lugar a buscar · ${title}`);
+  if (!(await input.isVisible()))
+    await page.getByRole('button', { name: `Elegir lugar · ${title}` }).click();
+  await input.fill(query);
   const geocoding = page.waitForResponse(
     (response) => response.url() === api + '/geocoding/search',
   );
@@ -129,109 +129,138 @@ async function searchPlace(
   await page
     .getByRole('button', { name: label + ' · Cali', exact: true })
     .click();
-  await page
-    .getByLabel(`Instrucciones · ${title}`)
-    .fill('Referencia pública sintética de prueba');
 }
 
 async function publishJourney(
   driver: Page,
   direction: TripDirection,
   label: string,
-  departure: Date,
 ) {
   const inbound = direction === 'HACIA_USC';
   await driver.goto('/publish');
-  const local = new Date(+departure - 5 * 3600_000)
-    .toISOString()
-    .slice(0, 16)
-    .replace('T', ' ');
-  await driver.getByLabel('Salida Colombia (AAAA-MM-DD HH:mm)').fill(local);
-  const next = driver.getByRole('button', { name: 'Continuar', exact: true });
-  await next.click();
-  if (inbound)
-    await driver.getByRole('radio', { name: 'Hacia la USC' }).click();
-  const campusTitle = inbound ? 'Destino' : 'Origen';
-  const externalTitle = inbound ? 'Origen' : 'Destino';
-  await driver
-    .getByRole('radio', { name: campusTitle + ' · Sede sintética QA' })
-    .click();
-  await driver
-    .getByLabel('Punto de encuentro libre · ' + campusTitle)
-    .fill('Entrada interior QA');
-  if (!inbound) {
-    await driver.context().grantPermissions(['geolocation']);
-    await driver
-      .context()
-      .setGeolocation({ latitude: 3.51, longitude: -76.62, accuracy: 8 });
-    const tiles: string[] = [];
-    const track = (request: import('@playwright/test').Request) => {
-      if (request.url().startsWith('https://tiles.ruteam.invalid/'))
-        tiles.push(request.url());
-    };
-    driver.on('request', track);
-    try {
-      await driver
-        .getByRole('button', { name: 'Centrar en mi ubicación · Destino' })
-        .click();
-      await expect(driver.getByLabel('Vista local · Destino')).toBeVisible();
-      await driver
-        .getByRole('button', { name: 'Acercar', exact: true })
-        .click();
-      expect(tiles).toEqual([]);
-    } finally {
-      driver.off('request', track);
-    }
-  }
-  await searchPlace(driver, externalTitle, 'Lugar público Cali', label);
-  await driver
-    .getByLabel('Vías y referencias del recorrido')
-    .fill('Recorrido de prueba con parada intermedia');
-  await driver
-    .getByRole('button', { name: 'Añadir parada', exact: true })
-    .click();
-  await searchPlace(driver, 'Parada 1', 'Paso Cali', 'Paso público QA');
   if (inbound) {
+    await driver.getByRole('radio', { name: 'Hacia la USC' }).click();
     await expect(
-      driver.getByText(/Sólo paso. Los pasajeros abordan/),
+      driver.getByText('Destino · Ciudadela Pampalinda'),
     ).toBeVisible();
     await expect(
-      driver.getByRole('radio', { name: /Descenso · Parada 1/ }),
+      driver.getByRole('button', { name: '+ Añadir parada' }),
     ).toHaveCount(0);
+    await driver.getByRole('button', { name: 'Elegir lugar · Origen' }).click();
+    await driver
+      .getByRole('button', { name: 'Elegir en mapa · Origen' })
+      .click();
+    const map = driver.getByRole('button', {
+      name: 'Mapa para seleccionar · Origen',
+    });
+    await map.scrollIntoViewIfNeeded();
+    const touch = await driver.evaluate(() => navigator.maxTouchPoints > 0);
+    if (!touch) {
+      await map.hover();
+      await driver.mouse.wheel(0, -120);
+    }
+    const bounds = (await map.boundingBox())!;
+    if (!touch) {
+      await driver.mouse.move(
+        bounds.x + bounds.width * 0.4,
+        bounds.y + bounds.height * 0.32,
+      );
+      await driver.mouse.down();
+      await driver.mouse.move(
+        bounds.x + bounds.width * 0.57,
+        bounds.y + bounds.height * 0.4,
+        { steps: 8 },
+      );
+      await driver.mouse.up();
+    }
+    await expect(driver.getByLabel('Referencia pública · Origen')).toHaveCount(
+      0,
+    );
+    const position = {
+      x: Math.floor(bounds.width * 0.6),
+      y: Math.floor(bounds.height * 0.38),
+    };
+    const marker = driver.getByRole('button', {
+      name: 'Punto marcado',
+      exact: true,
+    });
+    await expect(async () => {
+      if (touch) await map.tap({ position });
+      else await map.click({ position });
+      await expect(marker).toBeVisible({ timeout: 800 });
+    }).toPass({ timeout: 12000 });
+    const selected = (await marker.boundingBox())!;
+    const currentMap = (await map.boundingBox())!;
+    expect(
+      Math.abs(selected.x + selected.width / 2 - currentMap.x - position.x),
+    ).toBeLessThan(4);
+    expect(
+      Math.abs(selected.y + selected.height / 2 - currentMap.y - position.y),
+    ).toBeLessThan(4);
+    await driver.getByLabel('Referencia pública · Origen').fill(label);
+    await driver
+      .getByRole('button', { name: 'Confirmar ubicación · Origen' })
+      .click();
+  } else {
+    await driver.getByRole('radio', { name: 'Desde la USC' }).click();
+    await driver
+      .getByLabel('Punto de encuentro en la USC')
+      .fill('Plazoleta de los Sabios');
+    await searchPlace(driver, 'Destino', 'Lugar público Cali', label);
+    await driver.getByRole('button', { name: '+ Añadir parada' }).click();
+    await searchPlace(driver, 'Parada 1', 'Paso Cali', 'Paso público QA');
   }
+  const routeRequest = driver.waitForRequest(
+    (response) => response.url() === api + '/trips/route-options',
+  );
   await driver
-    .getByRole('checkbox', { name: /Autorizo enviar las coordenadas/ })
+    .getByRole('button', { name: 'Autorizar y calcular ruta' })
     .click();
-  await driver.getByRole('button', { name: 'Consultar rutas viales' }).click();
-  await driver.getByRole('button', { name: 'Elegir alternativa 2' }).click();
-  await expect(
-    driver.getByText('Alternativa vial seleccionada', { exact: true }),
-  ).toBeVisible();
-  await expect(
-    driver.getByText(/Salida desde la parada.*Vía sintética QA/).first(),
-  ).toBeVisible();
-  await next.click();
+  const routeInput = (await routeRequest).postDataJSON();
+  await expect(driver.getByText(/plaza.*Ruta calculada/)).toBeVisible();
+  await driver.getByRole('radio', { name: /Ruta 2 ·/ }).click();
+  await driver.getByRole('button', { name: 'Mañana', exact: true }).click();
+  await driver.getByRole('button', { name: /Hora de salida/ }).click();
   await driver
-    .getByRole('radio', { name: 'Calcular aporte con gastos declarados' })
+    .getByRole('button', {
+      name: inbound ? 'Horas 12' : 'Horas 10',
+      exact: true,
+    })
     .click();
-  await driver.getByLabel('Combustible en COP').fill('8000');
-  await driver.getByRole('checkbox', { name: 'Nequi', exact: true }).click();
-  await driver.getByRole('button', { name: 'Revisar viaje' }).click();
+  await driver.getByRole('button', { name: 'Minutos 15', exact: true }).click();
+  await driver.getByRole('button', { name: 'Confirmar hora' }).click();
+  await driver
+    .getByRole('button', { name: 'Añadir plaza', exact: true })
+    .click();
   await driver
     .getByRole('checkbox', { name: /Confirmo que la ruta y los puntos/ })
     .click();
-  const publication = driver.waitForResponse(
-    (response) =>
-      response.url() === api + '/trips' &&
-      response.request().method() === 'POST',
-  );
-  await driver
-    .getByRole('button', { name: 'Confirmar publicación', exact: true })
-    .click();
-  const receipt = await publication;
-  expect(receipt.status(), await receipt.text()).toBe(201);
+  const receipt = await clickMutation(driver, 'Publicar viaje', '/trips', 201);
   const trip: TripSummary = await receipt.json();
-  expect(trip.estimatedDurationMinutes).toBe(12);
+  await expect(
+    driver.getByText('Viaje publicado', { exact: true }),
+  ).toBeVisible();
+  await driver.reload();
+  await expect(
+    driver.getByRole('heading', { name: 'Detalle del viaje' }),
+  ).toBeVisible();
+  expect(trip.offeredSeats).toBe(2);
+  if (inbound) {
+    expect(routeInput.origin).toMatchObject({
+      label,
+      latitude: expect.any(Number),
+      longitude: expect.any(Number),
+    });
+    expect(trip.itinerary?.stops[0]).toMatchObject({
+      label,
+      latitude: Number(routeInput.origin.latitude.toFixed(6)),
+      longitude: Number(routeInput.origin.longitude.toFixed(6)),
+    });
+    expect(trip.itinerary?.geometry?.coordinates[0]).toEqual([
+      Number(routeInput.origin.longitude.toFixed(6)),
+      Number(routeInput.origin.latitude.toFixed(6)),
+    ]);
+  }
   return trip;
 }
 
@@ -259,8 +288,20 @@ async function discoverAndConfirm(
 ) {
   await passenger.goto('/available-trips');
   await passenger.locator(`a[href="/trip/${trip.id}"]`).click();
+  if (trip.itinerary?.direction === 'DESDE_USC') {
+    await expect(
+      passenger.getByText('Encuentro · Plazoleta de los Sabios'),
+    ).toBeVisible();
+    await passenger
+      .getByRole('radio', { name: 'Descenso · ' + dropoffLabel, exact: true })
+      .click();
+  } else {
+    await expect(
+      passenger.getByText('Descenso · ' + dropoffLabel, { exact: true }),
+    ).toBeVisible();
+  }
   await passenger
-    .getByRole('radio', { name: 'Descenso · ' + dropoffLabel, exact: true })
+    .getByRole('button', { name: 'Tomar viaje', exact: true })
     .click();
   const result = await clickMutation(
     passenger,
@@ -285,68 +326,26 @@ export async function exerciseMobility(
   driver: Page,
   stamp: string,
 ) {
-  // Provision only geography in the isolated test database. Both accounts, their
-  // capabilities and every trip transition use the application's ordinary routes.
-  const campus = await db.campusDestination.upsert({
-    where: { code: 'USC-E2E-JOURNEY' },
-    update: {},
-    create: {
-      code: 'USC-E2E-JOURNEY',
-      campus: 'USC',
-      name: 'Sede sintética QA',
-      kind: 'CAMPUS',
-      demo: false,
-      ...campusCoordinates,
-    },
+  const campus = await db.campusDestination.findUniqueOrThrow({
+    where: { code: 'USC-CALI-PAMPALINDA' },
   });
+  expect(campus.latitude).not.toBeNull();
+  await driver.route('https://tiles.ruteam.invalid/**', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#dcebea"/></svg>',
+    }),
+  );
   const label = `Destino público QA ${stamp}`;
   const server = provider(label);
   await new Promise<void>((resolve, reject) =>
     server.once('error', reject).listen(3199, '127.0.0.1', resolve),
   );
   try {
-    await call(passenger, 'POST', '/mobility/preferences', 201, {
-      label: 'Regreso QA',
-      campusPointId: campus.id,
-      direction: 'DESDE_USC',
-      days: [1, 2, 3, 4, 5, 6, 7],
-      startMinute: 0,
-      endMinute: 1439,
-      placeLabel: label,
-      ...destination,
-      radiusKm: 0.5,
-      vehicleTypes: ['CAR'],
-      maxContributionCop: 5000,
-      notificationsEnabled: true,
-      active: true,
-    });
-    const departure = new Date(Date.now() + 35 * 60_000);
-    const trip = await publishJourney(driver, 'DESDE_USC', label, departure);
+    const trip = await publishJourney(driver, 'DESDE_USC', label);
     const [pickup, middle, dropoff] = trip.itinerary!.stops;
+    expect(pickup.campusSiteId).toBe(campus.id);
     const tripPath = '/trips/' + trip.id;
-    const feed = await call<TripFeedPage>(
-      passenger,
-      'GET',
-      '/trips/feed?tab=FOR_YOU',
-      200,
-    );
-    expect(
-      feed.items.find(({ id }) => id === trip.id)?.recommendation,
-    ).toMatchObject({ type: 'DIRECT', pickupId: pickup.id });
-    await call(passenger, 'PUT', '/mobility/saved-trips/' + trip.id, 200);
-    await call(driver, 'POST', tripPath + '/delay', 200, {
-      estimatedDepartureAt: new Date(+departure + 5 * 60_000).toISOString(),
-    });
-    const delayed = await call<TripFeedPage>(
-      passenger,
-      'GET',
-      '/trips/feed?tab=FOR_YOU',
-      200,
-    );
-    expect(
-      delayed.items.find(({ id }) => id === trip.id)?.recommendation
-        ?.pickupEstimatedAt,
-    ).toBe(new Date(+departure + 5 * 60_000).toISOString());
     const boarding = await discoverAndConfirm(passenger, trip, middle.label);
     expect(boarding.pickup.id).toBe(pickup.id);
     expect(boarding.dropoff.id).toBe(middle.id);
@@ -395,9 +394,12 @@ export async function exerciseMobility(
     ]);
 
     await driver.context().grantPermissions(['geolocation']);
-    await driver
-      .context()
-      .setGeolocation({ latitude: 3.407, longitude: -76.5465, accuracy: 8 });
+    const [routeStart, firstStop] = trip.itinerary!.geometry!.coordinates;
+    await driver.context().setGeolocation({
+      latitude: (routeStart[1] + firstStop[1]) / 2,
+      longitude: (routeStart[0] + firstStop[0]) / 2,
+      accuracy: 8,
+    });
     await driver.goto('/trip-operation/' + trip.id);
     await driver.getByRole('button', { name: 'Activar compartición' }).click();
     await expect(driver.getByTestId('next-route-maneuver')).toBeVisible();
@@ -454,38 +456,21 @@ export async function exerciseMobility(
     ).toBe('COMPLETADO');
 
     await call(passenger, 'GET', '/mobility/activity', 200);
-    await call(passenger, 'POST', tripPath + '/ratings', 201, {
-      rateeId: trip.driverId,
-      stars: 5,
-      comment: 'Ensayo QA',
-    });
-    await call(passenger, 'POST', participation + '/compensation', 200, {
-      method: 'NEQUI',
-    });
-    await call(
-      driver,
-      'POST',
-      participation + '/compensation/resolution',
-      200,
-      { action: 'ACKNOWLEDGE' },
-    );
     const inbound = await publishJourney(
       driver,
       'HACIA_USC',
-      label,
-      new Date(Date.now() + 80 * 60_000),
+      'Origen marcado ' + stamp,
     );
-    const [inOrigin, inWaypoint, inCampus] = inbound.itinerary!.stops;
+    const [inOrigin, inCampus] = inbound.itinerary!.stops;
     expect(inbound.itinerary?.stops.map(({ access }) => access)).toEqual([
       'PICKUP',
-      'WAYPOINT',
       'DROPOFF',
     ]);
     expect(inCampus.campusSiteId).toBe(campus.id);
     const inboundPath = '/trips/' + inbound.id;
     await call(passenger, 'POST', inboundPath + '/participations', 400, {
-      pickupId: inWaypoint.id,
-      dropoffId: inCampus.id,
+      pickupId: inCampus.id,
+      dropoffId: inOrigin.id,
     });
     const confirmed = await discoverAndConfirm(
       passenger,

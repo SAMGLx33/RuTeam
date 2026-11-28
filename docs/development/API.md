@@ -457,3 +457,17 @@ de opciones viales, publicación y participación aplican la misma regla.
 `POST /trips/:tripId/pickup-proposals` responde 409 y la decisión de aceptar
 una propuesta pendiente también responde 409. Se conservan la consulta de
 propuestas históricas, la decisión de rechazo y los datos operativos existentes.
+
+### Publicación rápida desde o hacia Pampalinda
+
+`GET /campus/publication-point` devuelve la referencia de Ciudadela
+Pampalinda para una sesión autorizada. Si faltan las coordenadas responde
+503 con la indicación de configurar el catálogo. El catálogo histórico sigue
+disponible por `GET /campus/meeting-points`.
+
+Las publicaciones nuevas, copias y ocurrencias de recurrencias requieren
+Pampalinda. Las sedes históricas se conservan para consultas y operación.
+El entorno de datos sintéticos mantiene sus registros DEMO. Para el encuentro
+en el campus, los clientes envían el identificador asignado y un nombre libre.
+En HACIA_USC la referencia interior puede omitirse. Una referencia externa
+requiere nombre y ubicación. Sus instrucciones son opcionales.

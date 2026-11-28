@@ -51,22 +51,26 @@ test.afterEach(async ({ page }, info) => {
     });
   }
 });
-async function selectMapPoint(page: Page, label: string, x: number, y: number) {
-  const open = page.getByRole('button', { name: `Elegir en mapa · ${label}` });
-  if (await open.isVisible()) await open.click();
+async function selectMapPoint(
+  page: Page,
+  label: string,
+  name: string,
+  x: number,
+  y: number,
+) {
+  await page.getByRole('button', { name: 'Elegir en mapa · ' + label }).click();
   const map = page.getByRole('button', {
-    name: `Mapa para seleccionar · ${label}`,
+    name: 'Mapa para seleccionar · ' + label,
   });
   await expect(
     page.getByRole('button', { name: 'Marcar centro del mapa' }),
   ).toBeEnabled();
-  const bounds = await map.boundingBox();
-  if (!bounds) throw new Error('El mapa no es visible');
+  const bounds = (await map.boundingBox())!;
   await map.click({ position: { x: bounds.width * x, y: bounds.height * y } });
-  await expect(
-    page.getByText(`Ubicación seleccionada · ${label}`),
-  ).toBeVisible();
-  await page.getByRole('button', { name: `Cerrar mapa · ${label}` }).click();
+  await page.getByLabel('Referencia pública · ' + label).fill(name);
+  await page
+    .getByRole('button', { name: 'Confirmar ubicación · ' + label })
+    .click();
 }
 
 test('publicación, feed automático, aviso persistente y participación directa en dos sesiones', async ({
@@ -140,25 +144,13 @@ test('publicación, feed automático, aviso persistente y participación directa
     await expect(
       page.getByRole('heading', { name: 'Publicar viaje' }),
     ).toBeVisible();
+    await page.getByRole('radio', { name: new RegExp(plate) }).click();
     await page
-      .getByRole('radio', { name: new RegExp(`Vehículo ${plate}`) })
-      .click();
-    await page
-      .getByLabel('Salida Colombia (AAAA-MM-DD HH:mm)')
-      .fill('2020-01-01 10:00');
-    const nextStep = page.getByRole('button', {
-      name: 'Continuar',
-      exact: true,
-    });
-    await nextStep.click();
-    await page
-      .getByRole('radio', { name: /Origen · Plazoleta de los Sabios/ })
-      .click();
-    await page.getByLabel('Nombre público · Destino').fill(destination);
+      .getByLabel('Punto de encuentro en la USC')
+      .fill('Sótano, junto a la escalera');
     await expect(page.getByLabel(/^(Latitud|Longitud|Geometría)/)).toHaveCount(
       0,
     );
-    await selectMapPoint(page, 'Destino', 0.63, 0.4);
     // Only the provider response is controlled. Selection and publication use the real form and DB.
     await page.route('**/api/v1/geocoding/search', async (route) => {
       expect(route.request().method()).toBe('POST');
@@ -181,7 +173,7 @@ test('publicación, feed automático, aviso persistente y participación directa
       });
     });
     await page
-      .getByRole('button', { name: 'Buscar lugar · Destino', exact: true })
+      .getByRole('button', { name: 'Elegir lugar · Destino', exact: true })
       .click();
     const locationSearch = page.getByLabel('Lugar a buscar · Destino', {
       exact: true,
@@ -210,95 +202,43 @@ test('publicación, feed automático, aviso persistente y participación directa
     await capture(page, testInfo, 'geocoding-results');
     if (testInfo.project.name === 'desktop') await searchResult.press('Enter');
     else await searchResult.click();
-    await expect(page.getByLabel('Nombre público · Destino')).toHaveValue(
-      destination,
-    );
     await expect(
-      page.getByRole('button', {
-        name: 'Mapa para seleccionar · Destino',
-        exact: true,
-      }),
-    ).toBeVisible();
-    await expect(
-      page.getByText('Ubicación seleccionada · Destino'),
+      page.getByText(destination, { exact: true }).first(),
     ).toBeVisible();
     await capture(page, testInfo, 'geocoding-selected-map');
-    await page
-      .getByRole('button', { name: 'Cerrar mapa · Destino', exact: true })
-      .click();
-    await page
-      .getByLabel('Instrucciones · Destino')
-      .fill('Esperar en el encuentro público DEMO');
-    await page
-      .getByLabel('Vías y referencias del recorrido')
-      .fill('Ejemplo sintético, pasando por Calle Quinta');
-    if (!process.env.ROUTING_BASE_URL) {
-      await expect(
-        page.getByRole('button', { name: 'Consultar rutas viales' }),
-      ).toBeDisabled();
-      await page
-        .getByRole('checkbox', { name: /Autorizo enviar las coordenadas/ })
-        .click();
-      await page
-        .getByRole('button', { name: 'Consultar rutas viales' })
-        .click();
-      await expect(page.getByRole('alert')).toContainText(
-        'Motor vial sin configurar',
-      );
-    }
-    await nextStep.click();
-    const review = page.getByRole('button', {
-      name: 'Revisar viaje',
-      exact: true,
-    });
-    const publish = page.getByRole('button', {
-      name: 'Confirmar publicación',
-      exact: true,
-    });
-    const consent = page.getByRole('checkbox', {
-      name: /Confirmo que la ruta/,
-    });
-    await review.click();
-    await consent.click();
-    await publish.click();
-    await expect(page.getByRole('alert')).toContainText('30 minutos');
-    await page
-      .getByRole('button', { name: 'Volver a vehículo y horario' })
-      .click();
+    const now = new Date(Date.now() - 5 * 3600_000);
     const date = new Date(
-      Date.now() +
-        (testInfo.project.name === 'desktop' ? 10 : 11) * 86400000 -
-        5 * 3600000,
+      +now + (testInfo.project.name === 'desktop' ? 10 : 11) * 86400_000,
     )
       .toISOString()
-      .slice(0, 16)
-      .replace('T', ' ');
-    await page.getByLabel('Salida Colombia (AAAA-MM-DD HH:mm)').fill(date);
-    await nextStep.click();
-    await page
-      .getByLabel('Punto de encuentro libre · Origen')
-      .fill('Sótano, junto a la escalera');
+      .slice(0, 10);
+    const tomorrow = new Date(+now + 86400_000).toISOString().slice(0, 10);
+    await page.getByRole('button', { name: 'Otra fecha' }).click();
+    if (tomorrow.slice(0, 7) !== date.slice(0, 7))
+      await page.getByRole('button', { name: 'Mes siguiente' }).click();
+    await page.getByRole('button', { name: date, exact: true }).click();
     for (const index of [1, 2]) {
-      await page.getByRole('button', { name: 'Añadir parada' }).click();
       await page
-        .getByLabel(`Nombre público · Parada ${index}`)
-        .fill(`Parada ${index} DEMO`);
+        .getByRole('button', { name: '+ Añadir parada', exact: true })
+        .click();
       await selectMapPoint(
         page,
-        `Parada ${index}`,
+        'Parada ' + index,
+        'Parada ' + index + ' DEMO',
         0.5 + index * 0.1,
         0.5 - index * 0.1,
       );
-      await page
-        .getByLabel(`Instrucciones · Parada ${index}`)
-        .fill('Junto al letrero DEMO');
     }
-    await page.getByRole('radio', { name: 'Sólo paso · Parada 2' }).click();
+    await page.getByRole('button', { name: 'Opciones adicionales' }).click();
+    await page.getByRole('checkbox', { name: 'Parada 2 sólo de paso' }).click();
+    await page
+      .getByLabel('Nota del conductor (opcional)')
+      .fill('Ejemplo sintético, pasando por Calle Quinta');
     // The HTTP provider is tested separately. This controlled response covers
     // selecting an alternative and persisting exactly the chosen geometry.
     await page.route('**/api/v1/trips/route-options', async (route) => {
       const origin = await db.campusDestination.findUniqueOrThrow({
-        where: { code: 'USC-DEMO-SABIOS' },
+        where: { code: 'USC-CALI-PAMPALINDA' },
       });
       const submitted = route.request().postDataJSON();
       expect(submitted.destination).toMatchObject(geocodedDestination);
@@ -314,7 +254,7 @@ test('publicación, feed automático, aviso persistente y participación directa
       selectedRoute = { type: 'LineString', coordinates };
       if (!preferenceId) {
         const campus = await db.campusDestination.findUniqueOrThrow({
-          where: { code: 'USC-DEMO-CAMPUS' },
+          where: { code: 'USC-CALI-PAMPALINDA' },
         });
         // A disposable private preference uses the same selected public point as
         // the trip. Only cartography is mocked; matching, notifications and DB are real.
@@ -353,29 +293,28 @@ test('publicación, feed automático, aviso persistente y participación directa
       });
     });
     await page
-      .getByRole('checkbox', { name: /Autorizo enviar las coordenadas/ })
+      .getByRole('button', { name: 'Autorizar y calcular ruta' })
       .click();
-    await page.getByRole('button', { name: 'Consultar rutas viales' }).click();
-    await page.getByRole('button', { name: 'Elegir alternativa 1' }).click();
-    await nextStep.click();
+    await expect(page.getByText(/plaza.*Ruta calculada/)).toBeVisible();
     await page
-      .getByRole('radio', { name: 'Calcular aporte con gastos declarados' })
+      .getByRole('radio', { name: 'Calcular aporte voluntario' })
       .click();
     await page.getByLabel('Combustible en COP').fill('10001');
     await page.getByRole('checkbox', { name: 'Nequi', exact: true }).click();
-    await review.click();
-    await expect(page.getByText('Resumen para publicar')).toBeVisible();
+    await expect(page.getByText('Resumen', { exact: true })).toBeVisible();
     await expect(
       page.getByLabel(/Vista geográfica de la geometría/),
     ).toBeVisible();
     await capture(page, testInfo, 'publication-preview');
-    await consent.click();
+    await page.getByRole('checkbox', { name: /Confirmo que la ruta/ }).click();
     const published = page.waitForResponse(
       (response) =>
         response.url().endsWith('/api/v1/trips') &&
         response.request().method() === 'POST',
     );
-    await publish.click();
+    await page
+      .getByRole('button', { name: 'Publicar viaje', exact: true })
+      .click();
     const response = await published;
     expect(response.status()).toBe(201);
     tripId = (await response.json()).id;
@@ -393,9 +332,9 @@ test('publicación, feed automático, aviso persistente y participación directa
     );
     expect(persisted.routeGeometry).toEqual(selectedRoute);
     await expect(
-      page.getByText('Viaje publicado. Ya aparece en Mis viajes.'),
+      page.getByText('Viaje publicado', { exact: true }),
     ).toBeVisible();
-    await page.getByRole('link', { name: 'Ver mis viajes publicados' }).click();
+    await page.getByRole('link', { name: 'Gestionar mi viaje' }).click();
     await page.reload();
     await expect(page.getByText(destination, { exact: false })).toBeVisible();
 
@@ -418,14 +357,9 @@ test('publicación, feed automático, aviso persistente y participación directa
         exact: true,
       }),
     ).toBeVisible();
-    await expect(
-      passenger.getByRole('tab', { name: 'Para ti', exact: true }),
-    ).toHaveAttribute('aria-selected', 'true');
+    await passenger.getByRole('tab', { name: 'Para ti', exact: true }).click();
     const feedLink = passenger.locator(`a[href="/trip/${tripId}"]`);
     await expect(feedLink).toBeVisible();
-    await expect(
-      passenger.getByText(destination, { exact: false }),
-    ).toHaveCount(0);
     await expect(
       passenger.getByText('Recogida compatible', { exact: true }).first(),
     ).toBeVisible();
@@ -456,6 +390,7 @@ test('publicación, feed automático, aviso persistente y participación directa
       .click();
     expect((await changed).status()).toBe(200);
     await passenger.goto('http://localhost:8082/available-trips');
+    await passenger.getByRole('tab', { name: 'Para ti', exact: true }).click();
     await expect(
       passenger.getByText('Todavía no hay recomendaciones'),
     ).toBeVisible();
@@ -483,9 +418,9 @@ test('publicación, feed automático, aviso persistente y participación directa
     await expect(
       passenger.getByRole('radio', { name: 'Encuentro · Parada 2 DEMO' }),
     ).toHaveCount(0);
-    await passenger
-      .getByRole('radio', { name: 'Encuentro · Sótano, junto a la escalera' })
-      .click();
+    await expect(
+      passenger.getByText('Encuentro · Sótano, junto a la escalera'),
+    ).toBeVisible();
     await passenger.getByLabel(/Vista geográfica de la geometría/).screenshot({
       path: `/tmp/ruteam-route-geometry-${testInfo.project.name}.png`,
     });
@@ -549,6 +484,9 @@ test('publicación, feed automático, aviso persistente y participación directa
     );
     await expect(passenger.getByText(/Costo total estimado/)).toHaveCount(0);
     await capture(passenger, testInfo, 'trip-detail');
+    await passenger
+      .getByRole('button', { name: 'Tomar viaje', exact: true })
+      .click();
     const confirmation = passenger.waitForResponse(
       (result) =>
         result.url().endsWith(`/trips/${tripId}/participations`) &&

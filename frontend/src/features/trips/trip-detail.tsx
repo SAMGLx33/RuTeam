@@ -187,7 +187,10 @@ function DetailContent({
 }
 
 export function TripDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, published } = useLocalSearchParams<{
+    id: string;
+    published?: string;
+  }>();
   const { user } = useSession();
   const trip = useQuery({
     queryKey: ['trip-detail', id, user?.id],
@@ -202,6 +205,11 @@ export function TripDetailScreen() {
   });
   return (
     <ProtectedPage title="Detalle del viaje">
+      {published === '1' && trip.data?.isDriver && (
+        <Text accessibilityLiveRegion="polite" style={s.title}>
+          Viaje publicado
+        </Text>
+      )}
       <Link href="/available-trips" style={s.link}>
         Volver a viajes disponibles
       </Link>
