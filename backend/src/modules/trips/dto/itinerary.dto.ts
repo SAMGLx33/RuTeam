@@ -142,9 +142,10 @@ export class ItineraryDto {
   @ArrayMaxSize(150)
   maneuvers?: RouteManeuver[];
 
-  @ApiProperty({ enum: [true] })
+  @ApiPropertyOptional({ enum: [true], deprecated: true })
+  @ValidateIf((_, value) => value !== undefined)
   @Equals(true)
-  publicMeetingPoints!: true;
+  publicMeetingPoints?: true;
 }
 
 export class RouteOptionsDto extends PickType(ItineraryDto, [

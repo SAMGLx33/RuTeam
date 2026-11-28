@@ -146,7 +146,7 @@ test.each([
     .send({ ...vehicleInput(), ...patch })
     .expect(400);
 });
-test('publica realmente PROGRAMADO con paradas ordenadas y DEFAULT sin ocupar cupos', async () => {
+test('publica realmente PROGRAMADO con paradas ordenadas, sin reglas seleccionadas ni cupos ocupados', async () => {
   const res = await call('post', '/trips').send(tripInput()).expect(201);
   tripIds.push(res.body.id);
   expect(res.body).toMatchObject({
@@ -157,7 +157,7 @@ test('publica realmente PROGRAMADO con paradas ordenadas y DEFAULT sin ocupar cu
     locationMode: 'DEMO',
   });
   expect(res.body.stops.map((stop) => stop.position)).toEqual([1, 2]);
-  expect(res.body.rules.map((rule) => rule.code)).toEqual(['DEFAULT']);
+  expect(res.body.rules).toEqual([]);
   expect(
     (
       await db.trip.findUniqueOrThrow({

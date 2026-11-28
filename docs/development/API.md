@@ -174,7 +174,7 @@ o ya fue revisada,400 si vencida. Usuario sinADMIN recibe403. No consulta SOAT/R
 
 PublishTripInput: vehicleId propio, destinationId USC activo, origin{label,latitude,longitude}
 (objeto, nunca array), departureAt>ahora+30min, estimatedDurationMinutes5..360 DEMO,
-offeredSeats1..capacidad, ruleIds[] válidos (DEFAULT si vacío), stops[]{position,label,lat,lon}
+offeredSeats1..capacidad, ruleIds[] válidos (vacío sin reglas), stops[]{position,label,lat,lon}
 con1..10 posiciones consecutivas (0paradas permitido), providesHelmet boolean obligatorio
 sólo moto. Nombres reales de coordenadas en origin/stops: latitude/longitude.
 Entrada destino externo/campo status/occupiedSeats/driverId inyectado rechazada400;
@@ -215,7 +215,7 @@ Corte local de `task/driver-defined-routes`. Contratos TypeScript en `packages/c
 | GET reservations/my                     | 200 hasta 50 solicitudes/reservas donde participa el actor, más recientes primero                                                                                             | Miembro del grupo                                |
 | POST trips/:tripId/transition           | `{ action: "START" \| "FINISH" \| "CANCEL" }` → 200 con `id`, `status`, `occupiedSeats`                                                                                       | Conductor propietario                            |
 
-Cada punto recibe `{campusPointId, instructions?}` o `{label, latitude, longitude, instructions, campusReference?}`. Para referencia interna personalizada, `campusReference` sólo permite `USC`. `itinerary` requiere `origin`, `destination`, `stops`, `description` y `publicMeetingPoints: true`. Cada intermedio incluye `access` (`PICKUP`, `DROPOFF`, `BOTH`, `WAYPOINT`). El orden del arreglo determina el de recorrido. `geometry` opcional recibe hasta 500 pares GeoJSON. El API valida la alineación con los puntos. `route-options` recibe únicamente `origin`, `destination`, `stops` y `publicMeetingPoints`. Ninguna sugerencia por sí sola modifica la publicación.
+Cada punto recibe `{campusPointId, label?, instructions?}` o `{label, latitude, longitude, instructions?}`. `itinerary` requiere `origin`, `destination`, `stops` y `description`. Cada intermedio incluye `access` (`PICKUP`, `DROPOFF`, `BOTH`, `WAYPOINT`). El orden del arreglo determina el recorrido. `geometry` opcional admite hasta 500 pares GeoJSON. La API valida su alineación con los puntos. `route-options` recibe `origin`, `destination`, `stops` y admite `direction`. El campo heredado `publicMeetingPoints: true` es opcional en ambos endpoints para clientes anteriores. La acción de cálculo informa al conductor del envío al motor vial.
 
 Los selectores `from`/`to` aceptan `USC`, UUID de punto institucional o `latitud,longitud`. Con coordenadas se exige radio explícito mayor que 0 y menor que 4 km. `after` es inclusivo, `before` exclusivo y la salida siempre futura. Cada resultado incluye su mejor par autorizado en orden de viaje, datos mínimos y geometría compartida. Orden de resultados por salida e ID. Límite de 20 coincidencias y hasta 200 candidatos por consulta. Si hay siguiente cursor, pueden quedar coincidencias aun con una página vacía.
 
@@ -461,9 +461,10 @@ propuestas históricas, la decisión de rechazo y los datos operativos existente
 ### Publicación rápida desde o hacia Pampalinda
 
 `GET /campus/publication-point` devuelve la referencia de Ciudadela
-Pampalinda para una sesión autorizada. Si faltan las coordenadas responde
-503 con la indicación de configurar el catálogo. El catálogo histórico sigue
-disponible por `GET /campus/meeting-points`.
+Pampalinda para una sesión autorizada. Al iniciar en `DECLARED_DOMAIN`, la API
+completa las coordenadas vacías del registro existente. Si la sede no está
+disponible, el endpoint responde 503. El catálogo histórico sigue disponible por
+`GET /campus/meeting-points`.
 
 Las publicaciones nuevas, copias y ocurrencias de recurrencias requieren
 Pampalinda. Las sedes históricas se conservan para consultas y operación.

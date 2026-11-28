@@ -306,7 +306,6 @@ test('publicación, feed automático, aviso persistente y participación directa
       page.getByLabel(/Vista geográfica de la geometría/),
     ).toBeVisible();
     await capture(page, testInfo, 'publication-preview');
-    await page.getByRole('checkbox', { name: /Confirmo que la ruta/ }).click();
     const published = page.waitForResponse(
       (response) =>
         response.url().endsWith('/api/v1/trips') &&

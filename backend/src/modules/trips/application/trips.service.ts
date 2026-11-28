@@ -265,8 +265,8 @@ export class ViajeService {
       now,
       end,
     );
-    const rules = await unit.rules(data.ruleIds);
-    if (rules.length !== (data.ruleIds.length || 1))
+    const rules = data.ruleIds.length ? await unit.rules(data.ruleIds) : [];
+    if (rules.length !== data.ruleIds.length)
       throw new BadRequestException('Reglas inexistentes o deshabilitadas');
     return {
       energy: snapshotEnergy(

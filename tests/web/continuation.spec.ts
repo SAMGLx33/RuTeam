@@ -96,7 +96,6 @@ test('el conductor gestiona una recurrencia y abre sus historiales desde la nave
     await page
       .getByRole('button', { name: 'Usar itinerario declarado' })
       .click();
-    await page.getByRole('checkbox', { name: /Confirmo que la ruta/ }).click();
     await page.getByRole('button', { name: 'Guardar recurrencia' }).click();
     await expect(page.getByText(/Recurrencia guardada/)).toBeVisible();
     await page

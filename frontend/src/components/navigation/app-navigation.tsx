@@ -1,8 +1,8 @@
 import { usePathname } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 import { Link, Text, View } from '../../theme/primitives';
 import { useAppearance } from '../../theme/appearance';
-import { colors, filledPrimary, radii } from '../../theme/tokens';
+import { colors, radii } from '../../theme/tokens';
 import { Icon, type IconName } from '../ui/icon';
 
 const sections = [
@@ -19,16 +19,13 @@ const sections = [
 
 export function Brand({ small = false }: { small?: boolean }) {
   return (
-    <View style={styles.identity}>
-      <View style={[styles.mark, small && styles.markSmall]}>
-        <Icon
-          name="git-merge"
-          color={colors.onPrimary}
-          size={small ? 18 : 23}
-        />
-      </View>
-      <Text style={[styles.brand, small && styles.brandSmall]}>RuTeam</Text>
-    </View>
+    <Image
+      source={require('../../../assets/branding/ruteam-logo.png')}
+      accessibilityLabel="RuTeam · Comparte el camino"
+      accessible
+      resizeMode="contain"
+      style={[styles.brand, small && styles.brandSmall]}
+    />
   );
 }
 
@@ -140,23 +137,8 @@ export function initials(name: string) {
 }
 
 const styles = StyleSheet.create({
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  mark: {
-    height: 42,
-    width: 42,
-    borderRadius: 12,
-    backgroundColor: filledPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markSmall: { height: 34, width: 34, borderRadius: 10 },
-  brand: {
-    color: colors.ink,
-    fontSize: 24,
-    letterSpacing: -0.75,
-    fontWeight: '900',
-  },
-  brandSmall: { fontSize: 20 },
+  brand: { width: 162, height: 54, borderRadius: 8 },
+  brandSmall: { width: 108, height: 36 },
   brandLink: { marginBottom: 28, paddingLeft: 6 },
   sidebar: {
     width: 222,

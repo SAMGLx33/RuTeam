@@ -360,7 +360,6 @@ export class RecurringTripsService {
           .slice(1, -1)
           .map((stop) => ({ ...point(stop), access: stop.access })),
         geometry: (source.routeGeometry as RouteGeometry | null) ?? undefined,
-        publicMeetingPoints: true as const,
       },
     };
     const planned = await planItinerary(template.itinerary, publication);

@@ -142,9 +142,7 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
       tx.campusDestination.findUnique({ where: { id } }),
     rules: (ids: string[]) =>
       tx.tripRuleDefinition.findMany({
-        where: ids.length
-          ? { id: { in: ids }, active: true }
-          : { code: 'DEFAULT', active: true },
+        where: { id: { in: ids }, active: true },
       }),
     overlaps: (start: Date, end: Date, excludedTripId?: string) =>
       hasActivityConflict(tx, driverId, { start, end }, excludedTripId),

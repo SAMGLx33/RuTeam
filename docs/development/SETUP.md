@@ -276,13 +276,15 @@ si se comparten alternativas firmadas. Consultar [mapas](MAP_EXPERIENCE.md).
 
 ### Referencia de publicación de Ciudadela Pampalinda
 
-Ejecuta el siguiente comando desde la raíz del repositorio.
+Con el esquema de PostgreSQL migrado, inicia la API y la web desde la raíz del
+repositorio en terminales separadas.
 
 ```bash
-node --env-file=.env scripts/configure-pampalinda.mjs
+npm run dev:api
+npm run dev:web
 ```
 
-El comando completa únicamente las coordenadas vacías de la fila activa
+Al iniciar en `DECLARED_DOMAIN`, NestJS completa las coordenadas vacías de la fila activa
 `USC-CALI-PAMPALINDA` y registra su fuente. Una segunda ejecución conserva
 la referencia existente. La USC identifica la sede en Calle 5 # 62-00. La
 ubicación pública aproximada de campus usada para el mapa es 3.403412,
@@ -294,6 +296,7 @@ Verifica la sede en `GET /campus/publication-point` con una sesión vigente.
 El catálogo de `GET /campus/meeting-points` sigue disponible para las
 funciones que usan varias sedes.
 
-Para una base aislada ya migrada, usa el mismo comando con `--test`.
-`npm run db:test:setup` lo aplica durante la preparación de la base de
-pruebas. El entorno oficial sigue exigiendo su política de acreditación.
+En un equipo con una base nueva, ejecuta `npm run db:migrate` antes de
+iniciar la API. La migración existente crea la identidad de la sede. El
+arranque académico completa su referencia tanto en desarrollo como en pruebas.
+El modo `OFFICIAL` mantiene su política de acreditación.

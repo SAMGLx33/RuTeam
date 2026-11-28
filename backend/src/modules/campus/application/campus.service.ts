@@ -1,4 +1,10 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  type OnApplicationBootstrap,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import { CampusRepository } from '../infrastructure/repositories/campus.repository.js';
 function meetingPoint(
   point: Awaited<ReturnType<CampusRepository['listActive']>>[number],
@@ -19,8 +25,15 @@ function meetingPoint(
   };
 }
 @Injectable()
-export class CampusService {
-  constructor(private readonly repository: CampusRepository) {}
+export class CampusService implements OnApplicationBootstrap {
+  constructor(
+    private readonly repository: CampusRepository,
+    @Inject(ENVIRONMENT) private readonly env: Environment,
+  ) {}
+  async onApplicationBootstrap() {
+    if (this.env.INSTITUTIONAL_ACCESS_MODE === 'DECLARED_DOMAIN')
+      await this.repository.completePublicationReference();
+  }
   async destinations() {
     return (await this.repository.listActive(true)).map((point) => ({
       ...point,
@@ -35,7 +48,7 @@ export class CampusService {
     const site = await this.repository.publicationPoint();
     if (site?.latitude == null || site.longitude == null)
       throw new ServiceUnavailableException(
-        'Falta configurar la referencia pública de Ciudadela Pampalinda. Contacta al responsable del entorno.',
+        'El servicio de publicación no pudo cargar Ciudadela Pampalinda.',
       );
     return meetingPoint(site);
   }

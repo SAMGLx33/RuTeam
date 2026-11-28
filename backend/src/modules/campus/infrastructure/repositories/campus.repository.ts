@@ -1,9 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
-import { pampalindaCode } from '../../domain/publication-campus.js';
+import {
+  pampalindaCode,
+  pampalindaReference,
+} from '../../domain/publication-campus.js';
 @Injectable()
 export class CampusRepository {
   constructor(private readonly db: PrismaService) {}
+  completePublicationReference() {
+    const { latitude, longitude, sourceUrl } = pampalindaReference;
+    return this.db.$executeRaw`
+      UPDATE "CampusDestination"
+      SET latitude = COALESCE(latitude, ${latitude}::numeric),
+          longitude = COALESCE(longitude, ${longitude}::numeric),
+          "sourceUrl" = ${sourceUrl}
+      WHERE code = ${pampalindaCode} AND campus = 'USC' AND kind = 'CAMPUS'
+        AND active AND NOT demo AND (latitude IS NULL OR longitude IS NULL)
+    `;
+  }
   publicationPoint() {
     return this.db.campusDestination.findFirst({
       where: {

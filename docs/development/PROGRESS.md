@@ -211,3 +211,11 @@ conductor presenta maniobras de la ruta firmada y avance GPS estimado.
 - 2026-11-28 — Incremento local de publicación en una pantalla,
   Pampalinda automática y confirmación breve en `task/trip-operations`.
   [Handoff de publicación y participación](../handoffs/2026-11-28_task-trip-operations_publicacion-rapida.md).
+
+- 2026-11-28 — Arranque académico con referencia automática de Pampalinda
+  e integración del logo adjunto en `task/trip-operations`.
+  [Handoff de Pampalinda automática](../handoffs/2026-11-28_task-trip-operations_pampalinda-automatica.md).
+
+- 2026-11-28 — Publicación académica con catálogo de reglas vacío y aviso de
+  visibilidad en la pantalla única.
+  [Handoff de publicación sin reglas](../handoffs/2026-11-28_task-trip-operations_publicar-sin-reglas.md).

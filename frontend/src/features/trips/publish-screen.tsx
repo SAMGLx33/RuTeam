@@ -250,7 +250,6 @@ function PublishForm({
   const [ruleIds, setRuleIds] = useState(template?.ruleIds ?? []);
   const [helmet, setHelmet] = useState(template?.providesHelmet ?? false);
   const [consent, setConsent] = useState(false);
-  const [publicPoints, setPublicPoints] = useState(false);
   const [manualKey, setManualKey] = useState<string>();
   const [refreshKey, setRefreshKey] = useState<string>();
   const [choice, setChoice] = useState<{ key: string; index: number }>();
@@ -353,7 +352,6 @@ function PublishForm({
     intermediate.length === visibleStops.length
       ? {
           direction: values.direction,
-          publicMeetingPoints: true,
           origin: fromUsc ? campusPoint : externalPoint,
           destination: fromUsc ? externalPoint : campusPoint,
           stops: intermediate,
@@ -499,7 +497,7 @@ function PublishForm({
     if (!vehicle) return setNotice('Selecciona un vehículo habilitado.');
     if (!campus || !geoCampus)
       return setNotice(
-        'Pampalinda necesita una referencia geográfica configurada.',
+        points.error?.message ?? 'Espera a que se cargue Ciudadela Pampalinda.',
       );
     if (fromUsc && interior.length < 2)
       return setNotice('Indica el punto de encuentro dentro de la USC.');
@@ -512,8 +510,6 @@ function PublishForm({
     if (!route) return setNotice('Completa o elimina la parada sin ubicación.');
     if (!alternative && !manual)
       return setNotice('Calcula una ruta o elige un itinerario declarado.');
-    if (!publicPoints)
-      return setNotice('Confirma que los puntos y la ruta son públicos.');
     const departureAt = values.departureAt.replace(' ', 'T') + ':00-05:00';
     if (!recurring && !hasDepartureWindow(departureAt))
       return setNotice(
@@ -589,16 +585,18 @@ function PublishForm({
           El marcador de la USC representa una referencia pública de Pampalinda.
         </Text>
       )}
-      {route && !consent && !alternative && !manual && (
+      {route && !consent && !manual && (
         <>
           <Text style={s.text}>
             Los puntos públicos se enviarán al motor vial para calcular el
             recorrido.
           </Text>
-          <Button
-            title="Autorizar y calcular ruta"
-            onPress={() => setConsent(true)}
-          />
+          {!alternative && (
+            <Button
+              title="Autorizar y calcular ruta"
+              onPress={() => setConsent(true)}
+            />
+          )}
         </>
       )}
       {routeQuery.isFetching && (
@@ -629,7 +627,7 @@ function PublishForm({
       {alternative && (
         <Button
           secondary
-          title="Cambiar ruta"
+          title={consent ? 'Cambiar ruta' : 'Autorizar y cambiar ruta'}
           onPress={() => {
             setConsent(true);
             setRefreshKey(key);
@@ -669,10 +667,7 @@ function PublishForm({
             <Button
               secondary
               title="Volver al cálculo vial"
-              onPress={() => {
-                setManualKey(undefined);
-                setConsent(true);
-              }}
+              onPress={() => setManualKey(undefined)}
             />
           </>
         ) : (
@@ -717,7 +712,9 @@ function PublishForm({
             </View>
             <Text style={s.title}>
               {fromUsc ? 'Origen' : 'Destino'} ·{' '}
-              {campus?.name ?? 'Ciudadela Pampalinda'}
+              {edited
+                ? (campus?.name ?? 'Ciudadela Pampalinda')
+                : 'USC Ciudadela Pampalinda'}
             </Text>
             {points.error && (
               <>
@@ -725,7 +722,7 @@ function PublishForm({
                   {points.error.message}
                 </Text>
                 <Button
-                  title="Reintentar sede"
+                  title="Volver a intentar"
                   secondary
                   onPress={() => void points.refetch()}
                 />
@@ -1088,12 +1085,10 @@ function PublishForm({
               <EconomicTerms terms={economicsPreview.data} />
             )}
             {!contribution && <Text style={s.text}>Viaje gratuito</Text>}
-            <Choice
-              checkbox
-              label="Confirmo que la ruta y los puntos son públicos"
-              checked={publicPoints}
-              onPress={() => setPublicPoints(!publicPoints)}
-            />
+            <Text style={s.text}>
+              Los puntos de encuentro y el recorrido serán visibles para los
+              usuarios autorizados.
+            </Text>
             {(notice || save.error) && (
               <Text accessibilityRole="alert" style={s.error}>
                 {notice || save.error?.message}

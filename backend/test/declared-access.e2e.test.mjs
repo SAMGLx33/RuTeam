@@ -71,9 +71,33 @@ beforeAll(async () => {
   const { createApp } = await import('../dist/src/bootstrap.js');
   const { PrismaService } =
     await import('../dist/src/infrastructure/prisma/prisma.service.js');
+  const where = { code: 'USC-CALI-PAMPALINDA' };
   app = await createApp();
-  await app.init();
   db = app.get(PrismaService);
+  await db.$connect();
+  const before = await db.campusDestination.update({
+    where,
+    data: { latitude: null, longitude: null },
+  });
+  expect(before).toMatchObject({ latitude: null, longitude: null });
+  const linked = { campusSiteId: before.id };
+  const relatedBefore = await db.tripStop.count({ where: linked });
+  await app.init();
+  const first = await db.campusDestination.findUniqueOrThrow({ where });
+  expect(first.id).toBe(before.id);
+  expect(Number(first.latitude)).toBe(3.403412);
+  expect(Number(first.longitude)).toBe(-76.547719);
+  const version = (client) => client.$queryRaw`
+    SELECT xmin::text AS version FROM "CampusDestination" WHERE code = ${where.code}
+  `;
+  const firstVersion = await version(db);
+  await app.close();
+  app = await createApp();
+  db = app.get(PrismaService);
+  await app.init();
+  expect(await version(db)).toEqual(firstVersion);
+  expect(await db.campusDestination.count({ where })).toBe(1);
+  expect(await db.tripStop.count({ where: linked })).toBe(relatedBefore);
 }, 15000);
 
 afterAll(async () => {
@@ -220,7 +244,6 @@ test('dos cuentas ordinarias publican, encuentran y operan un viaje con document
     estimatedDurationMinutes: 35,
     ruleIds: [],
     itinerary: {
-      publicMeetingPoints: true,
       description: 'Recorrido sintético de validación',
       origin: { campusPointId: campus.id, label: 'Plazoleta de los Sabios' },
       destination: {
@@ -231,6 +254,14 @@ test('dos cuentas ordinarias publican, encuentran y operan un viaje con document
       stops: [],
     },
   };
+  if (process.env.RUTEAM_EXPECT_NO_ACTIVE_RULES)
+    await call('get', '/trip-rules', driver.token).expect(200).expect([]);
+  await call('post', '/trips', driver.token)
+    .send({ ...publication, ruleIds: [randomUUID()] })
+    .expect(400)
+    .expect(({ body }) =>
+      expect(body.message).toContain('Reglas inexistentes o deshabilitadas'),
+    );
   await call('post', '/trips', driver.token)
     .send({
       ...publication,
@@ -247,6 +278,7 @@ test('dos cuentas ordinarias publican, encuentran y operan un viaje con document
     .send(publication)
     .expect(201);
   trips.add(trip.id);
+  expect(trip.rules).toEqual([]);
   const root = '/trips/' + trip.id;
   await call('get', '/trips/feed?tab=ALL', rider.token)
     .expect(200)
@@ -261,6 +293,41 @@ test('dos cuentas ordinarias publican, encuentran y operan un viaje con document
   )
     .send({ pickupId: pickup.id, dropoffId: dropoff.id })
     .expect(201);
+  expect(pickup.label).toBe('Plazoleta de los Sabios');
+  const { body: inbound } = await call('post', '/trips', driver.token)
+    .send({
+      ...publication,
+      departureAt: new Date(Date.now() + 4 * 3600_000).toISOString(),
+      itinerary: {
+        ...publication.itinerary,
+        direction: 'HACIA_USC',
+        origin: publication.itinerary.destination,
+        destination: { campusPointId: campus.id },
+      },
+    })
+    .expect(201);
+  trips.add(inbound.id);
+  const [external, usc] = inbound.itinerary.stops;
+  expect(usc.campusSiteId).toBe(campus.id);
+  await call('get', '/trips/feed?tab=ALL', rider.token)
+    .expect(200)
+    .expect(({ body }) =>
+      expect(body.items.map(({ id }) => id)).toContain(inbound.id),
+    );
+  await call('post', '/trips/' + inbound.id + '/participations', rider.token)
+    .send({ pickupId: external.id, dropoffId: usc.id })
+    .expect(201);
+  await call('get', '/trips/my', driver.token)
+    .expect(200)
+    .expect(({ body }) =>
+      expect(body.filter(({ id }) => trips.has(id))).toEqual(
+        expect.arrayContaining(
+          [trip.id, inbound.id].map((id) =>
+            expect.objectContaining({ id, occupiedSeats: 1 }),
+          ),
+        ),
+      ),
+    );
   await call('post', root + '/chat/messages', driver.token)
     .send({ clientMessageId: randomUUID(), body: 'Encuentro de prueba' })
     .expect(201);

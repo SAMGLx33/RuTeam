@@ -90,8 +90,8 @@ export interface ItineraryInput {
   geometry?: RouteGeometry;
   routingSelection?: string;
   maneuvers?: RouteManeuver[];
-  /** Confirma que paradas, geometría e instrucciones son apropiadas para compartir. */
-  publicMeetingPoints: true;
+  /** @deprecated Campo de compatibilidad con clientes anteriores. */
+  publicMeetingPoints?: true;
 }
 export interface RouteStop extends TripPoint {
   id: string;
