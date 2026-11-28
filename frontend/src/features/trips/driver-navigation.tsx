@@ -1,63 +1,20 @@
 import { useEffect, useState } from 'react';
-import type { RouteManeuver, TripOperation } from '@ruteam/contracts';
+import type { TripOperation } from '@ruteam/contracts';
+import { BottomSheet } from '../../components/ui/bottom-sheet';
 import { formStyles as s } from '../../components/ui/protected-page';
 import { Text, View } from '../../theme/primitives';
-import { RouteGeometryPreview, travelTime } from './route-preview';
+import {
+  maneuverInstruction,
+  RouteGeometryPreview,
+  travelTime,
+} from './route-preview';
 import type { NavigationEstimate, NavigationFix } from './route-progress';
 
 export interface DriverObservation {
   fix: NavigationFix;
+  receivedAt: number;
   estimate: NavigationEstimate | null;
   lastProjection: Extract<NavigationEstimate, { status: 'ON_ROUTE' }> | null;
-}
-
-const direction: Record<NonNullable<RouteManeuver['modifier']>, string> = {
-  LEFT: 'a la izquierda',
-  RIGHT: 'a la derecha',
-  SHARP_LEFT: 'cerrado a la izquierda',
-  SHARP_RIGHT: 'cerrado a la derecha',
-  SLIGHT_LEFT: 'ligeramente a la izquierda',
-  SLIGHT_RIGHT: 'ligeramente a la derecha',
-  STRAIGHT: 'recto',
-  UTURN: 'en retorno',
-};
-
-function instruction({
-  site,
-  movement,
-}: {
-  site: RouteManeuver['kind'];
-  movement: RouteManeuver['modifier'];
-}) {
-  const turn = movement ? ' ' + direction[movement] : '';
-  switch (site) {
-    case 'ARRIVE':
-      return 'Llegada prevista a la parada de la ruta';
-    case 'TURN':
-      return 'Gira' + turn;
-    case 'FORK':
-      return 'Bifurcación' + turn;
-    case 'END_OF_ROAD':
-      return 'Final de vía' + turn;
-    case 'MERGE':
-      return 'Incorporación' + turn;
-    case 'ON_RAMP':
-    case 'OFF_RAMP':
-    case 'RAMP':
-      return 'Ramal' + turn;
-    case 'ROUNDABOUT':
-    case 'ROUNDABOUT_TURN':
-    case 'ROTARY':
-      return 'Glorieta' + turn;
-    case 'EXIT_ROUNDABOUT':
-    case 'EXIT_ROTARY':
-      return 'Salida de glorieta' + turn;
-    case 'NEW_NAME':
-    case 'CONTINUE':
-      return 'Continúa' + turn;
-    default:
-      return 'Maniobra indicada por el motor vial';
-  }
 }
 
 export function DriverNavigation({
@@ -69,23 +26,41 @@ export function DriverNavigation({
 }) {
   const [clock, setClock] = useState(Date.now);
   const fix = observation?.fix;
-  useEffect(() => {
-    if (!fix) return;
-    const timer = setInterval(() => setClock(Date.now()), 5000);
-    return () => clearInterval(timer);
-  }, [fix?.timestamp, fix?.latitude, fix?.longitude, fix]);
-  const recent = !!fix && clock - fix.timestamp <= 30000;
+  const now = Math.max(clock, observation?.receivedAt ?? clock);
+  const recent =
+    !!fix &&
+    now - fix.timestamp <= 30000 &&
+    fix.timestamp - now <= 15000 &&
+    observation.estimate?.status !== 'STALE';
   const position =
     recent && fix.accuracy !== null && fix.accuracy <= 100 ? fix : undefined;
   const estimate = recent ? observation?.estimate : null;
   const next = row.progress.next;
-  const basis = row.startedAt ?? row.estimatedDepartureAt ?? row.departureAt;
-  const eta =
+  const publishedEta =
     next?.estimatedOffsetSeconds == null
       ? null
       : new Date(
-          Date.parse(basis) + next.estimatedOffsetSeconds * 1000,
+          Date.parse(row.departureAt) + next.estimatedOffsetSeconds * 1000,
         ).toISOString();
+  const projection = estimate?.status === 'ON_ROUTE' ? estimate : null;
+  const arrival = projection?.arrival;
+  const updatedEta =
+    projection && arrival && arrival.position === next?.position
+      ? projection.timestamp + arrival.remainingSeconds * 1000
+      : null;
+  const expiresAt = recent ? fix.timestamp + 30001 : null;
+  useEffect(() => {
+    if (expiresAt === null) return;
+    const deadline =
+      updatedEta && updatedEta > now
+        ? Math.min(expiresAt, updatedEta)
+        : expiresAt;
+    const timer = setTimeout(
+      () => setClock(Date.now()),
+      Math.max(0, deadline - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [expiresAt, updatedEta, now]);
   const orientation = position?.heading;
   const guidance = estimate?.status === 'ON_ROUTE' ? estimate.next : null;
   const status = !row.maneuvers?.length
@@ -108,10 +83,7 @@ export function DriverNavigation({
       <Text style={s.title}>Navegación del conductor</Text>
       {guidance && (
         <Text style={s.text} testID="next-route-maneuver">
-          {instruction({
-            site: guidance.maneuver.kind,
-            movement: guidance.maneuver.modifier,
-          })}
+          {maneuverInstruction(guidance.maneuver)}
           {guidance.maneuver.street ? ' · ' + guidance.maneuver.street : ''}
           {' · ~' + guidance.remainingMeters + ' m'}
         </Text>
@@ -121,6 +93,7 @@ export function DriverNavigation({
         geometry={row.itinerary.geometry}
         stops={row.itinerary.stops}
         observedPosition={position}
+        projectedPosition={projection?.projected}
         devicePosition
       />
       {position && (
@@ -134,15 +107,28 @@ export function DriverNavigation({
             : ''}
         </Text>
       )}
-      {estimate?.status === 'ON_ROUTE' && (
-        <Text style={s.text}>
-          Avance GPS estimado · {estimate.percent}% del recorrido
-        </Text>
-      )}
       {next && (
+        <BottomSheet
+          title="Próxima parada"
+          summary={<Text style={s.text}>{next.label}</Text>}
+        >
+          {publishedEta && (
+            <Text style={s.text}>
+              Hora publicada · {travelTime(publishedEta)}
+            </Text>
+          )}
+          <Text style={s.text}>
+            {updatedEta && updatedEta > now
+              ? 'ETA según posición y ruta · ' +
+                travelTime(new Date(updatedEta).toISOString())
+              : 'ETA GPS pendiente'}
+          </Text>
+        </BottomSheet>
+      )}
+      {projection && (
         <Text style={s.text}>
-          Próxima parada sin registrar · {next.label}
-          {eta ? ' · estimada ' + travelTime(eta) : ''}
+          Avance GPS estimado · {projection.percent}% ·{' '}
+          {projection.remainingMeters} m restantes
         </Text>
       )}
       <Text style={s.text}>

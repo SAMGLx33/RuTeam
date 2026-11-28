@@ -13,15 +13,19 @@ export function MeetingMapPicker({
   value,
   onSelect,
   initiallyOpen = false,
+  privateReference,
 }: {
   title: string;
   reference: Coordinates;
   value?: Coordinates;
   onSelect: (coordinates: Coordinates) => void;
   initiallyOpen?: boolean;
+  privateReference?: Coordinates;
 }) {
   const [open, setOpen] = useState(initiallyOpen);
-  if (!hasMapTiles())
+  const [publicView, setPublicView] = useState(false);
+  const showPrivate = !!privateReference && !publicView;
+  if (!showPrivate && !hasMapTiles())
     return (
       <Text style={s.text}>
         Mapa base no configurado. Puedes buscar el lugar por su nombre.
@@ -36,7 +40,35 @@ export function MeetingMapPicker({
         onPress={() => setOpen(!open)}
       />
       {value && <Text style={s.text}>Ubicación seleccionada · {title}</Text>}
-      {open && (
+      {open && showPrivate && (
+        <>
+          <MobilityMap
+            height={220}
+            label={`Vista local · ${title}`}
+            reference={privateReference}
+            markers={[
+              {
+                ...privateReference,
+                id: 'private-reference',
+                label: 'Referencia privada',
+                kind: 'current',
+              },
+            ]}
+            allowTiles={false}
+          />
+          <Text style={s.text}>
+            Vista local. Para marcar otro punto, usa el mapa público.
+          </Text>
+          {hasMapTiles() && (
+            <Button
+              title="Abrir mapa público"
+              secondary
+              onPress={() => setPublicView(true)}
+            />
+          )}
+        </>
+      )}
+      {open && !showPrivate && (
         <MobilityMap
           height={290}
           label={`Mapa para seleccionar · ${title}`}

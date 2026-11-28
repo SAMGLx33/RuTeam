@@ -76,13 +76,15 @@ function TripLocationContent({
   const observe = useCallback(
     (fix: NavigationFix | null) => {
       if (!fix) return setObservation(null);
+      const receivedAt = Date.now();
       setObservation((previous) => {
         const lastProjection = previous?.lastProjection ?? null;
         const estimate = model
-          ? estimateRouteProgress(model, fix, lastProjection, fix.timestamp)
+          ? estimateRouteProgress(model, fix, lastProjection, receivedAt)
           : null;
         return {
           fix,
+          receivedAt,
           estimate,
           lastProjection:
             estimate?.status === 'ON_ROUTE' ? estimate : lastProjection,

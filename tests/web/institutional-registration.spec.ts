@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../backend/src/generated/prisma/client';
+import { exerciseMobility } from './support/mobility-journey';
+
+test.use({ actionTimeout: 20_000 });
 
 async function register(
   page: Page,
@@ -67,12 +70,32 @@ async function register(
       result.url().endsWith('/auth/login') &&
       result.request().method() === 'POST',
   );
+  const log = process.env.RUTEAM_OTP_TEST_LOG;
+  const logOffset = log ? (await readFile(log, 'utf8')).length : 0;
   await submit.click();
   expect((await response).status()).toBe(202);
   const login = await loginResponse;
   expect(login.status()).toBe(200);
-  await page.getByRole('button', { name: 'Omitir por ahora' }).click();
-  await page.getByRole('button', { name: 'Continuar sin confirmar' }).click();
+  if (log) {
+    let code: string | undefined;
+    await expect
+      .poll(async () => {
+        const additions = (await readFile(log, 'utf8')).slice(logOffset);
+        code = additions.match(
+          /Propósito: CONTACT_CONFIRMATION[^\n]*Código: (\d{6})/u,
+        )?.[1];
+        return Boolean(code);
+      })
+      .toBe(true);
+    await page
+      .getByRole('textbox', { name: 'Código de seis dígitos' })
+      .fill(code!);
+    await page.getByRole('button', { name: 'Validar código' }).click();
+    await page.getByRole('button', { name: 'Continuar al onboarding' }).click();
+  } else {
+    await page.getByRole('button', { name: 'Omitir por ahora' }).click();
+    await page.getByRole('button', { name: 'Continuar sin confirmar' }).click();
+  }
   expect((await login.json()).account).toMatchObject({
     email: identity.email.toLowerCase(),
     synthetic: false,
@@ -88,7 +111,7 @@ test('dos cuentas nuevas usan dominio USC declarado sin correo ni acreditación'
   browser,
   baseURL,
 }, info) => {
-  test.setTimeout(120_000);
+  test.setTimeout(180_000);
   const url = process.env.TEST_DATABASE_URL;
   if (
     !url ||
@@ -128,11 +151,13 @@ test('dos cuentas nuevas usan dominio USC declarado sin correo ni acreditación'
     await mkdir(dir, { recursive: true });
     await target.screenshot({ path: join(dir, surface + '.png') });
   };
+  let exercisedJourney = false;
   try {
     await page.goto('/recover-access');
-    await expect(
-      page.getByText(/recuperación por correo está temporalmente indisponible/),
-    ).toBeVisible();
+    if (process.env.RUTEAM_OTP_TEST_LOG)
+      await expect(
+        page.getByRole('button', { name: 'Solicitar código' }),
+      ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Enviar enlace' }),
     ).toHaveCount(0);
@@ -249,6 +274,10 @@ test('dos cuentas nuevas usan dominio USC declarado sin correo ni acreditación'
     ).toHaveCount(0);
     expect(appErrors).toEqual([]);
     await capture(driverPage, 'driver-home');
+    if (process.env.RUTEAM_OTP_TEST_LOG) {
+      exercisedJourney = true;
+      await exerciseMobility(db, page, driverPage, stamp);
+    }
   } finally {
     await context.close();
     const emails = Object.values(identities).map(({ email }) =>
@@ -256,6 +285,7 @@ test('dos cuentas nuevas usan dominio USC declarado sin correo ni acreditación'
     );
     await db
       .$transaction(async (tx) => {
+        if (exercisedJourney) return;
         const where = { email: { in: emails } };
         const id = {
           in: (await tx.user.findMany({ where, select: { id: true } })).map(

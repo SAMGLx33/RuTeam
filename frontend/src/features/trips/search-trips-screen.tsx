@@ -19,6 +19,7 @@ import type {
   TripSearchPage,
 } from '@ruteam/contracts';
 import { Field } from '../../components/forms/field';
+import { caliCenter } from '../../components/maps/mercator';
 import { Button } from '../../components/ui/button';
 import {
   ProtectedPage,
@@ -149,6 +150,7 @@ export function SearchTripsScreen() {
   const [catalogFor, setCatalogFor] = useState<'from' | 'to'>();
   const [showNearby, setShowNearby] = useState(false);
   const [near, setNear] = useState<Coordinates>();
+  const [nearIsPrivate, setNearIsPrivate] = useState(false);
   const [radiusKm, setRadiusKm] = useState(0.5);
   const [confirmed, setConfirmed] = useState(false);
   const [selectedPoints, setSelectedPoints] = useState<
@@ -314,6 +316,7 @@ export function SearchTripsScreen() {
         onPress={() => {
           setShowNearby(!showNearby);
           setNear(undefined);
+          setNearIsPrivate(false);
         }}
       />
       {showNearby && (
@@ -323,21 +326,34 @@ export function SearchTripsScreen() {
             parada autorizada.
           </Text>
           <FrequentPlacePicker
-            onSelect={({ latitude, longitude }) =>
-              setNear({ latitude, longitude })
-            }
+            onSelect={({ latitude, longitude }) => {
+              setNear({ latitude, longitude });
+              setNearIsPrivate(true);
+            }}
           />
-          {reference?.latitude != null && reference.longitude != null && (
-            <MeetingMapPicker
-              title="Lugar de interés"
-              reference={{
-                latitude: reference.latitude,
-                longitude: reference.longitude,
-              }}
-              value={near}
-              onSelect={setNear}
-            />
-          )}
+          <MeetingMapPicker
+            title="Lugar de interés"
+            key={
+              near && nearIsPrivate
+                ? `private:${near.latitude}:${near.longitude}`
+                : 'public'
+            }
+            reference={
+              reference?.latitude != null && reference.longitude != null
+                ? {
+                    latitude: reference.latitude,
+                    longitude: reference.longitude,
+                  }
+                : caliCenter
+            }
+            privateReference={nearIsPrivate ? near : undefined}
+            value={nearIsPrivate ? undefined : near}
+            initiallyOpen={nearIsPrivate || !!near}
+            onSelect={(point) => {
+              setNear(point);
+              setNearIsPrivate(false);
+            }}
+          />
           {catalog.isPending && <Text>Cargando referencias del mapa…</Text>}
           {catalog.error && (
             <Text accessibilityRole="alert" style={s.error}>

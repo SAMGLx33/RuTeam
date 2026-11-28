@@ -23,6 +23,7 @@ import {
   type Coordinates,
 } from '../trips/meeting-map-picker';
 import { frequentPlacesPath, useFrequentPlaces } from './frequent-place-picker';
+import { caliCenter } from '../../components/maps/mercator';
 
 const labels: Record<FrequentPlaceKind, string> = {
   HOME_AREA: 'Zona cercana a casa',
@@ -47,7 +48,9 @@ function PlaceEditor({
     place?.kind ?? 'PUBLIC_REFERENCE',
   );
   const [point, setPoint] = useState<Coordinates | undefined>(place);
-  const [focus, setFocus] = useState<Coordinates | undefined>(place);
+  const [focus, setFocus] = useState<Coordinates>();
+  const [usePrivateView, setUsePrivateView] = useState(!!place);
+  const privateReference = usePrivateView ? point : undefined;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const campus = useQuery({
     queryKey: ['meeting-points'],
@@ -61,7 +64,7 @@ function PlaceEditor({
     focus ??
     (fallback?.latitude != null && fallback.longitude != null
       ? { latitude: fallback.latitude, longitude: fallback.longitude }
-      : undefined);
+      : caliCenter);
   const path = place ? `${frequentPlacesPath}/${place.id}` : frequentPlacesPath;
   const mutation = useMutation({
     mutationFn: (data: FrequentPlaceInput | null) =>
@@ -105,6 +108,7 @@ function PlaceEditor({
           setLabel(value);
           setPoint(position);
           setFocus(position);
+          setUsePrivateView(false);
         }}
       />
       <Text style={accountStyles.label}>Referencia de ubicación</Text>
@@ -116,16 +120,22 @@ function PlaceEditor({
         maxLength={160}
         placeholder="Parque del barrio"
       />
-      {reference && (
-        <MeetingMapPicker
-          title="Lugar habitual"
-          key={`${reference.latitude}:${reference.longitude}`}
-          reference={reference}
-          value={point}
-          initiallyOpen={!!focus}
-          onSelect={setPoint}
-        />
-      )}
+      <MeetingMapPicker
+        title="Lugar habitual"
+        key={
+          privateReference
+            ? 'private'
+            : `${reference.latitude}:${reference.longitude}`
+        }
+        reference={reference}
+        privateReference={privateReference}
+        value={usePrivateView ? undefined : point}
+        initiallyOpen={!!point}
+        onSelect={(position) => {
+          setPoint(position);
+          setUsePrivateView(false);
+        }}
+      />
       {campus.error && !focus && (
         <Text style={s.error} accessibilityRole="alert">
           {campus.error.message}

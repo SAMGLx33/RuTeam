@@ -11,6 +11,7 @@ import type {
   VehicleType,
 } from '@ruteam/contracts';
 import { PlaceSearch } from '../../components/forms/place-search';
+import { caliCenter } from '../../components/maps/mercator';
 import { accountStyles } from '../../components/ui/account-page';
 import { Button } from '../../components/ui/button';
 import {
@@ -85,8 +86,9 @@ function PreferenceEditor({
       : undefined,
   );
   const [mapOpen, setMapOpen] = useState(false);
+  const [usePrivateView, setUsePrivateView] = useState(!!coordinates);
   const [searchFocus, setSearchFocus] = useState<Coordinates>();
-  const mapReference = searchFocus ?? reference;
+  const privateReference = usePrivateView ? coordinates : undefined;
   const [remove, setRemove] = useState(false);
   const startMinute = minutes(start);
   const endMinute = minutes(end);
@@ -171,7 +173,8 @@ function PreferenceEditor({
         onSelect={({ latitude, longitude, placeLabel }) => {
           setPlace(placeLabel);
           setCoordinates({ latitude, longitude });
-          setSearchFocus({ latitude, longitude });
+          setUsePrivateView(true);
+          setMapOpen(true);
         }}
       />
       <PlaceSearch
@@ -181,6 +184,7 @@ function PreferenceEditor({
           setPlace(name);
           setCoordinates(position);
           setSearchFocus(position);
+          setUsePrivateView(false);
           setMapOpen(true);
         }}
       />
@@ -189,23 +193,26 @@ function PreferenceEditor({
         secondary
         onPress={() => setMapOpen(!mapOpen)}
       />
-      {mapOpen &&
-        (mapReference ? (
-          <MeetingMapPicker
-            title="Zona habitual"
-            key={
-              searchFocus
+      {mapOpen && (
+        <MeetingMapPicker
+          title="Zona habitual"
+          key={
+            privateReference
+              ? `private:${privateReference.latitude}:${privateReference.longitude}`
+              : searchFocus
                 ? `${searchFocus.latitude}:${searchFocus.longitude}`
                 : 'default'
-            }
-            reference={mapReference}
-            value={coordinates}
-            initiallyOpen={!!searchFocus}
-            onSelect={setCoordinates}
-          />
-        ) : (
-          <Text style={s.text}>El mapa no está disponible para esta zona.</Text>
-        ))}
+          }
+          reference={searchFocus ?? reference ?? caliCenter}
+          privateReference={privateReference}
+          value={usePrivateView ? undefined : coordinates}
+          initiallyOpen={!!(searchFocus || privateReference)}
+          onSelect={(point) => {
+            setCoordinates(point);
+            setUsePrivateView(false);
+          }}
+        />
+      )}
       {!!coordinates && (
         <Button
           title="Quitar marcador"

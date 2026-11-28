@@ -58,3 +58,31 @@ Las bases usadas para ese ensayo con datos públicos fueron
 `ROUTING_BASE_URL=https://routing.openstreetmap.de/routed-car` y la plantilla
 `https://tile.openstreetmap.org/{z}/{x}/{y}.png`. Las políticas del proveedor
 rigen su uso y estas bases se probaron sólo en el proceso de validación.
+
+## Continuidad del 28/11
+
+La publicación muestra las alternativas con sus paradas, distancias, duraciones
+e indicaciones de OSRM. La alternativa seleccionada sigue visible al volver al
+paso del recorrido. Si cambian los puntos o su orden, el asistente pide una
+selección vigente. Los encuentros interiores se marcan con la referencia
+geográfica autorizada que ya tenga el catálogo. En el entorno habitual,
+Pampalinda, Sede Centro y Palmira están registradas sin coordenadas autorizadas.
+
+Los controles de GPS y de lugares habituales abren una vista local. El mapa
+público se abre por separado y empieza desde una referencia pública. Si una
+cámara deriva de una posición privada, conserva la protección al pausar el
+seguimiento o caducar la muestra. Ajustar al recorrido recupera su encuadre.
+
+La navegación distingue la observación de la proyección estimada. El ETA de
+posición usa el tiempo restante de las maniobras firmadas cuando la proyección
+es reciente y corresponde a la próxima parada operativa. La hora publicada
+sigue visible como referencia. La estimación no registra llegadas ni altera
+la ruta o el estado de las participaciones.
+
+En una consulta pública limitada, Photon encontró el Parque del Perro y el
+Estadio Olímpico Pascual Guerrero en Cali. OSRM devolvió una ruta de 1.435,7 m,
+199,5 s, 42 puntos y nueve maniobras. La tesela XYZ solicitada respondió 200
+con PNG de 256 × 256 y cabeceras de caché.
+[Photon](https://github.com/komoot/photon) ·
+[FOSSGIS](https://routing.openstreetmap.de/about.html) ·
+[OpenStreetMap](https://operations.osmfoundation.org/policies/tiles/).

@@ -12,10 +12,10 @@ function touchDistance(
 
 export function createMapGestures(
   initial: Camera,
-  onMove: (camera: Camera) => void,
+  onMove: (camera: Camera, privateViewport: boolean) => void,
 ) {
-  let current = initial;
-  let start: { camera: Camera; distance: number } | null = null;
+  let current = { camera: initial, privateViewport: false };
+  let start: (typeof current & { distance: number }) | null = null;
   let moved = false;
   const responder = PanResponder.create({
     onMoveShouldSetPanResponder: (event, state) =>
@@ -24,7 +24,7 @@ export function createMapGestures(
       Math.abs(state.dy) > 7,
     onPanResponderGrant: (event) => {
       start = {
-        camera: current,
+        ...current,
         distance: touchDistance(event.nativeEvent.touches),
       };
       moved = true;
@@ -43,13 +43,16 @@ export function createMapGestures(
             )
           : start.camera.zoom;
       const pixels = 2 ** zoom * tileSize;
-      onMove({
-        zoom,
-        center: {
-          x: clamp(start.camera.center.x - movement.dx / pixels, 0, 1),
-          y: clamp(start.camera.center.y - movement.dy / pixels, 0, 1),
+      onMove(
+        {
+          zoom,
+          center: {
+            x: clamp(start.camera.center.x - movement.dx / pixels, 0, 1),
+            y: clamp(start.camera.center.y - movement.dy / pixels, 0, 1),
+          },
         },
-      });
+        start.privateViewport,
+      );
     },
     onPanResponderRelease: () => {
       start = null;
@@ -60,8 +63,8 @@ export function createMapGestures(
   });
   return {
     panHandlers: responder.panHandlers,
-    setActive(camera: Camera) {
-      current = camera;
+    setActive(camera: Camera, privateViewport: boolean) {
+      current = { camera, privateViewport };
     },
     resetDrag() {
       moved = false;

@@ -197,3 +197,8 @@ conductor presenta maniobras de la ruta firmada y avance GPS estimado.
 
 - [Integración de producto](PRODUCT_INTEGRATION.md)
 - [Handoff y pruebas](../handoffs/2026-11-27_trip-operations_integracion-producto.md)
+
+- 2026-11-28 — Continuidad local de cartografía y operación en
+  `task/trip-operations`. Selección vial, cámara privada, ETA por maniobras,
+  coincidencia tras demora y chat durante reconexión.
+  [Handoff de cartografía y operación](../handoffs/2026-11-28_task-trip-operations_cartografia-y-operacion.md).

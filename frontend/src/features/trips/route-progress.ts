@@ -19,8 +19,14 @@ type Segment = {
   latitudeDelta: number;
   startMeters: number;
   lengthMeters: number;
+  startSeconds: number;
+  durationSeconds: number;
 };
-type Guidance = { maneuver: RouteManeuver; atMeters: number };
+type Guidance = {
+  maneuver: RouteManeuver;
+  atMeters: number;
+  atSeconds: number;
+};
 
 type Navigation = {
   segments: Segment[];
@@ -35,7 +41,10 @@ export type NavigationEstimate =
       meters: number;
       percent: number;
       timestamp: number;
+      projected: Coordinate;
+      remainingMeters: number;
       next: { maneuver: RouteManeuver; remainingMeters: number } | null;
+      arrival: { position: number; remainingSeconds: number } | null;
     };
 type OnRoute = Extract<NavigationEstimate, { status: 'ON_ROUTE' }>;
 const metersPerDegree = 111195;
@@ -54,29 +63,40 @@ export function prepareNavigation(
   const segments: Segment[] = [];
   const guidance: Guidance[] = [];
   let totalMeters = 0;
+  let totalSeconds = 0;
   for (const maneuver of maneuvers) {
-    guidance.push({ maneuver, atMeters: totalMeters });
+    guidance.push({
+      maneuver,
+      atMeters: totalMeters,
+      atSeconds: totalSeconds,
+    });
     const points = maneuver.geometry.coordinates;
     const lengths = points
       .slice(1)
       .map((to, index) => lengthBetween(points[index], to));
     const segmentSum = lengths.reduce((sum, length) => sum + length, 0);
     let startMeters = totalMeters;
+    let startSeconds = totalSeconds;
     for (const [index, length] of lengths.entries()) {
       if (!length || !maneuver.distanceMeters) continue;
       const from = points[index];
       const to = points[index + 1];
       const lengthMeters = (length * maneuver.distanceMeters) / segmentSum;
+      const durationSeconds = (length * maneuver.durationSeconds) / segmentSum;
       segments.push({
         from,
         longitudeDelta: to[0] - from[0],
         latitudeDelta: to[1] - from[1],
         startMeters,
         lengthMeters,
+        startSeconds,
+        durationSeconds,
       });
       startMeters += lengthMeters;
+      startSeconds += durationSeconds;
     }
     totalMeters += maneuver.distanceMeters;
+    totalSeconds += maneuver.durationSeconds;
   }
   return { guidance, segments, totalMeters };
 }
@@ -93,6 +113,11 @@ function project(segment: Segment, fix: NavigationFix) {
   );
   return {
     meters: segment.startMeters + segment.lengthMeters * fraction,
+    seconds: segment.startSeconds + segment.durationSeconds * fraction,
+    projected: {
+      longitude: segment.from[0] + segment.longitudeDelta * fraction,
+      latitude: segment.from[1] + segment.latitudeDelta * fraction,
+    },
     distance:
       Math.hypot(x - dx * fraction, y - dy * fraction) * metersPerDegree,
     heading: (Math.atan2(dx, dy) / radians + 360) % 360,
@@ -105,7 +130,8 @@ export function estimateRouteProgress(
   prior: OnRoute | null,
   now: number,
 ): NavigationEstimate {
-  if (now - fix.timestamp > 30000) return { status: 'STALE' };
+  if (now - fix.timestamp > 30000 || fix.timestamp - now > 15000)
+    return { status: 'STALE' };
   const { accuracy, heading, speed } = fix;
   if (accuracy === null || accuracy > 65) return { status: 'IMPRECISE' };
 
@@ -153,16 +179,32 @@ export function estimateRouteProgress(
     ({ atMeters, maneuver }) =>
       maneuver.kind !== 'DEPART' && atMeters >= best.meters - 5,
   );
+  const arrival = navigation.guidance.find(
+    ({ atMeters, maneuver }) =>
+      maneuver.kind === 'ARRIVE' && atMeters > best.meters + accuracy,
+  );
+  const remainingSeconds = arrival
+    ? Math.ceil(arrival.atSeconds - best.seconds)
+    : 0;
   return {
     status: 'ON_ROUTE',
     meters: best.meters,
     percent: Math.round((best.meters / navigation.totalMeters) * 100),
     timestamp: fix.timestamp,
+    projected: best.projected,
+    remainingMeters: Math.max(
+      0,
+      Math.round(navigation.totalMeters - best.meters),
+    ),
     next: next
       ? {
           maneuver: next.maneuver,
           remainingMeters: Math.max(0, Math.round(next.atMeters - best.meters)),
         }
       : null,
+    arrival:
+      arrival?.maneuver.stopPosition != null && remainingSeconds > 0
+        ? { position: arrival.maneuver.stopPosition, remainingSeconds }
+        : null,
   };
 }

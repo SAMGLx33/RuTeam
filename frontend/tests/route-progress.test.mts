@@ -109,3 +109,26 @@ test('caducidad, precisión insuficiente y separación de la ruta tienen estados
     'OFF_ROUTE',
   );
 });
+
+test('una proyección fiable estima distancia y tiempo restante a la parada firmada', () => {
+  const arrival: RouteManeuver = {
+    ...steps[0],
+    order: 1,
+    kind: 'ARRIVE',
+    stopPosition: 1,
+    distanceMeters: 0,
+    durationSeconds: 0,
+  };
+  const model = prepareNavigation([steps[0], arrival]);
+  const estimate = estimateRouteProgress(
+    model,
+    { ...fix, latitude: 0.00002 },
+    null,
+    clock,
+  );
+  assert.equal(estimate.status, 'ON_ROUTE');
+  if (estimate.status !== 'ON_ROUTE') return;
+  assert.deepEqual(estimate.projected, { latitude: 0, longitude: 0 });
+  assert.equal(estimate.remainingMeters, 110);
+  assert.deepEqual(estimate.arrival, { position: 1, remainingSeconds: 15 });
+});

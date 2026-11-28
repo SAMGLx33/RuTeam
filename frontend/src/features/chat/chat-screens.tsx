@@ -188,6 +188,7 @@ function ChatRoom({
   scrollRef: RefObject<ScrollView | null>;
 }) {
   const client = useQueryClient();
+  const { connection } = useSession();
   const { reducedMotion } = useAppearance();
   const historyKey = ['chat', userId, tripId];
   const endpoint = `/trips/${encodeURIComponent(tripId)}/chat`;
@@ -230,6 +231,10 @@ function ChatRoom({
     },
   });
   const current = history.data;
+  const refreshFailed =
+    history.error instanceof ApiError &&
+    (history.error.status === 0 || history.error.status >= 500);
+  const stale = connection !== 'available' || refreshFailed;
   const newest = current?.messages[0]?.id;
   const resultRecovered =
     send.error instanceof ApiError &&
@@ -248,7 +253,7 @@ function ChatRoom({
     );
     return () => cancelAnimationFrame(frame);
   }, [newest, reducedMotion, scrollRef]);
-  if (history.error)
+  if (history.error && (!current || !refreshFailed))
     return (
       <Text accessibilityRole="alert" style={s.error}>
         {history.error.message}
@@ -282,12 +287,18 @@ function ChatRoom({
         )}
       </View>
       <View style={[s.section, styles.messages]}>
+        {stale && (
+          <Text accessibilityLiveRegion="polite" style={s.text}>
+            {connection === 'lost' ? 'Sin conexión.' : 'Reconectando…'} Se
+            muestran los últimos mensajes recibidos.
+          </Text>
+        )}
         {cursor && (
           <View style={styles.centered}>
             <Button
               title="Cargar mensajes anteriores"
               secondary
-              disabled={loadOlder.isPending}
+              disabled={loadOlder.isPending || stale}
               onPress={() => loadOlder.mutate(cursor)}
             />
           </View>
@@ -339,7 +350,7 @@ function ChatRoom({
           <Button
             title="Marcar conversación como leída"
             secondary
-            disabled={read.isPending}
+            disabled={read.isPending || stale}
             onPress={() => read.mutate(current.messages[0].id)}
           />
         </View>
@@ -369,7 +380,7 @@ function ChatRoom({
             }
             loading={send.isPending}
             icon="send"
-            disabled={!draft.trim() || send.isPending}
+            disabled={!draft.trim() || send.isPending || stale}
             onPress={() => {
               const text = draft.trim();
               const input =

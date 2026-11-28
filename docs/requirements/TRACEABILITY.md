@@ -259,3 +259,16 @@ Pruebas y límites en [preparación de entrega](../reviews/RELEASE_READINESS.md#
 | RF-001, RF-002, RF-016 | Dominio exacto, alta concurrente, dos cuentas ordinarias, estado separado y protección frente a enlaces tardíos. `declared-access.e2e` e `institutional-registration.spec`. |
 | RF-003, RF-013, RF-024 | Conducción académica condicionada a titularidad, licencia, SOAT y vigencias. `declared-access.e2e` y `phase2.e2e`.                                                          |
 | RF-015, RF-018         | Maniobras firmadas, vínculo con geometría y avance aproximado. `osrm-routing.test`, `routing-selections.test`, `campus-timing.e2e`, `route-progress.test`.                  |
+
+### Continuidad de cartografía y operación
+
+- RF-003 y RF-015. Las alternativas del asistente conservan paradas, orden e
+  indicaciones firmadas. `publication.spec` y `institutional-registration.spec`
+  documentan disposición, selección y publicación desde web.
+- RF-005 y RF-006. La hora de salida estimada se aplica a la coincidencia de
+  preferencias. El recorrido de dos cuentas comprueba recomendación directa
+  y confirmación transaccional.
+- RF-018 y RNF-033. `route-progress.test` comprueba ambigüedad, caducidad y
+  tiempo restante. El recorrido de dos cuentas incluye vista privada de mapa
+  y revocación de ubicación tras el descenso. El dispositivo físico sigue
+  pendiente.

@@ -57,7 +57,8 @@ import {
   expenseConcepts,
   methodLabel,
 } from '../expenses/economic-terms';
-import { RoutePreview } from './route-preview';
+import { maneuverInstruction, RoutePreview } from './route-preview';
+import { BottomSheet } from '../../components/ui/bottom-sheet';
 import {
   PublishProgress,
   PublishSummary,
@@ -67,6 +68,10 @@ import {
 } from './publish-wizard';
 
 type Draft = PublishTripInput;
+type PreviewAlternative = Pick<RouteOption, 'geometry' | 'durationMinutes'> &
+  Partial<
+    Pick<RouteOption, 'routingSelection' | 'maneuvers' | 'distanceMeters'>
+  >;
 const emptyCatalog: CampusMeetingPoint[] = [];
 function previewPoint(
   point: MeetingPointInput,
@@ -136,31 +141,111 @@ function isCalendarDate(value: string) {
   );
 }
 
-function RouteSelectionStatus({
+function previewStops(route: RouteOptionsInput, catalog: CampusMeetingPoint[]) {
+  return [
+    { ...previewPoint(route.origin, catalog), access: 'PICKUP' as const },
+    ...route.stops.map((stop) => ({
+      ...previewPoint(stop, catalog),
+      access: stop.access,
+    })),
+    { ...previewPoint(route.destination, catalog), access: 'DROPOFF' as const },
+  ];
+}
+
+function RouteAlternatives({
   control,
+  catalog,
   selectionKey,
+  selected,
+  requested,
+  options,
+  onChoose,
 }: {
   control: Control<PublishFormValues>;
-  selectionKey: string;
+  catalog: CampusMeetingPoint[];
+  selectionKey?: string;
+  selected?: PreviewAlternative;
+  requested?: RouteOptionsInput;
+  options?: RouteOption[];
+  onChoose: (option: RouteOption) => void;
 }) {
-  const [direction, origin, destination, stops] = useWatch({
+  const [direction, origin, destination, routeStops] = useWatch({
     control,
     name: routeFields,
   });
-  let matches = false;
+  let key: string | undefined;
+  let stops: ReturnType<typeof previewStops> = [];
   try {
-    matches =
-      selectionKey ===
-      JSON.stringify(routePoints({ direction, origin, destination, stops }));
+    const route = routePoints({
+      direction,
+      origin,
+      destination,
+      stops: routeStops,
+    });
+    stops = previewStops(route, catalog);
+    key = JSON.stringify(route);
   } catch {
     // The selected alternative no longer describes these points.
   }
+  const matches = !!selected && selectionKey === key;
+  const currentOptions =
+    key && requested && JSON.stringify(requested) === key ? options : undefined;
+  const displayed = matches ? selected : currentOptions?.[0];
+  const displayedIndex =
+    currentOptions?.findIndex((option) => displayed === option) ?? -1;
+  const title =
+    displayedIndex >= 0
+      ? `Alternativa vial ${displayedIndex + 1}`
+      : 'Alternativa vial seleccionada';
   return (
-    <Text style={matches ? w.success : w.note} accessibilityLiveRegion="polite">
-      {matches
-        ? 'Alternativa vial seleccionada'
-        : 'Los puntos cambiaron. Consulta otra alternativa vial para este recorrido.'}
-    </Text>
+    <>
+      {!!selected && (
+        <Text
+          style={matches ? w.success : w.note}
+          accessibilityLiveRegion="polite"
+        >
+          {matches
+            ? 'Alternativa vial seleccionada'
+            : 'Los puntos cambiaron. Consulta otra alternativa vial para este recorrido.'}
+        </Text>
+      )}
+      {currentOptions?.map((option, index) => (
+        <View key={index} style={w.group}>
+          <Text style={s.text}>
+            Alternativa {index + 1} ·{' '}
+            {(option.distanceMeters / 1000).toFixed(1)} km ·{' '}
+            {option.durationMinutes} min
+          </Text>
+          <Button
+            secondary={!matches || selected !== option}
+            title={`Elegir alternativa ${index + 1}`}
+            disabled={matches && selected === option}
+            onPress={() => onChoose(option)}
+          />
+        </View>
+      ))}
+      {displayed && (
+        <>
+          <RoutePreview
+            key={displayedIndex}
+            geometry={displayed.geometry}
+            stops={stops}
+            description={`${title} · ${displayed.durationMinutes} minutos estimados`}
+            distanceMeters={displayed.distanceMeters}
+          />
+          {!!displayed.maneuvers?.length && (
+            <BottomSheet title="Indicaciones viales">
+              {displayed.maneuvers.map((maneuver) => (
+                <Text key={maneuver.order} style={s.text}>
+                  {maneuverInstruction(maneuver)}
+                  {maneuver.street ? ' · ' + maneuver.street : ''}
+                </Text>
+              ))}
+            </BottomSheet>
+          )}
+        </>
+      )}
+    </>
   );
 }
 
@@ -339,8 +424,7 @@ function PublishForm({
   const [selectedRoute, setSelectedRoute] = useState<
     | {
         key: string;
-        option: Pick<RouteOption, 'geometry' | 'durationMinutes'> &
-          Partial<Pick<RouteOption, 'routingSelection' | 'maneuvers'>>;
+        option: PreviewAlternative;
       }
     | undefined
   >(
@@ -486,12 +570,15 @@ function PublishForm({
           'Los puntos cambiaron. Consulta las alternativas para el nuevo recorrido.',
         );
       setSelectedRoute({ key: JSON.stringify(options.variables), option });
-      if (option.durationMinutes >= 5 && option.durationMinutes <= 360)
+      if (
+        (!option.routingSelection || edited) &&
+        option.durationMinutes >= 5 &&
+        option.durationMinutes <= 360
+      )
         form.setValue(
           'estimatedDurationMinutes',
           String(option.durationMinutes),
         );
-      options.reset();
     } catch (error) {
       setInputError(
         error instanceof Error ? error.message : 'Revisa la alternativa.',
@@ -593,17 +680,7 @@ function PublishForm({
         selectedRoute?.key === JSON.stringify(route)
           ? selectedRoute.option
           : undefined;
-      const previewStops = [
-        { ...previewPoint(route.origin, catalog), access: 'PICKUP' as const },
-        ...route.stops.map((point) => ({
-          ...previewPoint(point, catalog),
-          access: point.access,
-        })),
-        {
-          ...previewPoint(route.destination, catalog),
-          access: 'DROPOFF' as const,
-        },
-      ];
+      const reviewedStops = previewStops(route, catalog);
       const offeredSeats = Number(values.offeredSeats);
       if (
         !Number.isInteger(offeredSeats) ||
@@ -664,7 +741,7 @@ function PublishForm({
       setPreview({
         recurrence,
         economics: calculated,
-        stops: previewStops,
+        stops: reviewedStops,
         draft: {
           vehicleId: selected.id,
           departureAt: `${values.departureAt.replace(' ', 'T')}:00-05:00`,
@@ -1003,27 +1080,15 @@ function PublishForm({
                       void suggest();
                     }}
                   />
-                  {selectedRoute && (
-                    <RouteSelectionStatus
-                      control={form.control}
-                      selectionKey={selectedRoute.key}
-                    />
-                  )}
-                  {options.data?.map((option, index) => (
-                    <View key={index} style={s.section}>
-                      <RoutePreview
-                        geometry={option.geometry}
-                        stops={[]}
-                        description={`Alternativa vial ${index + 1} · ${option.durationMinutes} minutos estimados`}
-                        distanceMeters={option.distanceMeters}
-                      />
-                      <Button
-                        title={`Elegir alternativa ${index + 1}`}
-                        secondary
-                        onPress={() => chooseOption(option)}
-                      />
-                    </View>
-                  ))}
+                  <RouteAlternatives
+                    control={form.control}
+                    catalog={catalog}
+                    selectionKey={selectedRoute?.key}
+                    selected={selectedRoute?.option}
+                    requested={options.variables}
+                    options={options.data}
+                    onChoose={chooseOption}
+                  />
                 </View>
               </>
             )}

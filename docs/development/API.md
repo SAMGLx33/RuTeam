@@ -429,3 +429,15 @@ acredita la identidad ni verifica el correo institucional.
 firmada. La publicación o edición presenta el mismo conjunto y Nest valida su
 asociación. `GET /trips/:id/operation` incluye las maniobras disponibles para
 el conductor propietario.
+
+### Matching y orientación por GPS
+
+El matching de preferencias emplea la estimación de salida vigente si el
+conductor reportó una demora. Conserva el horario programado como dato de
+publicación y usa los offsets firmados para evaluar la recogida. La
+disponibilidad y confirmación se siguen resolviendo con las reglas de Nest.
+
+La aplicación calcula localmente la proyección y, si la señal y la secuencia
+de maniobras identifican la próxima parada sin ambigüedad, estima un ETA con
+el tiempo vial restante. La lectura de ubicación sigue autorizada por recurso.
+Al confirmar el descenso, la consulta en vivo queda revocada para ese pasajero.

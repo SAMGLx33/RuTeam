@@ -34,7 +34,8 @@ export type MarkerKind =
   | 'pickup'
   | 'dropoff'
   | 'waypoint'
-  | 'current';
+  | 'current'
+  | 'projected';
 export interface MapMarker extends Coordinates {
   id: string;
   label: string;
@@ -49,6 +50,7 @@ const symbols: Record<MarkerKind, IconName> = {
   dropoff: 'arrow-down-left',
   waypoint: 'more-horizontal',
   current: 'crosshair',
+  projected: 'circle',
 };
 
 function tilesConfiguration() {
@@ -96,9 +98,11 @@ export function MobilityMap({
 }) {
   const { palette } = useAppearance();
   const [width, setWidth] = useState(0);
-  const [camera, setCamera] = useState<Camera | null>(null);
+  const [camera, setCamera] = useState<{
+    view: Camera;
+    privateViewport: boolean;
+  } | null>(null);
   const [selection, setSelection] = useState<string | null>(null);
-  const [privateViewport, setPrivateViewport] = useState(false);
   const [following, setFollowing] = useState(false);
   const [position, setPosition] = useState<Coordinates | null>(null);
   const [locationError, setLocationError] = useState('');
@@ -107,8 +111,6 @@ export function MobilityMap({
   const [tileStatus, setTileStatus] = useState<
     Record<string, 'loaded' | 'failed'>
   >({});
-  const tileConfig =
-    allowTiles && !privateViewport ? tilesConfiguration() : null;
   const points = markers.filter(valid);
   const line = (geometry?.coordinates ?? []).map(([lon, lat]) =>
     worldPoint(lon, lat),
@@ -118,16 +120,18 @@ export function MobilityMap({
   );
   const fitted = fitCamera([...line, ...markerWorld], reference, width, height);
   const follows = following && followPoint && valid(followPoint);
+  const privateViewport = !allowTiles || !!follows || !!camera?.privateViewport;
+  const tileConfig = privateViewport ? null : tilesConfiguration();
   const active = follows
     ? {
         center: worldPoint(followPoint.longitude, followPoint.latitude),
-        zoom: camera?.zoom ?? 16,
+        zoom: camera?.view.zoom ?? 16,
       }
-    : (camera ?? fitted);
+    : (camera?.view ?? fitted);
   const [gestures] = useState(() =>
-    createMapGestures(fitted, (next) => {
+    createMapGestures(fitted, (next, isPrivate) => {
       setFollowing(false);
-      setCamera(next);
+      setCamera({ view: next, privateViewport: isPrivate });
     }),
   );
   const {
@@ -135,11 +139,11 @@ export function MobilityMap({
     zoom: activeZoom,
   } = active;
   useEffect(() => {
-    gestures.setActive({
-      center: { x: activeX, y: activeY },
-      zoom: activeZoom,
-    });
-  }, [activeX, activeY, activeZoom, gestures]);
+    gestures.setActive(
+      { center: { x: activeX, y: activeY }, zoom: activeZoom },
+      privateViewport,
+    );
+  }, [activeX, activeY, activeZoom, gestures, privateViewport]);
   const count = 2 ** active.zoom;
   const scale = count * tileSize;
   const left = active.center.x * scale - width / 2;
@@ -199,14 +203,20 @@ export function MobilityMap({
     });
   }
   const zoomBy = (delta: number) =>
-    setCamera({ ...active, zoom: clamp(active.zoom + delta, 3, 19) });
+    setCamera({
+      view: { ...active, zoom: clamp(active.zoom + delta, 3, 19) },
+      privateViewport,
+    });
 
   function moveBy(x: number, y: number) {
     setCamera({
-      ...active,
-      center: {
-        x: clamp(active.center.x + x / scale, 0, 1),
-        y: clamp(active.center.y + y / scale, 0, 1),
+      privateViewport,
+      view: {
+        ...active,
+        center: {
+          x: clamp(active.center.x + x / scale, 0, 1),
+          y: clamp(active.center.y + y / scale, 0, 1),
+        },
       },
     });
   }
@@ -252,10 +262,13 @@ export function MobilityMap({
       });
       setPosition(sample.coords);
       // The tile provider never receives the viewport of a private position.
-      setPrivateViewport(true);
+      setFollowing(false);
       setCamera({
-        center: worldPoint(sample.coords.longitude, sample.coords.latitude),
-        zoom: 15,
+        privateViewport: true,
+        view: {
+          center: worldPoint(sample.coords.longitude, sample.coords.latitude),
+          zoom: 15,
+        },
       });
     } catch {
       setLocationError(
@@ -344,7 +357,9 @@ export function MobilityMap({
                     styles.marker,
                     {
                       backgroundColor:
-                        marker.kind === 'origin' || marker.kind === 'pickup'
+                        marker.kind === 'origin' ||
+                        marker.kind === 'pickup' ||
+                        marker.kind === 'projected'
                           ? palette.turquoise
                           : marker.kind === 'waypoint'
                             ? palette.muted
@@ -384,7 +399,6 @@ export function MobilityMap({
             onPress={() => {
               setCamera(null);
               setFollowing(false);
-              setPrivateViewport(false);
             }}
           />
           <IconButton
@@ -404,7 +418,7 @@ export function MobilityMap({
               label={follows ? 'Explorar mapa' : 'Seguir ubicación'}
               icon="crosshair"
               onPress={() => {
-                setCamera(follows ? active : null);
+                setCamera(follows ? { view: active, privateViewport } : null);
                 setFollowing(!follows);
               }}
             />

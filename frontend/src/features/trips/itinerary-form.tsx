@@ -16,6 +16,7 @@ import type {
 } from '@ruteam/contracts';
 import { Field } from '../../components/forms/field';
 import { PlaceSearch } from '../../components/forms/place-search';
+import { caliCenter } from '../../components/maps/mercator';
 import { formStyles as s } from '../../components/ui/protected-page';
 import { Pressable, Text, View } from '../../theme/primitives';
 import { colors } from '../../theme/tokens';
@@ -116,6 +117,7 @@ export function PointEditor({
     name: `${name}.label`,
   });
   const [searchFocus, setSearchFocus] = useState<Coordinates>();
+  const [privateFocus, setPrivateFocus] = useState<Coordinates>();
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
   async function centerOnCurrentLocation() {
@@ -132,7 +134,7 @@ export function PointEditor({
       const { coords } = await getCurrentPositionAsync({
         accuracy: Accuracy.Balanced,
       });
-      setSearchFocus({
+      setPrivateFocus({
         latitude: coords.latitude,
         longitude: coords.longitude,
       });
@@ -191,7 +193,7 @@ export function PointEditor({
                   />
                 ) : item.kind === 'CAMPUS' && site ? (
                   <Text key={item.id} style={s.text}>
-                    {item.name} · ubicación aún por configurar
+                    {item.name} · requiere una referencia geográfica autorizada
                   </Text>
                 ) : null,
               )}
@@ -200,6 +202,8 @@ export function PointEditor({
           {selected && (
             <Text style={s.text}>
               {[
+                label.value.trim() &&
+                  'El mapa usa la referencia del catálogo para este encuentro interior.',
                 selected.description,
                 selected.accessReference,
                 selected.level && `Nivel ${selected.level}`,
@@ -242,7 +246,7 @@ export function PointEditor({
           <FrequentPlacePicker
             title={`Centrar en un lugar habitual · ${title}`}
             onSelect={({ latitude, longitude }) =>
-              setSearchFocus({ latitude, longitude })
+              setPrivateFocus({ latitude, longitude })
             }
           />
           <PlaceSearch
@@ -252,29 +256,31 @@ export function PointEditor({
               coordinates.onChange(position);
               label.onChange(name);
               setSearchFocus(position);
+              setPrivateFocus(undefined);
             }}
           />
-          {reference?.latitude != null && reference.longitude != null ? (
-            <MeetingMapPicker
-              title={title}
-              key={
-                searchFocus
+          <MeetingMapPicker
+            title={title}
+            key={
+              privateFocus
+                ? `private:${privateFocus.latitude}:${privateFocus.longitude}`
+                : searchFocus
                   ? `${searchFocus.latitude}:${searchFocus.longitude}`
                   : 'default'
-              }
-              reference={{
-                latitude: reference.latitude,
-                longitude: reference.longitude,
-              }}
-              value={coordinates.value}
-              initiallyOpen={!!searchFocus}
-              onSelect={coordinates.onChange}
-            />
-          ) : (
-            <Text style={s.text}>
-              El mapa se puede centrar al elegir un resultado.
-            </Text>
-          )}
+            }
+            reference={
+              reference?.latitude != null && reference.longitude != null
+                ? {
+                    latitude: reference.latitude,
+                    longitude: reference.longitude,
+                  }
+                : caliCenter
+            }
+            value={coordinates.value}
+            privateReference={privateFocus}
+            initiallyOpen={!!(searchFocus || privateFocus)}
+            onSelect={coordinates.onChange}
+          />
         </>
       )}
       <Field

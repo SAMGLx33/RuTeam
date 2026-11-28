@@ -124,7 +124,7 @@ export function bestMobilityMatch(
   const candidate = {
     id: trip.id,
     driverId: trip.driverId,
-    departureAt: trip.departureAt,
+    departureAt: trip.estimatedDepartureAt ?? trip.departureAt,
     vehicleType: trip.vehicle.type,
     suggestedContributionCop: trip.suggestedContributionCop,
     stops: presentStops(trip),

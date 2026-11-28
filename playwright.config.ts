@@ -55,6 +55,10 @@ export default defineConfig({
         SMTP_HOST: '127.0.0.1',
         SMTP_PORT: '1',
         SMTP_SECURE: 'false',
+        ...(process.env.RUTEAM_OTP_TEST_LOG && {
+          GEOCODING_BASE_URL: 'http://127.0.0.1:3199',
+          ROUTING_BASE_URL: 'http://127.0.0.1:3199',
+        }),
       },
     },
     {

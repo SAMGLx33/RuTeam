@@ -164,3 +164,17 @@ Para este corte, crea dos cuentas de ensayo por dominio declarado. Verifica
 registro sin correo, vehículo, ruta con maniobras, confirmación, QR, GPS
 voluntario, pérdida de señal, pausa fuera del primer plano y descenso.
 La recepción push se comprueba en un development build autorizado.
+
+## Comprobación del 28/11
+
+VirtualBox muestra la interfaz `enp0s3` con IPv4 `10.0.2.15/24`.
+Nest en `:3000` devolvió salud de PostgreSQL y Metro web en `:8081` respondió
+HTTP 200 dentro de la VM. PostgreSQL se comprobó en `127.0.0.1:5432`.
+Metro para Expo Go devolvió un manifiesto Android de SDK 54 desde
+`10.0.2.15:8081`. El manifiesto conserva la API habitual en
+`http://localhost:3000/api/v1`. Para un teléfono, sustituye esa URL en el
+proceso Metro por `http://IPV4_LAN_ALCANZABLE:3000/api/v1` como indica esta guía.
+Sigue pendiente la prueba con un teléfono. Aplica la configuración de puente o
+redirección LAN de esta guía y usa el QR de Metro con Expo Go compatible con SDK 54. Comprueba en el dispositivo sesión persistida, cámara, permiso GPS, zoom y
+desplazamiento. Ensaya pausa y reanudación, y verifica desde la cuenta pasajera
+la pérdida de acceso a la ubicación después del descenso.

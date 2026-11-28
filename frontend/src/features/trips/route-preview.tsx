@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import type {
   RouteGeometry,
+  RouteManeuver,
   StopAccess,
   TripPoint,
   TripSummary,
@@ -13,6 +14,51 @@ import { BottomSheet } from '../../components/ui/bottom-sheet';
 import { formStyles as s } from '../../components/ui/protected-page';
 import { colors } from '../../theme/tokens';
 import { Text, View } from '../../theme/primitives';
+
+const direction: Record<NonNullable<RouteManeuver['modifier']>, string> = {
+  LEFT: 'a la izquierda',
+  RIGHT: 'a la derecha',
+  SHARP_LEFT: 'cerrado a la izquierda',
+  SHARP_RIGHT: 'cerrado a la derecha',
+  SLIGHT_LEFT: 'ligeramente a la izquierda',
+  SLIGHT_RIGHT: 'ligeramente a la derecha',
+  STRAIGHT: 'recto',
+  UTURN: 'en retorno',
+};
+
+export function maneuverInstruction({ kind, modifier }: RouteManeuver) {
+  const turn = modifier ? ' ' + direction[modifier] : '';
+  switch (kind) {
+    case 'DEPART':
+      return 'Salida desde la parada de la ruta';
+    case 'ARRIVE':
+      return 'Llegada prevista a la parada de la ruta';
+    case 'TURN':
+      return 'Gira' + turn;
+    case 'FORK':
+      return 'Bifurcación' + turn;
+    case 'END_OF_ROAD':
+      return 'Final de vía' + turn;
+    case 'MERGE':
+      return 'Incorporación' + turn;
+    case 'ON_RAMP':
+    case 'OFF_RAMP':
+    case 'RAMP':
+      return 'Ramal' + turn;
+    case 'ROUNDABOUT':
+    case 'ROUNDABOUT_TURN':
+    case 'ROTARY':
+      return 'Glorieta' + turn;
+    case 'EXIT_ROUNDABOUT':
+    case 'EXIT_ROTARY':
+      return 'Salida de glorieta' + turn;
+    case 'NEW_NAME':
+    case 'CONTINUE':
+      return 'Continúa' + turn;
+    default:
+      return 'Maniobra indicada por el motor vial';
+  }
+}
 
 export const tripStatusLabel: Record<TripSummary['status'], string> = {
   PROGRAMADO: 'programado',
@@ -43,11 +89,13 @@ export function RouteGeometryPreview({
   geometry,
   stops,
   observedPosition,
+  projectedPosition,
   devicePosition = false,
 }: {
   geometry: RouteGeometry | null;
   stops: MapStop[];
   observedPosition?: MapPoint;
+  projectedPosition?: MapPoint;
   devicePosition?: boolean;
 }) {
   const markers = stops.map((point, index): MapMarker => ({
@@ -76,6 +124,13 @@ export function RouteGeometryPreview({
         : 'Última posición compartida',
       kind: 'current',
     });
+  if (projectedPosition)
+    markers.push({
+      ...projectedPosition,
+      id: 'projected-position',
+      label: 'Posición estimada sobre el recorrido',
+      kind: 'projected',
+    });
   return (
     <MobilityMap
       label={
@@ -85,7 +140,7 @@ export function RouteGeometryPreview({
             : 'Vista esquemática de la última ubicación compartida y las paradas publicadas.'
           : 'Vista geográfica de la geometría publicada. Los números corresponden al orden de paradas.'
       }
-      allowTiles={!observedPosition}
+      allowTiles={!observedPosition && !projectedPosition}
       followPoint={devicePosition ? observedPosition : undefined}
       geometry={geometry}
       markers={markers}
