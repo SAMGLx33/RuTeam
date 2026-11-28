@@ -79,3 +79,7 @@ avisos y trazabilidad ambiental. Safety y Realtime revisan permiso y
 caducidad. El equipo Expo verifica dispositivos y reconsulta al abrir avisos.
 El integrador coordina migraciones, contratos y lockfile. Personas
 revisoras POR_ASIGNAR.
+
+Identidad revisa la política declarada y sus consumidores. Trips revisa firma,
+persistencia y operación. Expo revisa cartografía, experiencia y GPS físico.
+Integración coordina contratos, migraciones y evidencias. POR_ASIGNAR.

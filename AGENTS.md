@@ -23,10 +23,10 @@ Cuentas de prueba atraviesan ese mismo formulario y sesión; proveedores de corr
 sintéticos sólo en entornos aislados y nunca activables en producción.
 
 Distinguir sesión de cuenta, control del correo, estamento/matrícula, preferencia de uso y
-capacidad efectiva. Cuenta pendiente puede gestionar sólo cuenta/verificación/onboarding
-básico expresamente permitidos, sin viajes. Elegir conductor no habilita publicación.
+capacidad efectiva. El modo académico admite el dominio declarado con credenciales
+y un estado de cuenta permitido. El modo oficial exige acreditación. Elegir conductor no habilita publicación.
 Onboarding persistido/retomable; pasajero puede iniciar habilitación desde Perfil.
-Conducción documental vencida conserva pasajero si matrícula vigente, no publicar/START.
+Los documentos vencidos impiden publicar e iniciar. El acceso de pasajero aplica su política propia.
 
 Navegación según capacidades actuales del servidor, con inicio útil, feed y perfil separado;
 API protege también URL directa/IDs ajenos/capacidad desactualizada. Movilidad privada no
@@ -38,7 +38,7 @@ recorrido E2E/visual son parte del DoD, no basta endpoint o prueba aislada.
 
 ## Producto y autoridad
 
-- Sólo estudiantes USC con vigencia acreditada. Una identidad con capacidades compatibles
+- Acceso académico por dominio exacto @usc.edu.co declarado. Una identidad con capacidades compatibles
   de pasajero y conductor; Nest decide la elegibilidad. Ningún rol, acceso, panel,
   endpoint, seed o flujo funcional de administración. La operación técnica de infraestructura
   es distinta. Preservar auditoría histórica sin convertir usuarios antiguos en estudiantes.
@@ -155,3 +155,9 @@ El cierre conserva los descensos pendientes de confirmación. Agenda y búsqueda
 el estado operativo de Nest. Describir, demorar y editar una publicación son acciones
 distintas. Mantener el orden de bloqueos y las referencias de reservas, grupos
 y propuestas. Ver [API](docs/development/API.md#operación-de-viaje-y-movilidad-cotidiana).
+
+## Integración vigente
+
+Nest aplica la política configurada, conserva autorización por recurso y
+diferencia el avance estimado por GPS de una llegada registrada. Consultar
+[Integración de producto](docs/development/PRODUCT_INTEGRATION.md).

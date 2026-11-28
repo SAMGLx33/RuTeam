@@ -10,7 +10,7 @@ test('la lectura se identifica como desactualizada, se recupera y limpia al revo
   await page
     .getByLabel('Correo institucional')
     .fill('ana@student-fixtures.ruteam.invalid');
-  await page.getByLabel('Contraseña').fill(password);
+  await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await expectSuccessfulLogin(page);
   await page.goto('/profile');
   const profile = page.getByRole('heading', { name: 'Perfil', exact: true });

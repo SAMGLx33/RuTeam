@@ -1,1 +1,1 @@
-export { RegisterScreen as default } from '../src/features/auth/login-screen';
+export { RegisterScreen as default } from '../src/features/auth/register-screen';

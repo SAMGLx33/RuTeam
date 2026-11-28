@@ -1,7 +1,4 @@
 import { SavedTripActions } from '../mobility/saved-trips-screen';
-import { cancellationLabel } from './cancellation-reasons';
-import { EconomicTerms } from '../expenses/economic-terms';
-import { ReputationLabel } from '../ratings/reputation-label';
 import { useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -49,7 +46,11 @@ function DetailContent({
         <>
           <View style={ui.panel} testID="trip-detail-summary">
             <View style={ui.row}>
-              <TripStatus status={trip.status} />
+              {trip.status === 'PROGRAMADO' && trip.expiredAt ? (
+                <Text style={[s.text, ui.emphasized]}>Viaje vencido</Text>
+              ) : (
+                <TripStatus status={trip.status} />
+              )}
               <Text style={s.text}>
                 {direction ? directionLabel[direction] : 'Viaje compartido'}
               </Text>
@@ -59,9 +60,15 @@ function DetailContent({
             </TripSectionTitle>
             <View style={ui.facts}>
               <Text style={s.text}>
-                {travelTime(trip.departureAt)} · {trip.estimatedDurationMinutes}{' '}
-                min estimados
+                Salida programada · {travelTime(trip.departureAt)} ·{' '}
+                {trip.estimatedDurationMinutes} min estimados
               </Text>
+              {trip.estimatedDepartureAt && (
+                <Text style={[s.text, ui.emphasized]}>
+                  Nueva salida estimada ·{' '}
+                  {travelTime(trip.estimatedDepartureAt)}
+                </Text>
+              )}
               <Text style={s.text}>
                 Conduce {trip.driverName ?? 'un estudiante'} ·{' '}
                 {trip.vehicle.brand} {trip.vehicle.color.toLowerCase()}
@@ -82,6 +89,12 @@ function DetailContent({
               </Text>
               <EconomicTerms terms={trip.economics} />
             </View>
+            {!trip.isDriver && (
+              <SavedTripActions
+                tripId={trip.id}
+                canSave={!!trip.canSaveInterest}
+              />
+            )}
             {(trip.rules.length > 0 ||
               (trip.providesHelmet !== null &&
                 trip.vehicle.type === 'MOTORCYCLE')) && (
@@ -128,7 +141,7 @@ function DetailContent({
                     Gestionar mi viaje
                   </Link>
                 )}
-                {(trip.status === 'PROGRAMADO' ||
+                {((trip.status === 'PROGRAMADO' && !trip.expiredAt) ||
                   trip.status === 'EN_CURSO') && (
                   <Link
                     href={{
@@ -175,7 +188,7 @@ function DetailContent({
           {!confirmed && trip.acceptsPickupProposal && (
             <PickupProposalForm trip={trip} />
           )}
-          {direction && trip.status === 'PROGRAMADO' && (
+          {direction && trip.status === 'PROGRAMADO' && !trip.expiredAt && (
             <PublicStopDirections stops={trip.itinerary.stops} />
           )}
         </>
@@ -206,12 +219,6 @@ export function TripDetailScreen() {
       <Link href="/saved-trips" style={s.link}>
         Mis viajes guardados
       </Link>
-      {trip.data && !trip.data.isDriver && (
-        <SavedTripActions
-          tripId={trip.data.id}
-          canSave={!!trip.data.canSaveInterest}
-        />
-      )}
       {trip.isPending && <Text style={s.text}>Cargando viaje…</Text>}
       {trip.error && (
         <Text accessibilityRole="alert" style={s.error}>

@@ -145,9 +145,8 @@ export function ProtectedPage({
             {(!wide || !unlocked) && !compactTitle && (
               <Text role="heading" aria-level={1} style={styles.title}>
                 {title}
-            <Text role="heading" aria-level={1} style={styles.title}>
-              {title}
-            </Text>
+              </Text>
+            )}
             {(session.connection !== 'available' ||
               session.reconnectingLive) && (
               <Text accessibilityLiveRegion="polite" style={formStyles.text}>

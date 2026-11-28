@@ -511,12 +511,26 @@ test('publicación, feed automático, aviso persistente y participación directa
     await expect(
       passenger.getByRole('heading', { name: 'Notificaciones', exact: true }),
     ).toBeVisible();
+    const matchInbox = await passenger.request.get(`${apiUrl}/notifications`);
+    expect(matchInbox.ok()).toBe(true);
+    const matchNotice = (await matchInbox.json()).items.find(
+      (item: { tripId: string; kind: string }) =>
+        item.tripId === tripId && item.kind === 'TRIP_MATCH',
+    );
+    expect(matchNotice).toBeDefined();
     const notice = passenger
-      .locator(`a[href="/trip/${tripId}"]`)
+      .locator(`a[href="/open/notice/${matchNotice.id}"]`)
       .filter({ hasText: 'Abrir viaje' });
     await expect(notice).toHaveCount(1);
     await capture(passenger, testInfo, 'notifications');
     await notice.click();
+    await expect(
+      passenger
+        .getByText('Esta recomendación ya no está vigente.')
+        .filter({ visible: true }),
+    ).toBeVisible();
+    // The old recommendation is stale after editing preferences; ordinary discovery remains authorized.
+    await passenger.goto('http://localhost:8082/trip/' + tripId);
     await expect(passenger).toHaveURL(new RegExp(`/trip/${tripId}$`));
     await expect(
       passenger.getByRole('heading', {
@@ -576,8 +590,15 @@ test('publicación, feed automático, aviso persistente y participación directa
     const driverChat = await page.context().newPage();
     try {
       await driverChat.goto('http://localhost:8082/notifications');
+      const chatInbox = await driverChat.request.get(`${apiUrl}/notifications`);
+      expect(chatInbox.ok()).toBe(true);
+      const chatNotice = (await chatInbox.json()).items.find(
+        (item: { tripId: string; kind: string }) =>
+          item.tripId === tripId && item.kind === 'CHAT_MESSAGE',
+      );
+      expect(chatNotice).toBeDefined();
       const notice = driverChat
-        .locator(`a[href="/chat/${tripId}"]`)
+        .locator(`a[href="/open/notice/${chatNotice.id}"]`)
         .filter({ hasText: 'Abrir chat' });
       await expect(notice).toHaveCount(1);
       await notice.click();
@@ -643,7 +664,7 @@ test('publicación, feed automático, aviso persistente y participación directa
         ),
       },
     });
-    await passenger.goto(`/trip-operation/${tripId}`);
+    await passenger.goto(`http://localhost:8082/trip-operation/${tripId}`);
     await expect(
       passenger.getByRole('heading', {
         name: 'Seguimiento y resumen del viaje',

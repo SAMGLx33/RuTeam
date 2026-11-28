@@ -31,3 +31,6 @@ QR, conservan sus requisitos de lectura.
 de pantalla, secciones, estados y entradas se centralizan en `ProtectedPage`,
 `AccountPage`, `formStyles` y `accountStyles`. `BottomSheet` compone los paneles
 cartográficos con control explícito y movimiento breve que respeta la preferencia.
+
+Registro, cuenta y navegación vial usan los tokens de tema. `AppearanceProvider`
+contiene un Stack y la barra de estado temática con sesión y avisos.

@@ -12,6 +12,7 @@ import {
   ENVIRONMENT,
   type Environment,
 } from '../../../../config/environment.js';
+import { fromOsrmLegs } from '../../domain/route-maneuvers.js';
 import { validateGeometry } from '../../domain/models/driver-route.js';
 
 const responseSchema = z.object({
@@ -22,7 +23,12 @@ const routeSchema = z.object({
   distance: z.number().positive(),
   duration: z.number().positive(),
   legs: z
-    .array(z.object({ duration: z.number().nonnegative().max(21600) }))
+    .array(
+      z.object({
+        duration: z.number().nonnegative().max(21600),
+        steps: z.array(z.unknown()).optional(),
+      }),
+    )
     .max(11)
     .optional(),
   geometry: z.object({
@@ -51,7 +57,7 @@ export class OsrmRoutingProvider {
       .join(';');
     const base = this.env.ROUTING_BASE_URL.replace(/\/$/, '');
     const query =
-      'alternatives=2&steps=false&overview=simplified&geometries=geojson';
+      'alternatives=2&steps=true&overview=simplified&geometries=geojson&generate_hints=false';
     let payload: unknown;
     try {
       const response = await fetch(
@@ -94,6 +100,10 @@ export class OsrmRoutingProvider {
             seconds > 0 &&
             seconds <= 21600 &&
             Math.abs(seconds - parsed.data.duration) <= points.length;
+          const maneuvers =
+            reliable && parsed.data.legs
+              ? fromOsrmLegs(parsed.data.legs)
+              : undefined;
           options.push({
             geometry: parsed.data.geometry,
             distanceMeters: Math.round(parsed.data.distance),
@@ -101,6 +111,7 @@ export class OsrmRoutingProvider {
               ? Math.max(5, Math.ceil(seconds / 60))
               : Math.max(1, Math.round(parsed.data.duration / 60)),
             ...(reliable && { legDurationsSeconds: legs }),
+            ...(maneuvers && { maneuvers }),
           });
         } catch (error) {
           if (!(error instanceof DomainPolicyError)) throw error;

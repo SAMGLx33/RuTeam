@@ -67,3 +67,7 @@ En un ensayo físico, verifica consentimiento concedido y denegado, lista y revo
 - La preferencia `reminders` controla los recordatorios opcionales. `reminderLeadMinutes` acepta 15, 30 o 60. Las cuentas que no hayan elegido un valor reciben el predeterminado de 30 minutos.
 - Los recordatorios de salida, recogida, propuesta aceptada y vencimiento de documentos se calculan desde sus fechas vigentes en PostgreSQL. Las salidas recurrentes se consideran cuando ya existe el viaje publicado. La lista de actividades sigue mostrando documentos que vencen durante los próximos 30 días.
 - El trabajador comprueba los estados vigentes al emitir. Los registros del viaje, la participación o el documento permanecen como datos fuente. La clave única del aviso combina el destinatario, el tipo, el registro de origen y la fecha del evento. Una reprogramación puede producir un recordatorio para la hora nueva. Los avisos registrados alimentan la misma bandeja y cola push que los demás eventos.
+
+Los recordatorios y avisos aplican la política institucional de la instalación.
+Los destinatarios académicos pueden recibirlos mediante el acceso declarado.
+El envío push sigue condicionado a preferencias, sesión y proveedor autorizado.

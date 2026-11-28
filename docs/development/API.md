@@ -20,28 +20,28 @@ Contrato operativo vigente. Consultar
 | GET /driver-eligibility, POST /driver-eligibility | Licencia propia. Declaración mediante `{category, expiresAt}`.                            |
 
 La documentación pública temporal distingue `DECLARED`, `VERIFIED`,
-`EXPIRED` y `UNVERIFIED`. El fixture puede usar declaraciones de desarrollo.
-Producción requiere una verificación autorizada. Se retiraron `/admin/demo/*`,
+`EXPIRED` y `UNVERIFIED`. El modo académico admite declaraciones ordinarias vigentes.
+El modo oficial exige una verificación autorizada. Se retiraron `/admin/demo/*`,
 cuentas administrativas operativas y los permisos de aprobación. Los usuarios
 históricos incompatibles están deshabilitados y sus sesiones revocadas.
 
 ## Cuentas y onboarding
 
-| Operación                   | Entrada y resultado                                                                                                                                                          |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST /auth/register         | `{name,email,password,usagePreference}`. Correo USC normalizado; 202 genérico con `emailDeliveryAvailable` según configuración de envío. Sin SMTP la cuenta queda pendiente. |
-| POST /auth/login            | `{email,password}`; 200 con `account,expiresAt`, cookie web o token sólo nativo. Credenciales inválidas devuelven 401 sin distinguir cuenta inexistente.                     |
-| GET /auth/account           | `Account` privado para una sesión de cuenta, incluso pendiente o no elegible.                                                                                                |
-| PATCH /auth/onboarding      | `{step,usagePreference?,complete?}`; permite avanzar de 0 a 4 y retomar. Completar requiere correo y matrícula vigentes. Devuelve `Account`.                                 |
-| POST /auth/email/request    | `{email}`; 202 genérico, 503 si el transporte no está configurado.                                                                                                           |
-| POST /auth/email/confirm    | `{token,password}`; el dueño del buzón elige su contraseña, confirma correo y revoca sesiones/enlaces anteriores. 200 o 400 por enlace inválido, vencido o consumido.        |
-| POST /auth/password/request | `{email}`; 202 genérico, 503 sin correo disponible.                                                                                                                          |
-| POST /auth/password/reset   | `{token,password}`; 200 revoca las sesiones anteriores, 400 por enlace inválido, vencido o consumido.                                                                        |
+| Operación                   | Entrada y resultado                                                                                                                                                        |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST /auth/register         | `{name,email,password,usagePreference}`. Correo USC normalizado; 202 genérico con `institutionalAccess` y `emailDeliveryAvailable`. El acceso académico funciona sin SMTP. |
+| POST /auth/login            | `{email,password}`; 200 con `account,expiresAt`, cookie web o token sólo nativo. Credenciales inválidas devuelven 401 sin distinguir cuenta inexistente.                   |
+| GET /auth/account           | `Account` privado para una sesión de cuenta, incluso pendiente o no elegible.                                                                                              |
+| PATCH /auth/onboarding      | `{step,usagePreference?,complete?}`; permite avanzar de 0 a 4 y retomar. Completar requiere la política de acceso vigente. Devuelve `Account`.                             |
+| POST /auth/email/request    | `{email}`; 202 genérico, 503 si el transporte no está configurado.                                                                                                         |
+| POST /auth/email/confirm    | `{token,password}`; el dueño del buzón elige su contraseña, confirma correo y revoca sesiones/enlaces anteriores. 200 o 400 por enlace inválido, vencido o consumido.      |
+| POST /auth/password/request | `{email}`; 202 genérico, 503 sin correo disponible.                                                                                                                        |
+| POST /auth/password/reset   | `{token,password}`; 200 revoca las sesiones anteriores, 400 por enlace inválido, vencido o consumido.                                                                      |
 
 `Account` expone correo propio, nombre, preferencia, avance, comprobación de correo, estado
 institucional y capacidades `passenger`, `driverAccess` y `driver`. Un guard de sesión de
 cuenta permite terminar el acceso o consultar ese estado. El guard de producto vuelve a
-validar correo, estamento, matrícula y proveedor. Viajes y vehículos aplican sus permisos
+validar el modo institucional y el estado de la cuenta. Viajes y vehículos aplican sus permisos
 por recurso. Login limita a 10/min por IP, registro y solicitudes de enlace a 6/min.
 Cada propósito de enlace por cuenta admite uno nuevo por minuto y hasta diez por hora.
 Enlaces con vencimientos 30 min (confirmación) y 15 min (recuperación), de uso único.
@@ -380,3 +380,16 @@ bloqueo, conserva las confirmaciones históricas y caduca invitaciones,
 propuestas y pases. La retirada propia sigue disponible antes de abordar
 mientras el viaje permanezca programado. El cálculo de emisiones conserva
 la geometría prevista y devuelve la procedencia del descenso en resultados nuevos.
+
+## Acceso declarado y maniobras
+
+`GET /auth/access`, `POST /auth/register` y `Account` incluyen
+`institutionalAccess: DECLARED_DOMAIN | OFFICIAL`. `DECLARED` expresa acceso
+por dominio sin fuente acreditada. `GET /auth/me` devuelve `membership: null`
+en ese caso. Los enlaces de confirmación quedan fuera del acceso declarado.
+En ese modo la recuperación por correo requiere un buzón previamente verificado.
+
+`POST /trips/route-options` puede devolver `maneuvers` junto con la alternativa
+firmada. La publicación o edición presenta el mismo conjunto y Nest valida su
+asociación. `GET /trips/:id/operation` incluye las maniobras disponibles para
+el conductor propietario.

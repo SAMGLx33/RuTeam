@@ -50,17 +50,16 @@ En teléfono usar IP LAN alcanzable y versión Expo Go compatible, nunca localho
 
 ## Entornos e integraciones
 
-La pantalla de acceso usa correo y contraseña propios de RuTeam. Las cuentas pueden
-crearse y consultar su estado de verificación; ver y compartir viajes exige confirmar
-el correo y acreditar matrícula vigente. La plantilla usa proveedor oficial y el
-acceso a viajes reales seguirá bloqueado hasta que la USC autorice la integración.
+En la instalación académica, crea tu cuenta con el dominio exacto `@usc.edu.co`
+y una contraseña propia. Registro e inicio de sesión funcionan sin SMTP.
+El modo `OFFICIAL` exige acreditación y falla cerrado si falta su fuente.
 
 Para ensayar el mismo formulario en un entorno aislado, habilita el proveedor sintético
 local, define `AUTH_FIXTURE_PASSWORD` al ejecutar el seed e inicia sesión con
 `ana@student-fixtures.ruteam.invalid` (pasajera) o `diego@student-fixtures.ruteam.invalid`
 (conductor) y la contraseña que configuraste. Consulta [SETUP](docs/development/SETUP.md).
 Los fixtures representan pruebas y aparecen como tales en el perfil.
-No usar cuentas administrativas o estamentos no estudiantiles como usuarios válidos.
+El producto mantiene capacidades de pasajero y conductor sin un rol administrativo.
 La acreditación real de matrícula necesita una fuente USC autorizada. Verificar dominio
 o control del correo no la sustituye: producción debe fallar cerrada mientras falte.
 Verificación documental autorizada, geocodificación, motor vial y teselas requieren
@@ -131,3 +130,10 @@ versionada, guardados, lugares habituales y seguimiento voluntario en primer
 plano. Consulta los [contratos](docs/development/API.md#operación-de-viaje-y-movilidad-cotidiana),
 la [validación](docs/reviews/RELEASE_READINESS.md) y la
 [guía de Expo Go y development build](docs/development/MOBILE_TESTING.md).
+
+## Integración de producto
+
+El rediseño y la operación comparten navegación. La vista del conductor muestra
+maniobras de la alternativa OSRM firmada cuando estén disponibles. Consulta
+[integración y pruebas](docs/development/PRODUCT_INTEGRATION.md) y
+[configuración cartográfica](docs/development/MAP_EXPERIENCE.md).

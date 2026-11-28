@@ -18,7 +18,7 @@ export interface CurrentUser {
     group: InstitutionalGroup;
     verifiedBy: string;
     validUntil: string;
-  };
+  } | null;
   demo: boolean;
 }
 export interface DemoLoginInput {

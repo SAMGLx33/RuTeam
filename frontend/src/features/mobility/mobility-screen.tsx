@@ -1,5 +1,4 @@
-import { Text, TextInput, View } from '../../theme/primitives';
-import { Link } from 'expo-router';
+import { Link, Text, TextInput, View } from '../../theme/primitives';
 import { FrequentPlacePicker } from './frequent-place-picker';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,6 +26,7 @@ import {
   type Coordinates,
 } from '../trips/meeting-map-picker';
 import { directionLabel } from '../trips/trip-feed';
+import { pesos } from '../expenses/economic-terms';
 
 const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const radii = [0.25, 0.5, 1, 2];
@@ -443,6 +443,11 @@ export function MobilityScreen() {
                 {item.days.map((day) => dayLabels[day - 1]).join(', ')} ·{' '}
                 {clock(item.startMinute)} a {clock(item.endMinute)}
               </Text>
+              {item.maxContributionCop != null && (
+                <Text style={s.text}>
+                  Aporte máximo · {pesos(item.maxContributionCop)} COP
+                </Text>
+              )}
               <Button
                 title="Editar preferencia"
                 secondary

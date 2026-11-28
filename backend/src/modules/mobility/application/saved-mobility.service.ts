@@ -122,6 +122,7 @@ export class SavedMobilityService {
     return {
       tripId: trip.id,
       departureAt: trip.departureAt.toISOString(),
+      estimatedDepartureAt: trip.estimatedDepartureAt?.toISOString() ?? null,
       direction: tripDirection(presentStops(trip)),
       availability,
       availableSeats:

@@ -37,8 +37,8 @@ export function AccountPage({
                 <>
                   <Text style={styles.purpose}>Muévete con tu comunidad</Text>
                   <Text style={styles.description}>
-                    Comparte y encuentra viajes programados con estudiantes de
-                    la Universidad Santiago de Cali.
+                    Comparte y encuentra viajes programados hacia o desde la
+                    Universidad Santiago de Cali.
                   </Text>
                 </>
               )}

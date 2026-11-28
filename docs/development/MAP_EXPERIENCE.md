@@ -10,7 +10,7 @@ El trazado se basa exclusivamente en geometría publicada o en una alternativa q
 devolvió OSRM. Cada marcador muestra el tipo y etiqueta del punto. Un punto interior
 puede seguir siendo texto libre ligado al campus. Sin geometría, se pueden mostrar
 marcadores y paradas ordenadas. Una LineString dibuja el recorrido persistido; la
-interfaz actual no recibe maniobras. Los tiempos estimados y llegadas registradas
+vista del conductor presenta las maniobras disponibles de la alternativa firmada. Los tiempos estimados y llegadas registradas
 mantienen su distinción. El progreso se lee del contrato de operación.
 
 Sigue vigente `EXPO_PUBLIC_ROUTE_TILE_URL`, plantilla HTTP(S) con {z}, {x}, {y}, y
@@ -34,3 +34,27 @@ dispone de enlaces profundos y Apple ofrece URLs para sus dispositivos. Se
 mantiene una sola salida explícita en este corte para evitar diferentes reglas
 de descubrimiento y apertura según plataforma. [Waze](https://developers.google.com/waze/deeplinks)
 · [Apple Maps](https://developer.apple.com/documentation/mapkit/unified-map-urls).
+
+## Maniobras y proveedores
+
+Nest usa `steps=true` y normaliza orden, tramo, tipo, modificador, vía, distancia,
+duración, punto, geometría y asociación de parada. Firma esos datos junto a la
+ruta. El progreso usa precisión, antigüedad, sentido y continuidad. Si la posición
+es ambigua o fuera de la ruta se informa y se conserva la geometría.
+
+El 27/11 se consultaron lugares públicos de Cali. Photon respondió 200 para
+Estadio Olímpico Pascual Guerrero y Parque del Perro. FOSSGIS/OSRM respondió
+200 con un tramo, ocho maniobras y 1.758,3 m. OpenStreetMap devolvió una tesela
+PNG con 200. Los adaptadores Nest también interpretaron un resultado Photon y
+una alternativa OSRM con las ocho maniobras. Las suites de regresión usan
+proveedores controlados.
+[OSRM](https://project-osrm.org/docs/v5.24.0/api/) ·
+[FOSSGIS](https://routing.openstreetmap.de/about.html) ·
+[Photon](https://github.com/komoot/photon) ·
+[Teselas](https://operations.osmfoundation.org/policies/tiles/).
+
+Las bases usadas para ese ensayo con datos públicos fueron
+`GEOCODING_BASE_URL=https://photon.komoot.io`,
+`ROUTING_BASE_URL=https://routing.openstreetmap.de/routed-car` y la plantilla
+`https://tile.openstreetmap.org/{z}/{x}/{y}.png`. Las políticas del proveedor
+rigen su uso y estas bases se probaron sólo en el proceso de validación.

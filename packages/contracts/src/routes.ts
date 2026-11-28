@@ -41,6 +41,46 @@ export interface RouteGeometry {
   type: 'LineString';
   coordinates: [longitude: number, latitude: number][];
 }
+export interface RouteManeuver {
+  order: number;
+  leg: number;
+  kind:
+    | 'DEPART'
+    | 'ARRIVE'
+    | 'TURN'
+    | 'NEW_NAME'
+    | 'MERGE'
+    | 'RAMP'
+    | 'ON_RAMP'
+    | 'OFF_RAMP'
+    | 'FORK'
+    | 'END_OF_ROAD'
+    | 'CONTINUE'
+    | 'ROUNDABOUT'
+    | 'ROTARY'
+    | 'ROUNDABOUT_TURN'
+    | 'EXIT_ROUNDABOUT'
+    | 'EXIT_ROTARY'
+    | 'OTHER';
+  modifier:
+    | 'UTURN'
+    | 'SHARP_RIGHT'
+    | 'RIGHT'
+    | 'SLIGHT_RIGHT'
+    | 'STRAIGHT'
+    | 'SLIGHT_LEFT'
+    | 'LEFT'
+    | 'SHARP_LEFT'
+    | null;
+  street: string | null;
+  longitude: number;
+  latitude: number;
+  distanceMeters: number;
+  durationSeconds: number;
+  geometry: RouteGeometry;
+  /** Orden del punto enviado al motor vial antes de publicar. */
+  stopPosition: number | null;
+}
 export interface ItineraryInput {
   direction?: TripDirection;
   origin: MeetingPointInput;
@@ -49,6 +89,7 @@ export interface ItineraryInput {
   description: string;
   geometry?: RouteGeometry;
   routingSelection?: string;
+  maneuvers?: RouteManeuver[];
   /** Confirma que paradas, geometría e instrucciones son apropiadas para compartir. */
   publicMeetingPoints: true;
 }
@@ -136,6 +177,8 @@ export interface ReservationView {
   pickup: ReservedMeetingPoint;
   dropoff: ReservedMeetingPoint;
   departureAt: string;
+  estimatedDepartureAt?: string | null;
+  expiredAt?: string | null;
   createdAt: string;
   confirmedAt: string | null;
   boardedAt: string | null;
@@ -155,6 +198,7 @@ export interface RouteOption {
   distanceMeters: number;
   durationMinutes: number;
   routingSelection?: string;
+  maneuvers?: RouteManeuver[];
   legDurationsSeconds?: number[];
 }
 

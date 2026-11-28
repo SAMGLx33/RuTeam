@@ -1,7 +1,5 @@
-import { Link } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SavedTripView } from '@ruteam/contracts';
-import { Text, View } from 'react-native';
 import { Button } from '../../components/ui/button';
 import {
   ProtectedPage,
@@ -9,6 +7,7 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
+import { Link, Text, View } from '../../theme/primitives';
 import { travelTime } from '../trips/route-preview';
 
 const base = '/mobility/saved-trips';
@@ -22,7 +21,7 @@ const availabilityLabel: Record<SavedTripView['availability'], string> = {
   INTERRUPTED: 'Viaje interrumpido',
   UNAVAILABLE: 'Viaje no disponible',
 };
-function useSavedTrips() {
+export function useSavedTrips() {
   const { user } = useSession();
   return useQuery({
     queryKey: ['saved-trips', user?.id],
@@ -41,6 +40,19 @@ export function SavedTripActions({
 }) {
   const trips = useSavedTrips();
   const item = trips.data?.find((trip) => trip.tripId === tripId);
+  if (canSave && trips.error)
+    return (
+      <View style={s.section}>
+        <Text style={s.error} accessibilityRole="alert">
+          {trips.error.message}
+        </Text>
+        <Button
+          title="Reintentar guardados"
+          secondary
+          onPress={() => void trips.refetch()}
+        />
+      </View>
+    );
   if ((!canSave && !item) || !trips.data) return null;
   return <SavedActions tripId={tripId} item={item} />;
 }
@@ -62,9 +74,8 @@ function SavedActions({
       suffix?: string;
       method: 'PUT' | 'DELETE';
     }) => api(`${base}/${tripId}${suffix}`, { method }),
-    onSettled: () => {
-      void client.invalidateQueries({ queryKey: ['saved-trips', user?.id] });
-    },
+    onSettled: () =>
+      client.invalidateQueries({ queryKey: ['saved-trips', user?.id] }),
   });
   return (
     <>
@@ -140,6 +151,11 @@ export function SavedTripsScreen() {
                 : 'Ver viaje'}{' '}
             · {travelTime(item.departureAt)}
           </Link>
+          {item.estimatedDepartureAt && (
+            <Text style={s.text}>
+              Nueva salida estimada · {travelTime(item.estimatedDepartureAt)}
+            </Text>
+          )}
           <Text style={s.text}>
             {availabilityLabel[item.availability]}
             {item.availableSeats > 0 ? ` · ${item.availableSeats}` : ''}

@@ -15,7 +15,12 @@ import {
 } from '../infrastructure/repositories/trips.repository.js';
 import { Viaje } from '../domain/models/viaje.js';
 import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import { Inject } from '@nestjs/common';
+import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
+import {
+  canSubmitDeclaredDocuments,
+  locallyEligible,
+} from '../../institutional-membership/domain/access-policy.js';
 import { calculateEconomics } from '../../expenses/domain/expense-policy.js';
 import type { PublishTripDto } from '../dto/publish-trip.dto.js';
 import {
@@ -34,12 +39,13 @@ export class ViajeService {
     private readonly repository: ViajeRepository,
     private readonly routing: OsrmRoutingProvider,
     private readonly selections: RoutingSelections,
+    @Inject(ENVIRONMENT) private readonly env: Environment,
   ) {}
   listarPropios(driverId: string) {
     return this.repository.listarPropios(driverId);
   }
   buscar(actorId: string, data: SearchTripsDto) {
-    return searchTrips(this.repository, actorId, data);
+    return searchTrips(this.repository, actorId, data, this.env);
   }
   async opcionesDeRuta(driverId: string, input: RouteOptionsDto) {
     const stops = await this.repository.withDriverLock(
@@ -50,8 +56,12 @@ export class ViajeService {
         if (
           !actor ||
           !!actor.disabledAt ||
-          !isActiveMembership(actor.membership, now) ||
-          !VehiculoPolicy.esPublicable(actor.driverEligibility, now)
+          !locallyEligible(actor, this.env, now) ||
+          !VehiculoPolicy.esPublicable(
+            actor.driverEligibility,
+            now,
+            canSubmitDeclaredDocuments(actor, this.env),
+          )
         )
           throw new ForbiddenException(
             'Se requiere afiliación activa y documentación habilitada',
@@ -153,6 +163,7 @@ export class ViajeService {
       geometry: trip.geometry,
       durationMinutes: minutes,
       legDurationsSeconds,
+      maneuvers: trip.maneuvers,
     }).routingSelection;
   }
 
@@ -162,6 +173,10 @@ export class ViajeService {
     unit: PublicationUnit,
   ) {
     const itinerary = await planItinerary(data.itinerary, unit);
+    if (data.itinerary.maneuvers && !data.itinerary.routingSelection)
+      throw new BadRequestException(
+        'Selecciona una alternativa vial para publicar sus indicaciones.',
+      );
     if (data.itinerary.routingSelection) {
       const selected = this.selections.verify(
         data.itinerary.routingSelection,
@@ -169,7 +184,10 @@ export class ViajeService {
         itinerary.stops,
         itinerary.geometry,
         data.estimatedDurationMinutes,
+        Date.now(),
+        data.itinerary.maneuvers,
       );
+      itinerary.maneuvers = selected.maneuvers;
       let elapsed = 0;
       for (const [index, stop] of itinerary.stops.entries()) {
         stop.estimatedOffsetSeconds = elapsed;
@@ -190,20 +208,21 @@ export class ViajeService {
     end: Date,
   ) {
     const actor = await unit.actor();
-    if (
-      !actor ||
-      actor.disabledAt ||
-      !isActiveMembership(actor.membership, now)
-    )
+    if (!actor || actor.disabledAt || !locallyEligible(actor, this.env, now))
       throw new ForbiddenException('Afiliación USC no activa');
     const vehicle = await unit.vehicle(data.vehicleId);
     if (!vehicle || vehicle.ownerId !== driverId)
       throw new ForbiddenException('El vehículo debe pertenecer al conductor');
+    const declaredDocuments = canSubmitDeclaredDocuments(actor, this.env);
     if (
       (!actor.demoIdentity &&
         (vehicle.document?.demo || actor.driverEligibility?.demo)) ||
-      !VehiculoPolicy.esPublicable(vehicle.document, end) ||
-      !VehiculoPolicy.esPublicable(actor.driverEligibility, end)
+      !VehiculoPolicy.esPublicable(vehicle.document, end, declaredDocuments) ||
+      !VehiculoPolicy.esPublicable(
+        actor.driverEligibility,
+        end,
+        declaredDocuments,
+      )
     )
       throw new ForbiddenException(
         'SOAT o licencia sin elegibilidad o vigencia para el viaje',

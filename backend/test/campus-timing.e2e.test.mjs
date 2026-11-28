@@ -7,6 +7,7 @@ let app,
   db,
   server,
   routeTrip,
+  duplicatedTrip,
   preference,
   driver,
   passenger,
@@ -45,7 +46,29 @@ beforeAll(async () => {
           {
             distance: 9200,
             duration: 2400,
-            legs: [{ duration: 1200 }, { duration: 1200 }],
+            legs: points.slice(1).map((to, leg) => {
+              const from = points[leg];
+              return {
+                duration: 1200,
+                distance: 4600,
+                steps: [
+                  {
+                    duration: 1200,
+                    distance: 4600,
+                    name: 'Vía sintética',
+                    geometry: { type: 'LineString', coordinates: [from, to] },
+                    maneuver: { location: from, type: 'depart' },
+                  },
+                  {
+                    duration: 0,
+                    distance: 0,
+                    name: 'Vía sintética',
+                    geometry: { type: 'LineString', coordinates: [to, to] },
+                    maneuver: { location: to, type: 'arrive' },
+                  },
+                ],
+              };
+            }),
             geometry: { type: 'LineString', coordinates: points },
           },
         ],
@@ -83,6 +106,7 @@ afterAll(async () => {
   try {
     if (preference)
       await db.mobilityPreference.delete({ where: { id: preference } });
+    if (duplicatedTrip) await db.trip.delete({ where: { id: duplicatedTrip } });
     if (routeTrip) await db.trip.delete({ where: { id: routeTrip } });
     await app?.close();
     if (server) await new Promise((resolve) => server.close(resolve));
@@ -138,6 +162,7 @@ test('distingue sedes y persiste la geometría seleccionada con estimación inte
     durationMinutes: 40,
     legDurationsSeconds: [1200, 1200],
     routingSelection: expect.any(String),
+    maneuvers: expect.any(Array),
   });
   const departureAt = new Date(Date.now() + 22 * 86400000);
   departureAt.setUTCHours(4, 50, 0, 0);
@@ -152,16 +177,49 @@ test('distingue sedes y persiste la geometría seleccionada con estimación inte
       description: 'Ruta de prueba',
       geometry: option.geometry,
       routingSelection: option.routingSelection,
+      maneuvers: option.maneuvers,
     },
   };
   await call(driver, 'post', '/trips')
     .send({ ...publication, estimatedDurationMinutes: 30 })
+    .expect(400);
+  await call(driver, 'post', '/trips')
+    .send({
+      ...publication,
+      itinerary: {
+        ...publication.itinerary,
+        maneuvers: [
+          { ...option.maneuvers[0], street: 'Vía alterada' },
+          ...option.maneuvers.slice(1),
+        ],
+      },
+    })
     .expect(400);
   const { body: published } = await call(driver, 'post', '/trips')
     .send(publication)
     .expect(201);
   routeTrip = published.id;
   expect(published.itinerary.geometry).toEqual(option.geometry);
+  expect(
+    (await call(driver, 'get', `/trips/${routeTrip}/operation`).expect(200))
+      .body.maneuvers,
+  ).toEqual(option.maneuvers);
+  await call(passenger, 'get', `/trips/${routeTrip}/operation`).expect(404);
+  const { body: duplicate } = await call(
+    driver,
+    'post',
+    `/trips/${routeTrip}/duplicate`,
+  )
+    .send({ departureAt: new Date(+departureAt + 86400000).toISOString() })
+    .expect(201);
+  duplicatedTrip = duplicate.id;
+  expect(
+    (
+      await call(driver, 'get', `/trips/${duplicatedTrip}/operation`).expect(
+        200,
+      )
+    ).body.maneuvers,
+  ).toEqual(option.maneuvers);
   expect(
     published.itinerary.stops.map(
       ({ estimatedOffsetSeconds }) => estimatedOffsetSeconds,

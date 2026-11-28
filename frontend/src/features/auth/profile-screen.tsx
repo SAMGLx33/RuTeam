@@ -100,6 +100,14 @@ function ProfileSettings({ user }: { user: Account }) {
               ? 'Cuenta de pruebas'
               : eligibilityLabels[user.eligibility.status]}
           </Text>
+          {user.eligibility.status === 'DECLARED' && (
+            <Text style={s.text}>
+              El acceso por dominio declarado no acredita tu matrícula.
+              {user.emailVerified
+                ? ' Tu correo se confirmó previamente.'
+                : ' La titularidad de tu correo está sin verificar.'}
+            </Text>
+          )}
         </View>
       </View>
       <View style={styles.settingsGrid}>

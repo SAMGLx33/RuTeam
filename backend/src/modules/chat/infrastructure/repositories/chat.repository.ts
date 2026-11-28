@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ENVIRONMENT,
+  type Environment,
+} from '../../../../config/environment.js';
+import { participationCandidates } from '../../../institutional-membership/infrastructure/participation-candidates.js';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../../../generated/prisma/client.js';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 import { chatRetentionMs, type ChatMarker } from '../../domain/chat.policy.js';
@@ -75,6 +80,7 @@ function createChatUnit(
   tx: Prisma.TransactionClient,
   tripId: string,
   actorId: string,
+  access: Environment,
 ) {
   return {
     trip: () =>
@@ -131,15 +137,7 @@ function createChatUnit(
       const users = await tx.user.findMany({
         where: {
           id: { not: actorId },
-          disabledAt: null,
-          emailVerifiedAt: { not: null },
-          membership: {
-            is: {
-              status: 'ACTIVE',
-              group: 'STUDENT',
-              validUntil: { gt: createdAt },
-            },
-          },
+          AND: participationCandidates(access, createdAt, true),
           OR: [
             { id: driverId },
             {
@@ -204,7 +202,10 @@ export type ChatMessageRow = Prisma.TripChatMessageGetPayload<{
 
 @Injectable()
 export class ChatRepository {
-  constructor(private readonly db: PrismaService) {}
+  constructor(
+    private readonly db: PrismaService,
+    @Inject(ENVIRONMENT) private readonly env: Environment,
+  ) {}
   unread(actorId: string, tripIds: string[]) {
     return unreadCounts(this.db, actorId, tripIds);
   }
@@ -264,7 +265,7 @@ export class ChatRepository {
       >`SELECT id FROM "Trip" WHERE id = ${tripId}::uuid FOR UPDATE`;
       if (!locked.length)
         throw new NotFoundException('Conversación inexistente');
-      return operation(createChatUnit(tx, tripId, actorId));
+      return operation(createChatUnit(tx, tripId, actorId, this.env));
     });
   }
 

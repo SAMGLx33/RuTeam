@@ -5,6 +5,7 @@ const schema = z.object({
     .default('development'),
   DEMO_MODE: z.enum(['true', 'false']).default('false'),
   VERIFICATION_PROVIDER: z.enum(['demo', 'official']).default('official'),
+  INSTITUTIONAL_ACCESS_MODE: z.enum(['DECLARED_DOMAIN', 'OFFICIAL']).optional(),
   DATABASE_URL: z.url(),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   EXPO_PUSH_ENABLED: z
@@ -49,6 +50,16 @@ const schema = z.object({
 });
 export function readEnvironment() {
   const parsed = schema.parse(process.env);
+  const institutionalAccess =
+    parsed.INSTITUTIONAL_ACCESS_MODE ??
+    (parsed.NODE_ENV === 'production' ? 'OFFICIAL' : 'DECLARED_DOMAIN');
+  if (
+    parsed.NODE_ENV === 'production' &&
+    institutionalAccess === 'DECLARED_DOMAIN'
+  )
+    throw new Error(
+      'DECLARED_DOMAIN sólo se permite en instalaciones académicas no productivas',
+    );
   if (parsed.DEMO_MODE === 'true' && parsed.NODE_ENV === 'production')
     throw new Error('DEMO_MODE prohibido en producción');
   if (parsed.DEMO_MODE === 'false' && parsed.VERIFICATION_PROVIDER === 'demo') {
@@ -95,7 +106,12 @@ export function readEnvironment() {
   const origins = parsed.CORS_ORIGINS.split(',').map(
     (origin) => new URL(origin.trim()).origin,
   );
-  return { ...parsed, demo: parsed.DEMO_MODE === 'true', origins };
+  return {
+    ...parsed,
+    INSTITUTIONAL_ACCESS_MODE: institutionalAccess,
+    demo: parsed.DEMO_MODE === 'true',
+    origins,
+  };
 }
 export type Environment = ReturnType<typeof readEnvironment>;
 export const ENVIRONMENT = Symbol('ENVIRONMENT');

@@ -46,6 +46,7 @@ export async function api<T>(
   const signal = options?.signal;
   const method = options?.method ?? 'GET';
   const isWrite = method !== 'GET';
+  const accountIndependent = method === 'GET' && path === '/auth/access';
   const version = sessionVersion;
   if (Platform.OS === 'web' && browserOffline()) {
     setConnectionStatus('lost');
@@ -71,7 +72,7 @@ export async function api<T>(
       signal: controller.signal,
     });
     if (signal?.aborted) throw new Error('Solicitud cancelada');
-    if (version !== sessionVersion)
+    if (!accountIndependent && version !== sessionVersion)
       throw new ApiError(
         'La sesión cambió. Vuelve a la pantalla anterior.',
         401,
@@ -84,7 +85,10 @@ export async function api<T>(
       if (response.ok) throw error;
       return null;
     });
-    if (version !== sessionVersion || signal?.aborted) {
+    if (
+      (!accountIndependent && version !== sessionVersion) ||
+      signal?.aborted
+    ) {
       if (signal?.aborted) throw new Error('Solicitud cancelada');
       throw new ApiError(
         'La sesión cambió. Vuelve a la pantalla anterior.',

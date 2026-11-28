@@ -1,30 +1,31 @@
-import { Text, View } from '../../theme/primitives';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppState, Platform, Share } from 'react-native';
-import {
-  Accuracy,
-  getCurrentPositionAsync,
-  requestForegroundPermissionsAsync,
-} from 'expo-location';
-import type {
-  TripDriverLocationInput,
-  TripTrackingView,
-} from '@ruteam/contracts';
-import { useCallback, useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Platform, Share, Text, View } from 'react-native';
-import type { TripTrackingView } from '@ruteam/contracts';
+import { Platform, Share } from 'react-native';
+import type { TripOperation, TripTrackingView } from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';
 import { formStyles as s } from '../../components/ui/protected-page';
 import { api, ApiError } from '../../services/api/client';
-import { RouteGeometryPreview, travelTime } from '../trips/route-preview';
-
-import { useLocationSharing } from './use-location-sharing';
 import { useSession } from '../../providers/session-provider';
+import { Text, View } from '../../theme/primitives';
+import {
+  DriverNavigation,
+  type DriverObservation,
+} from '../trips/driver-navigation';
+import {
+  estimateRouteProgress,
+  prepareNavigation,
+  type NavigationFix,
+} from '../trips/route-progress';
+import { RouteGeometryPreview, travelTime } from '../trips/route-preview';
+import { useLocationSharing } from './use-location-sharing';
 
-export function TripLocation(props: { userId: string; tripId: string }) {
+interface TripLocationProps {
+  userId: string;
+  tripId: string;
+  navigation?: TripOperation;
+}
+
+export function TripLocation(props: TripLocationProps) {
   return (
     <TripLocationContent key={`${props.userId}:${props.tripId}`} {...props} />
   );
@@ -33,10 +34,8 @@ export function TripLocation(props: { userId: string; tripId: string }) {
 function TripLocationContent({
   userId,
   tripId,
-}: {
-  userId: string;
-  tripId: string;
-}) {
+  navigation,
+}: TripLocationProps) {
   const { user, connection } = useSession();
   const [previewedSample, setPreviewedSample] = useState<string>();
   const [sharingError, setSharingError] = useState('');
@@ -66,10 +65,37 @@ function TripLocationContent({
   const view =
     location.isError || connection === 'lost' ? undefined : location.data;
   const isCurrentDriver = user?.id === userId && view?.canShare === true;
+  const maneuvers = navigation?.maneuvers;
+  const model = useMemo(
+    () => (maneuvers?.length ? prepareNavigation(maneuvers) : null),
+    [maneuvers],
+  );
+  const [observation, setObservation] = useState<DriverObservation | null>(
+    null,
+  );
+  const observe = useCallback(
+    (fix: NavigationFix | null) => {
+      if (!fix) return setObservation(null);
+      setObservation((previous) => {
+        const lastProjection = previous?.lastProjection ?? null;
+        const estimate = model
+          ? estimateRouteProgress(model, fix, lastProjection, fix.timestamp)
+          : null;
+        return {
+          fix,
+          estimate,
+          lastProjection:
+            estimate?.status === 'ON_ROUTE' ? estimate : lastProjection,
+        };
+      });
+    },
+    [model],
+  );
   const sharing = useLocationSharing(
     path,
     isCurrentDriver && connection !== 'lost',
     refresh,
+    navigation ? observe : undefined,
   );
   const forget = useMutation({ mutationFn: sharing.stop, onSettled: refresh });
   const expiration = view?.expiresAt;
@@ -154,6 +180,14 @@ function TripLocationContent({
 
   return (
     <View style={s.section}>
+      {navigation && (
+        <DriverNavigation
+          row={navigation}
+          observation={
+            isCurrentDriver && sharing.state === 'active' ? observation : null
+          }
+        />
+      )}
       <Text style={s.title}>Ubicación del conductor</Text>
       {location.isPending && (
         <Text style={s.text}>Consultando la ubicación compartida…</Text>
@@ -185,16 +219,20 @@ function TripLocationContent({
               ? 'Precisión desconocida'
               : `Precisión estimada · ${accuracy} m`}
           </Text>
-          <RouteGeometryPreview
-            geometry={view.route.geometry}
-            stops={view.route.stops}
-            observedPosition={imprecise ? undefined : sample}
-          />
-          <Text style={s.text}>
-            {imprecise
-              ? 'La precisión es insuficiente para dibujar un punto. El esquema muestra el recorrido publicado.'
-              : 'El marcador naranja muestra la posición aproximada. El recorrido publicado es independiente.'}
-          </Text>
+          {!navigation && (
+            <>
+              <RouteGeometryPreview
+                geometry={view.route.geometry}
+                stops={view.route.stops}
+                observedPosition={imprecise ? undefined : sample}
+              />
+              <Text style={s.text}>
+                {imprecise
+                  ? 'La precisión es insuficiente para dibujar un punto. El esquema muestra el recorrido publicado.'
+                  : 'El marcador naranja muestra la posición aproximada. El recorrido publicado es independiente.'}
+              </Text>
+            </>
+          )}
           {shareText ? (
             <>
               <Text selectable style={s.text}>

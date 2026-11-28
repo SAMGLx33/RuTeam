@@ -50,7 +50,7 @@ async function checkBoarding(
   trip: BookableTrip,
   row: BoardableReservation,
   now: Date,
-  grace: number,
+  env: Environment,
 ): Promise<void> {
   if (
     row.status !== 'CONFIRMED' ||
@@ -64,13 +64,14 @@ async function checkBoarding(
   if (trip.status === 'PROGRAMADO') {
     if (
       row.pickupId !== trip.stops[0]?.id ||
-      departureState(trip, now, grace) === 'EXPIRED' ||
+      departureState(trip, now, env.TRIP_EXPIRATION_GRACE_MINUTES) ===
+        'EXPIRED' ||
       !originBoardingWindow(tripWindow(trip).start, tripWindow(trip).end, now)
     )
       throw new ConflictException(
         'Antes de iniciar sólo se registra abordaje en el origen dentro de la ventana de salida',
       );
-    checkDriver(trip, now);
+    checkDriver(trip, now, env);
   }
   await checkMembers(
     unit,
@@ -152,7 +153,7 @@ export class ReservationsService {
             'La nueva estimación debe ser futura y hasta tres horas después de la salida programada',
           );
         const delayed = { ...trip, estimatedDepartureAt: at };
-        checkDriver(delayed, now);
+        checkDriver(delayed, now, this.env);
         if (await hasActivityConflict(tx, actorId, tripWindow(delayed), tripId))
           throw new ConflictException(
             'La demora coincide con otro desplazamiento del conductor',
@@ -199,7 +200,7 @@ export class ReservationsService {
           );
         const now = new Date();
         checkOpen(trip, now);
-        checkDriver(trip, now);
+        checkDriver(trip, now, this.env);
         await checkMembers(unit, [actorId], now);
         const existing = await unit.activeForMember(actorId);
         if (existing) {
@@ -269,13 +270,7 @@ export class ReservationsService {
       const row = await unit.find(id);
       if (!row) throw new NotFoundException('Participación inexistente');
       const now = new Date();
-      await checkBoarding(
-        unit,
-        trip,
-        row,
-        now,
-        this.env.TRIP_EXPIRATION_GRACE_MINUTES,
-      );
+      await checkBoarding(unit, trip, row, now, this.env);
       if (row.boardedAt) return reservationView(row, actorId);
       await unit.revokePass(id);
       return reservationView(await unit.board(id, now, actorId), actorId);
@@ -294,13 +289,7 @@ export class ReservationsService {
       )
         throw new NotFoundException('Participación inexistente');
       const now = new Date();
-      await checkBoarding(
-        unit,
-        trip,
-        row,
-        now,
-        this.env.TRIP_EXPIRATION_GRACE_MINUTES,
-      );
+      await checkBoarding(unit, trip, row, now, this.env);
       if (row.boardedAt)
         throw new ConflictException('El abordaje ya está registrado');
       const pass = createBoardingPass(now);
@@ -334,13 +323,7 @@ export class ReservationsService {
         throw new ConflictException(
           'El QR ya no corresponde a un abordaje pendiente',
         );
-      await checkBoarding(
-        unit,
-        trip,
-        row,
-        now,
-        this.env.TRIP_EXPIRATION_GRACE_MINUTES,
-      );
+      await checkBoarding(unit, trip, row, now, this.env);
       const boarded = await unit.board(row.id, now, actorId);
       await unit.consumeBoardingPass(row.id, now);
       return reservationView(boarded, actorId);
@@ -487,7 +470,7 @@ export class ReservationsService {
           throw new ConflictException(
             'La ventana para iniciar el viaje venció',
           );
-        checkDriver(trip, now);
+        checkDriver(trip, now, this.env);
         const origin = trip.stops[0];
         if (!origin)
           throw new ConflictException('El viaje no tiene un origen registrado');

@@ -41,3 +41,7 @@ El reintento manual del mismo mensaje usa el mismo identificador.
 ## Operación
 
 Permitir conexiones HTTP largas y desactivar buffering de respuestas SSE en el proxy. La API envía `X-Accel-Buffering: no`. Si se usa PgBouncer, la conexión que ejecuta `LISTEN` necesita un endpoint PostgreSQL directo o pooling por sesión. `DATABASE_URL` ya señala PostgreSQL en el entorno local. Si falla la escucha, se cierran los flujos, se reintenta la conexión y la app conserva HTTP.
+
+SSE revalida la sesión y política de acceso vigente en cuentas académicas.
+La configuración pública de acceso se puede leer durante el arranque de sesión.
+Las consultas privadas permanecen ligadas a la cuenta.

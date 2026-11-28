@@ -25,11 +25,15 @@ export class VehiculoRepository {
   registrar(
     ownerId: string,
     data: RegisterVehicleDto,
-    demo: boolean,
     energy?: VehicleEnergyProfile,
   ) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${ownerId}::uuid FOR UPDATE`;
+      const owner = await tx.user.findUniqueOrThrow({
+        where: { id: ownerId },
+        select: { demoIdentity: true },
+      });
+      const demo = owner.demoIdentity !== null;
       return tx.vehicle.create({
         data: {
           ownerId,
@@ -57,9 +61,14 @@ export class VehiculoRepository {
   licencia(userId: string) {
     return this.db.driverEligibility.findUnique({ where: { userId } });
   }
-  registrarLicencia(userId: string, data: RegisterLicenseDto, demo: boolean) {
+  registrarLicencia(userId: string, data: RegisterLicenseDto) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
+      const owner = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { demoIdentity: true },
+      });
+      const demo = owner.demoIdentity !== null;
       return tx.driverEligibility.upsert({
         where: { userId },
         create: {
@@ -96,14 +105,14 @@ export class VehiculoRepository {
         : null;
     });
   }
-  actualizarSoat(
-    ownerId: string,
-    vehicleId: string,
-    expiresAt: Date,
-    demo: boolean,
-  ) {
+  actualizarSoat(ownerId: string, vehicleId: string, expiresAt: Date) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${ownerId}::uuid FOR UPDATE`;
+      const owner = await tx.user.findUniqueOrThrow({
+        where: { id: ownerId },
+        select: { demoIdentity: true },
+      });
+      const demo = owner.demoIdentity !== null;
       const vehicle = await tx.vehicle.findUnique({ where: { id: vehicleId } });
       if (!vehicle || vehicle.ownerId !== ownerId) return null;
       await tx.vehicleDocument.upsert({

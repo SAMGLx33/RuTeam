@@ -7,7 +7,7 @@ No Prisma en controllers de negocio ni reglas críticas en React o contratos.
 
 Separar guard de sesión de cuenta de guard de estudiante vigente. Registro/login,
 perfil básico/verificación/logout expresamente permitidos no acreditan correo o matrícula.
-Operaciones de viajes/feed/movilidad requieren correo comprobado, estamento y vigencia;
+Operaciones de viajes/feed/movilidad requieren la política institucional configurada;
 preferir conducir no concede capacidad. Revisar AUTHORIZATION_MATRIX para propietario y
 transición. Nueva autenticación con contraseña propia RuTeam y scrypt con sal/parámetros
 versionados, jamás password USC. Tokens de correo/recuperación impredecibles, hasheados,
@@ -102,3 +102,10 @@ individual o grupal que alteran horarios adquieren el advisory exclusivo antes
 de conductor y viaje. Los descensos permanecen por pasajero, conservan plazas y
 provocan señales de lectura. El vencimiento de un viaje sin iniciar es persistente.
 Mantener las lecturas autorizadas por recurso, incluidas ubicación y SSE.
+
+## Cuenta declarada y ruta publicada
+
+Reusar la política de institutional-membership en guardas, casos de uso y
+trabajadores. La primera admisión declarada queda en PostgreSQL para proteger
+credenciales ante enlaces antiguos. Los documentos académicos se guardan como
+declaraciones. Las maniobras quedan vinculadas a la selección firmada.

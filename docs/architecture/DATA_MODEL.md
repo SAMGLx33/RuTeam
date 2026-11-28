@@ -95,3 +95,10 @@ El control `Trip.version` protege cambios concurrentes y activa señales. El his
 de puntos permanece referenciado por reservas, grupos y propuestas. La posición
 en vivo caduca y el registro ambiental añade procedencia sin reescribir cierres
 anteriores.
+
+## Integración de producto
+
+`User.declaredDomainAccessAt` registra el primer acceso declarado y evita
+que enlaces previos cambien sus credenciales. `Trip.routeManeuvers` guarda
+la navegación opcional de la geometría firmada. Las publicaciones históricas
+conservan NULL y el mapa anterior. Ambas migraciones son aditivas.

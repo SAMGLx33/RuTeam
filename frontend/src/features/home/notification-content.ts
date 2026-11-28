@@ -139,7 +139,7 @@ export function notificationContent(item: TripNotificationView): {
             : 'Un viaje pasa cerca de tu zona',
         action: 'Abrir viaje',
         href: { pathname: '/trip/[id]', params: { id: item.tripId } },
-        unavailable: 'El viaje ya no tiene disponibilidad.',
+        unavailable: 'Esta recomendación ya no está vigente.',
       };
     default: {
       const content = eventNotice[item.kind];

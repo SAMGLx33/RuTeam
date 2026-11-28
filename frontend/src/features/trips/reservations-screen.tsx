@@ -74,8 +74,16 @@ export function ReservationSummary({
         </Text>
       )}
       <Text style={[s.text, emphasized && ui.emphasized]}>
-        {participationLabel(item)} · Viaje {tripStatusLabel[item.tripStatus]}
+        {participationLabel(item)} · Viaje{' '}
+        {item.tripStatus === 'PROGRAMADO' && item.expiredAt
+          ? 'vencido'
+          : tripStatusLabel[item.tripStatus]}
       </Text>
+      {item.estimatedDepartureAt && (
+        <Text style={s.text}>
+          Nueva salida estimada · {travelTime(item.estimatedDepartureAt)}
+        </Text>
+      )}
       <Text style={s.text}>
         Encuentro · {item.pickup.label}
         {item.pickup.instructions ? ` · ${item.pickup.instructions}` : ''}
@@ -119,7 +127,8 @@ export function ReservationsScreen() {
   const history: ReservationView[] = [];
   for (const item of list.data ?? []) {
     const upcomingTrip =
-      item.tripStatus === 'PROGRAMADO' || item.tripStatus === 'EN_CURSO';
+      (item.tripStatus === 'PROGRAMADO' && !item.expiredAt) ||
+      item.tripStatus === 'EN_CURSO';
     const currentParticipation = item.status === 'CONFIRMED' && !item.noShowAt;
     (upcomingTrip && currentParticipation ? upcoming : history).push(item);
   }
@@ -138,23 +147,6 @@ export function ReservationsScreen() {
       {item.withdrawalReason && (
         <Text style={s.text}>
           Motivo · {cancellationLabel[item.withdrawalReason]}
-      <Link href="/groups" style={s.link}>
-        Mis grupos
-      </Link>
-      <Text style={s.text}>
-        Aquí puedes consultar tu plaza individual o confirmada en grupo. Puedes
-        retirarte antes de abordar si el viaje sigue programado. Tu plaza se
-        libera y el historial se conserva.
-      </Text>
-      {list.isPending && <Text>Consultando tus participaciones…</Text>}
-      {list.error && (
-        <Text accessibilityRole="alert" style={s.error}>
-          {list.error.message}
-        </Text>
-      )}
-      {cancel.error && (
-        <Text accessibilityRole="alert" style={s.error}>
-          {cancel.error.message}
         </Text>
       )}
       <View style={ui.subdued}>
@@ -174,7 +166,8 @@ export function ReservationsScreen() {
             >
               Incidencias privadas
             </Link>
-            {!!item.economics?.suggestedContributionCop &&
+            {item.tripStatus === 'COMPLETADO' &&
+              !!item.economics?.suggestedContributionCop &&
               item.isRequester &&
               item.quantity === 1 && (
                 <Link
@@ -209,6 +202,7 @@ export function ReservationsScreen() {
       {item.isRequester &&
         item.status === 'CONFIRMED' &&
         item.quantity === 1 &&
+        !item.expiredAt &&
         !item.boardedAt &&
         !item.noShowAt &&
         (item.tripStatus === 'PROGRAMADO' ||
@@ -259,8 +253,9 @@ export function ReservationsScreen() {
     <ProtectedPage title="Mis participaciones">
       <View style={ui.panel}>
         <Text style={s.text}>
-          Consulta tus plazas individuales y en grupo. Retirarte de un viaje
-          futuro antes de abordar libera tu plaza y conserva tu historial.
+          Consulta tus plazas individuales y en grupo. Puedes retirarte antes de
+          abordar si el viaje sigue programado. Se libera tu plaza y conservas
+          tu historial.
         </Text>
         <View style={ui.row}>
           <Link href="/search-trips" style={s.link}>

@@ -43,6 +43,7 @@ model User {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   passwordHash String? @db.VarChar(255)
   emailVerifiedAt DateTime? @db.Timestamptz(3)
+  declaredDomainAccessAt DateTime? @db.Timestamptz(3)
   usagePreference UsagePreference?
   onboardingStep Int @default(0)
   onboardingCompletedAt DateTime? @db.Timestamptz(3)
@@ -243,6 +244,7 @@ model Trip {
   destinationId String? @db.Uuid
   routeDescription String? @db.VarChar(240)
   routeGeometry Json?
+  routeManeuvers Json?
   routeDistanceMeters Int?
   originLabel String @db.VarChar(100)
   originLatitude Decimal @db.Decimal(9,6)

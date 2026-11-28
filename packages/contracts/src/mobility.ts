@@ -46,6 +46,7 @@ export interface TripFeedCard {
   destinationLabel: string;
   meetingLabel: string;
   departureAt: string;
+  estimatedDepartureAt?: string | null;
   estimatedDurationMinutes: number;
   availableSeats: number;
   providesHelmet: boolean | null;
@@ -63,6 +64,8 @@ export interface TripDetail extends Omit<AvailableTrip, 'match'> {
   status: TripSummary['status'];
   terminationReason?: TripSummary['terminationReason'];
   expectedEndAt: string;
+  estimatedDepartureAt?: string | null;
+  expiredAt?: string | null;
   offeredSeats: number;
   occupiedSeats: number;
   isDriver: boolean;

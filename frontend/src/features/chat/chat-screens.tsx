@@ -23,7 +23,6 @@ import { useAppearance } from '../../theme/appearance';
 import { Link, Text, TextInput, View } from '../../theme/primitives';
 import { breakpoints, colors, radii } from '../../theme/tokens';
 import { api, ApiError } from '../../services/api/client';
-import { colors } from '../../theme/tokens';
 import { tripDate } from '../trips/trip-feed';
 import { tripStatusLabel } from '../trips/route-preview';
 
@@ -323,7 +322,12 @@ function ChatRoom({
           );
         })}
       </View>
-      {(send.error || read.error || loadOlder.error) && (
+      {resultRecovered && (
+        <Text accessibilityLiveRegion="polite" style={s.text}>
+          Envío confirmado después de consultar la conversación.
+        </Text>
+      )}
+      {(sendError || read.error || loadOlder.error) && (
         <Text accessibilityRole="alert" style={s.error}>
           {sendError?.message ??
             read.error?.message ??
@@ -363,7 +367,6 @@ function ChatRoom({
                   ? 'Reintentar envío'
                   : 'Enviar mensaje'
             }
-            disabled={!body.trim() || send.isPending}
             loading={send.isPending}
             icon="send"
             disabled={!draft.trim() || send.isPending}

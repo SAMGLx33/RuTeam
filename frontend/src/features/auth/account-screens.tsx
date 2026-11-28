@@ -1,10 +1,8 @@
 import { ActivityIndicator, Link, Text, View } from '../../theme/primitives';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 
 import type {
-  AccessConfiguration,
   StudentEligibilityStatus,
   UsagePreference,
 } from '@ruteam/contracts';
@@ -15,6 +13,7 @@ import {
 import { Button } from '../../components/ui/button';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
+import { useAccessConfiguration } from './access-configuration';
 import {
   AccountFeedback,
   AccountField,
@@ -25,6 +24,7 @@ import {
 export const eligibilityLabels: Record<StudentEligibilityStatus, string> = {
   PENDING_VERIFICATION: 'Verificación estudiantil pendiente',
   VERIFIED_CURRENT: 'Estudiante vigente',
+  DECLARED: 'Acceso por dominio USC declarado',
   INELIGIBLE: 'Vinculación no elegible',
   EXPIRED: 'Vigencia vencida',
   REVOKED: 'Verificación revocada',
@@ -36,16 +36,31 @@ export function VerificationScreen() {
   const action = useAccountAction();
   const { user } = session;
   const [password, setPassword] = useState('');
-  const access = useQuery({
-    queryKey: ['access-configuration'],
-    enabled: !!user && !token && !user.emailVerified,
-    queryFn: () => api<AccessConfiguration>('/auth/access'),
-  });
+  const access = useAccessConfiguration(!!user || !!token);
+  const declared = access.data?.institutionalAccess === 'DECLARED_DOMAIN';
 
   if (session.loading && !token)
     return <ActivityIndicator accessibilityLabel="Consultando sesión" />;
   if (!token && !user) return <Redirect href="/" />;
   if (!token && user?.capabilities.passenger) return <Redirect href="/" />;
+  if (token && (access.isPending || access.isError || declared))
+    return (
+      <AccountPage title="Confirmación de correo">
+        {access.isPending && (
+          <ActivityIndicator accessibilityLabel="Consultando el acceso" />
+        )}
+        <AccountFeedback error={access.error?.message} />
+        {declared && (
+          <Text style={s.text}>
+            Esta instalación admite el dominio declarado. Para acceder usa la
+            contraseña que elegiste en RuTeam.
+          </Text>
+        )}
+        <Link href="/" style={s.link}>
+          Volver a iniciar sesión
+        </Link>
+      </AccountPage>
+    );
 
   return (
     <AccountPage
@@ -90,34 +105,42 @@ export function VerificationScreen() {
       ) : (
         <>
           <Text style={s.text}>{user?.email}</Text>
-          <Text style={s.text}>
-            {user?.emailVerified
-              ? 'Correo confirmado.'
-              : access.data?.accountEmailAvailable
-                ? 'Confirma el enlace que recibiste por correo.'
-                : 'El envío de correo está pendiente de habilitación.'}
-          </Text>
-          <Text style={s.text}>
-            Para ver y compartir viajes necesitas que la USC acredite tu
-            matrícula vigente. El servicio de verificación institucional todavía
-            no está disponible.
-          </Text>
-          {!user?.emailVerified && access.data?.accountEmailAvailable && (
-            <Button
-              title="Reenviar correo"
-              disabled={action.busy}
-              onPress={() => {
-                void action.run(async () => {
-                  await api('/auth/email/request', {
-                    method: 'POST',
-                    body: { email: user?.email },
-                  });
-                  action.setMessage(
-                    'Si el correo está disponible, recibirás un enlace nuevo.',
-                  );
-                });
-              }}
-            />
+          {declared ? (
+            <Text style={s.text}>
+              El estado actual de tu cuenta restringe el acceso a los viajes.
+              Consulta el estado o vuelve a iniciar sesión.
+            </Text>
+          ) : (
+            <>
+              <Text style={s.text}>
+                {user?.emailVerified
+                  ? 'Correo confirmado.'
+                  : access.data?.accountEmailAvailable
+                    ? 'Confirma el enlace que recibiste por correo.'
+                    : 'La confirmación por correo está temporalmente indisponible.'}
+              </Text>
+              <Text style={s.text}>
+                En esta instalación el acceso a viajes requiere acreditar la
+                matrícula vigente.
+              </Text>
+              {!user?.emailVerified && access.data?.accountEmailAvailable && (
+                <Button
+                  title="Reenviar correo"
+                  disabled={action.busy}
+                  onPress={() => {
+                    void action.run(async () => {
+                      await api('/auth/email/request', {
+                        method: 'POST',
+                        body: { email: user?.email },
+                      });
+                      action.setMessage(
+                        'Si el correo está disponible, recibirás un enlace nuevo.',
+                      );
+                    });
+                  }}
+                />
+              )}
+            </>
           )}
           <Button
             title="Actualizar estado"
@@ -154,6 +177,10 @@ export function RecoverAccessScreen() {
   const { token } = useLocalSearchParams<{ token?: string }>();
   const [value, setValue] = useState('');
   const action = useAccountAction();
+  const access = useAccessConfiguration(!token);
+  const declared = access.data?.institutionalAccess === 'DECLARED_DOMAIN';
+  const canRequest = access.data?.accountEmailAvailable === true;
+
   async function submit() {
     const path = token ? '/auth/password/reset' : '/auth/password/request';
     await api(path, {
@@ -163,30 +190,56 @@ export function RecoverAccessScreen() {
     action.setMessage(
       token
         ? 'Contraseña actualizada. Inicia sesión con tu contraseña nueva.'
-        : 'Si existe una cuenta asociada, recibirá un enlace para restablecer su acceso.',
+        : 'Si la cuenta admite recuperación por correo, recibirás instrucciones.',
     );
     setValue('');
   }
+
   return (
     <AccountPage title={token ? 'Cambia tu contraseña' : 'Recuperar acceso'}>
-      <AccountField
-        label={token ? 'Contraseña nueva' : 'Correo institucional'}
-        secureTextEntry={!!token}
-        autoCapitalize="none"
-        autoComplete={token ? 'new-password' : 'email'}
-        value={value}
-        onChangeText={setValue}
-      />
-      <AccountFeedback error={action.error}>{action.message}</AccountFeedback>
-      <Button
-        title={token ? 'Guardar contraseña' : 'Enviar enlace'}
-        disabled={
-          action.busy || (token ? value.length < 12 : !value.includes('@'))
-        }
-        onPress={() => {
-          void action.run(submit);
-        }}
-      />
+      {!token && access.isPending && (
+        <ActivityIndicator accessibilityLabel="Consultando opciones de recuperación" />
+      )}
+      {!token && access.isSuccess && !canRequest && (
+        <Text style={s.text}>
+          La recuperación por correo está temporalmente indisponible.
+        </Text>
+      )}
+      {!token && declared && (
+        <Text style={s.text}>
+          La recuperación por correo está reservada a las cuentas que ya
+          verificaron la titularidad.
+        </Text>
+      )}
+      {(token || canRequest) && (
+        <>
+          <AccountField
+            label={token ? 'Contraseña nueva' : 'Correo institucional'}
+            secureTextEntry={!!token}
+            autoCapitalize="none"
+            autoComplete={token ? 'new-password' : 'email'}
+            value={value}
+            onChangeText={setValue}
+          />
+          <Button
+            title={token ? 'Guardar contraseña' : 'Enviar enlace'}
+            disabled={
+              action.busy ||
+              (token
+                ? value.length < 12 || value.length > 128
+                : !value.includes('@'))
+            }
+            onPress={() => {
+              void action.run(submit);
+            }}
+          />
+        </>
+      )}
+      <AccountFeedback
+        error={action.error ?? (!token ? access.error?.message : undefined)}
+      >
+        {action.message}
+      </AccountFeedback>
       <Link href="/" style={s.link}>
         Volver a iniciar sesión
       </Link>
@@ -198,8 +251,8 @@ export function PrivacyScreen() {
   return (
     <AccountPage title="Privacidad y condiciones de uso">
       <Text style={s.text}>
-        RuTeam conecta a estudiantes vigentes de la USC para compartir viajes
-        que ya tiene previsto realizar un conductor.
+        RuTeam facilita compartir viajes programados hacia o desde la
+        Universidad Santiago de Cali.
       </Text>
       <Text style={s.text}>
         Usamos tu correo para administrar el acceso. Tus preferencias de
@@ -211,9 +264,10 @@ export function PrivacyScreen() {
         datos de otras personas.
       </Text>
       <Text style={s.text}>
-        El conductor puede compartir una ubicación puntual durante un viaje
-        activo. La ven los participantes autorizados durante dos minutos como
-        máximo. Puede retirarse desde Seguridad del viaje.
+        En un viaje activo, el conductor puede compartir actualizaciones de
+        ubicación mientras la app esté en primer plano. Cada muestra visible
+        para los participantes autorizados caduca en dos minutos. El conductor
+        puede pausar o retirar la posición desde Seguridad del viaje.
       </Text>
       <Text style={s.text}>
         Los comentarios de calificación quedan en el historial de quien los
@@ -268,15 +322,21 @@ export function OnboardingScreen() {
         <View style={s.field}>
           <Text style={s.label}>{user.profile.displayName}</Text>
           <Text style={s.text}>{user.email}</Text>
-          <Text style={s.text}>Correo confirmado</Text>
+          <Text style={s.text}>
+            {user.eligibility.status === 'DECLARED'
+              ? eligibilityLabels.DECLARED
+              : user.emailVerified
+                ? 'Correo confirmado'
+                : eligibilityLabels[user.eligibility.status]}
+          </Text>
         </View>
       )}
       {step === 1 && <UsageChoices value={selected} onChange={setPreference} />}
       {step === 2 && (
         <>
           <Text style={s.text}>
-            Agrega una zona habitual y un horario para ver viajes compatibles.
-            Puedes hacerlo más tarde.
+            Personaliza tus recomendaciones con zonas y horarios habituales.
+            Puedes configurarlas ahora o desde Perfil cuando lo prefieras.
           </Text>
           <Link href="/mobility" style={s.link}>
             Configurar movilidad

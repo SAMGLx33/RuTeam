@@ -83,9 +83,9 @@ Si requiere descargas, diagnosticar el paquete/host oficial y permisos de red; n
 | ROUTING_BASE_URL                                                | Motor vial HTTP(S) de confianza opcional; no servicio público ilimitado              |
 | EXPO_PUBLIC_ROUTE_TILE_URL / EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION | Teselas XYZ autorizadas y atribución visible; ambas públicas                         |
 
-La plantilla mantiene `DEMO_MODE=false` y `VERIFICATION_PROVIDER=official`. El registro
-local persiste cuentas pendientes aunque SMTP no esté configurado. La autenticación
-de cuenta permite consultar el estado; los viajes permanecen restringidos a elegibles.
+La plantilla usa `DEMO_MODE=false` y `INSTITUTIONAL_ACCESS_MODE=DECLARED_DOMAIN`.
+Registro, sesión e incorporación funcionan sin SMTP. `OFFICIAL` exige la fuente de
+acreditación. El entorno productivo requiere modo oficial.
 
 Para pruebas locales autorizadas, usa `NODE_ENV=development`, `DEMO_MODE=true` y
 `VERIFICATION_PROVIDER=demo` en el entorno de los comandos. Define
@@ -245,3 +245,8 @@ propia cuyo nombre termine en `_test`. Ejecuta `npm run db:generate`,
 Mantén `EXPO_PUSH_ENABLED=false` durante las pruebas locales. La guía de
 [seguridad y notificaciones móviles](MOBILE_TESTING.md) contiene pasos
 separados para Expo Go y para development build.
+
+La cartografía se configura con `GEOCODING_BASE_URL`, `ROUTING_BASE_URL` y
+`EXPO_PUBLIC_ROUTE_TILE_URL` con `EXPO_PUBLIC_ROUTE_TILE_ATTRIBUTION`. Usar
+servicios autorizados. Definir `ROUTING_SELECTION_SECRET` en todas las réplicas
+si se comparten alternativas firmadas. Consultar [mapas](MAP_EXPERIENCE.md).

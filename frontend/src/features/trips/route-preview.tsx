@@ -43,10 +43,12 @@ export function RouteGeometryPreview({
   geometry,
   stops,
   observedPosition,
+  devicePosition = false,
 }: {
   geometry: RouteGeometry | null;
   stops: MapStop[];
   observedPosition?: MapPoint;
+  devicePosition?: boolean;
 }) {
   const markers = stops.map((point, index): MapMarker => ({
     id: String(index),
@@ -69,17 +71,22 @@ export function RouteGeometryPreview({
     markers.push({
       ...observedPosition,
       id: 'shared-position',
-      label: 'Última posición compartida',
+      label: devicePosition
+        ? 'Tu posición observada'
+        : 'Última posición compartida',
       kind: 'current',
     });
   return (
     <MobilityMap
       label={
         observedPosition
-          ? 'Vista esquemática de la última ubicación compartida y las paradas publicadas.'
+          ? devicePosition
+            ? 'Tu posición observada y la ruta publicada.'
+            : 'Vista esquemática de la última ubicación compartida y las paradas publicadas.'
           : 'Vista geográfica de la geometría publicada. Los números corresponden al orden de paradas.'
       }
       allowTiles={!observedPosition}
+      followPoint={devicePosition ? observedPosition : undefined}
       geometry={geometry}
       markers={markers}
       height={330}

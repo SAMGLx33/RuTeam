@@ -1,3 +1,5 @@
+import { Inject } from '@nestjs/common';
+import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import {
   BadRequestException,
   ConflictException,
@@ -49,6 +51,7 @@ function requireGroup(group: Group | null): Group {
 @Injectable()
 export class GroupsService {
   constructor(
+    @Inject(ENVIRONMENT) private readonly env: Environment,
     private readonly repository: GroupsRepository,
     private readonly reservations: ReservationsRepository,
   ) {}
@@ -63,7 +66,7 @@ export class GroupsService {
           'El conductor no puede participar en su propio viaje',
         );
       checkOpen(trip, now);
-      checkDriver(trip, now);
+      checkDriver(trip, now, this.env);
       await checkMembers(unit, [actorId], now);
       const pickupId = input.pickupId.toLowerCase();
       const dropoffId = input.dropoffId.toLowerCase();
@@ -112,7 +115,7 @@ export class GroupsService {
           'El conductor no puede participar en su propio viaje',
         );
       checkOpen(trip, now);
-      checkDriver(trip, now);
+      checkDriver(trip, now, this.env);
       await checkMembers(unit, [actorId], now);
       if (group.members.some(({ userId }) => userId === actorId))
         return groupView(group, actorId, now);
@@ -172,7 +175,7 @@ export class GroupsService {
         activeInvitation(group, now);
         const trip = await unit.trip();
         checkOpen(trip, now);
-        checkDriver(trip, now);
+        checkDriver(trip, now, this.env);
         checkSegment(trip, group.pickupId, group.dropoffId);
         const ids = group.members.map(({ userId }) => userId);
         if (ids.length !== group.expectedMembers || !ids.includes(actorId))

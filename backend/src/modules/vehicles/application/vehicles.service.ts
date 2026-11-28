@@ -10,6 +10,7 @@ import type {
   VehicleEnergyProfile,
 } from '@ruteam/contracts';
 import { normalizeEnergy } from '../../mobility/domain/emissions.js';
+import { declaredAccessEnabled } from '../../institutional-membership/domain/access-policy.js';
 import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import { VehiculoRepository } from '../infrastructure/repositories/vehicles.repository.js';
 import {
@@ -55,7 +56,6 @@ export class VehiculoService {
         await this.repository.registrar(
           userId,
           data,
-          this.env.demo,
           data.energyProfile ? normalizeEnergy(data.energyProfile) : undefined,
         ),
       );
@@ -88,7 +88,6 @@ export class VehiculoService {
       userId,
       vehicleId,
       this.futureDate(expiresAt),
-      this.env.demo,
     );
     if (!vehicle) throw new NotFoundException('Vehículo propio no encontrado');
     return this.present(vehicle);
@@ -99,7 +98,7 @@ export class VehiculoService {
   async registrarLicencia(userId: string, data: RegisterLicenseDto) {
     this.futureDate(data.expiresAt);
     return this.presentLicense(
-      await this.repository.registrarLicencia(userId, data, this.env.demo),
+      await this.repository.registrarLicencia(userId, data),
     );
   }
   private presentLicense(
@@ -111,7 +110,11 @@ export class VehiculoService {
       category: license.category,
       revision: license.revision,
       expiresAt: license.expiresAt.toISOString(),
-      verificationStatus: VehiculoPolicy.estadoDocumental(license, new Date()),
+      verificationStatus: VehiculoPolicy.estadoDocumental(
+        license,
+        new Date(),
+        declaredAccessEnabled(this.env),
+      ),
       verificationSource: license.verificationSource,
       demo: license.demo,
     };
@@ -137,10 +140,15 @@ export class VehiculoService {
       verificationStatus: VehiculoPolicy.estadoDocumental(
         vehicle.document,
         new Date(),
+        declaredAccessEnabled(this.env),
       ),
       verificationSource:
         vehicle.document?.verificationSource ?? 'SELF_DECLARED',
-      eligibleNow: VehiculoPolicy.esPublicable(vehicle.document, new Date()),
+      eligibleNow: VehiculoPolicy.esPublicable(
+        vehicle.document,
+        new Date(),
+        declaredAccessEnabled(this.env),
+      ),
     };
   }
 }

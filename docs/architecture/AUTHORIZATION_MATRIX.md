@@ -9,22 +9,22 @@ No hay actor ni permiso administrativo de producto. Operación de infraestructur
 
 1. **Identidad/sesión:** cuenta individual autenticada con sesión válida y revocable.
 2. **Correo:** dominio @usc.edu.co y control comprobado del buzón, por separado.
-3. **Elegibilidad:** estudiante vigente acreditado por fuente autorizada y política actual.
-   Pendiente, no elegible, vencido o revocado no acceden a operaciones de viajes.
+3. **Elegibilidad:** dominio declarado en el modo académico o fuente autorizada
+   en modo oficial. Suspensión y revocación restringen el acceso.
 4. **Preferencia:** pasajero o conductor y pasajero; elección editable que no concede permiso.
 5. **Capacidad:** operación permitida ahora por condiciones institucionales/documentales.
 6. **Recurso:** titular/propietario/participante, modalidad, fecha, estado, paradas y cupos.
 
 No inferir matrícula desde dominio, correo confirmado, contraseña, foto/carné/QR o seed.
 No inferir capacidad desde preferencia, menú visible ni flag enviado por el cliente.
-Fuente institucional real ausente falla cerrada para viajes, conservando acceso limitado
+El modo oficial sin fuente falla cerrado para viajes, conservando acceso limitado
 expreso a la cuenta. Las etiquetas siguientes son semánticas; no obligan a crear seis enums.
 
 ## Permisos
 
 «Propio» exige identidad de sesión y autorización del recurso en backend.
 «Condicionado» exige las reglas indicadas y no se concede por la columna solamente.
-Toda columna de estudiante requiere sesión válida, correo verificado y matrícula vigente.
+Cada columna de producto requiere sesión válida y la política institucional configurada.
 
 | Operación                                                                  | Sin sesión                                | Cuenta sin elegibilidad de viajes             | Estudiante pasajero                                              | Conducción inhabilitada, estudiante vigente                               | Conductor habilitado                                 |
 | -------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------- |
@@ -134,3 +134,6 @@ viajes se entregan a estudiantes autorizados a ver el viaje.
 | Consultar GPS activo                              | Conductor o participante confirmado vigente que no haya descendido ni tenga ausencia.                                                        |
 | Guardados, lugares, preferencias, agenda y avisos | Usuario autenticado, acceso a sus propios registros.                                                                                         |
 | Responder a un deep link de aviso                 | Permisos de sesión y del endpoint de destino. El enlace no concede acceso.                                                                   |
+
+Las maniobras se proyectan al conductor propietario. La estimación GPS conserva
+las autorizaciones y las acciones manuales de llegada.

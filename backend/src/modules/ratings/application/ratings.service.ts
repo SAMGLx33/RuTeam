@@ -11,7 +11,6 @@ import type {
   TripRatingsPage,
   TripRatingsView,
 } from '@ruteam/contracts';
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
 import { ratingTargetRole } from '../domain/rating-policy.js';
 import {
   presentSubmitted,
@@ -94,9 +93,8 @@ export class RatingsService {
 
   submit(actorId: string, tripId: string, input: SubmitRatingInput) {
     return this.repository.withTrip(tripId, actorId, async (trip, unit) => {
-      const [membership] = await unit.membership();
-      if (!isActiveMembership(membership ?? null, new Date()))
-        throw new ForbiddenException('Afiliación USC no activa');
+      const [eligible] = await unit.eligibleMembers(new Date());
+      if (!eligible) throw new ForbiddenException('Afiliación USC no activa');
       const passengers = requireCompleted(trip, actorId);
       const rateeId = input.rateeId.toLowerCase();
       if (rateeId === actorId)

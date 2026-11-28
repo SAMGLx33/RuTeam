@@ -72,6 +72,7 @@ export class AuthRepository {
     passwordHash: string,
     name: string,
     usagePreference: 'PASSENGER' | 'DRIVER_AND_PASSENGER',
+    declaredAccess = false,
   ) {
     return this.db.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${email}))`;
@@ -86,6 +87,7 @@ export class AuthRepository {
           email,
           passwordHash,
           usagePreference,
+          declaredDomainAccessAt: declaredAccess ? new Date() : undefined,
           profile: { create: { displayName: name } },
         },
         include: userInclude,
@@ -97,13 +99,25 @@ export class AuthRepository {
     expectedHash: string,
     tokenHash: string,
     expiresAt: Date,
+    declaredAccess = false,
   ) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
       const user = await tx.user.findUnique({ where: { id: userId } });
       if (!user || user.disabledAt || user.passwordHash !== expectedHash)
         return null;
+      if (declaredAccess && !user.declaredDomainAccessAt)
+        await tx.user.update({
+          where: { id: userId },
+          data: { declaredDomainAccessAt: new Date() },
+        });
       return tx.authSession.create({ data: { userId, tokenHash, expiresAt } });
+    });
+  }
+  noteDeclaredUse(userId: string) {
+    return this.db.user.updateMany({
+      where: { id: userId, disabledAt: null, declaredDomainAccessAt: null },
+      data: { declaredDomainAccessAt: new Date() },
     });
   }
   issueAccountToken(
@@ -111,9 +125,21 @@ export class AuthRepository {
     purpose: 'EMAIL_CONFIRMATION' | 'PASSWORD_RESET',
     tokenHash: string,
     expiresAt: Date,
+    requirePreviouslyVerified = false,
   ) {
     return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId}::uuid FOR UPDATE`;
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (
+        !user ||
+        user.disabledAt ||
+        user.demoIdentity !== null ||
+        (!user.emailVerifiedAt &&
+          (requirePreviouslyVerified || user.declaredDomainAccessAt)) ||
+        (purpose === 'EMAIL_CONFIRMATION' &&
+          (user.emailVerifiedAt || user.declaredDomainAccessAt))
+      )
+        return null;
       const now = Date.now();
       const latest = await tx.accountToken.findFirst({
         where: { userId, purpose },
@@ -143,6 +169,7 @@ export class AuthRepository {
     tokenHash: string,
     purpose: 'EMAIL_CONFIRMATION' | 'PASSWORD_RESET',
     passwordHash?: string,
+    requirePreviouslyVerified = false,
   ) {
     if (!passwordHash) return Promise.resolve(false);
     return this.db.$transaction(async (tx) => {
@@ -150,7 +177,16 @@ export class AuthRepository {
       if (!token || token.purpose !== purpose) return false;
       await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${token.userId}::uuid FOR UPDATE`;
       const user = await tx.user.findUnique({ where: { id: token.userId } });
-      if (!user || user.disabledAt || user.demoIdentity !== null) return false;
+      if (
+        !user ||
+        user.disabledAt ||
+        user.demoIdentity !== null ||
+        (!user.emailVerifiedAt &&
+          (requirePreviouslyVerified || user.declaredDomainAccessAt)) ||
+        (purpose === 'EMAIL_CONFIRMATION' &&
+          (user.emailVerifiedAt || user.declaredDomainAccessAt))
+      )
+        return false;
       const now = new Date();
       const claimed = await tx.accountToken.updateMany({
         where: {
@@ -203,7 +239,6 @@ export class AuthRepository {
         user.onboardingStep,
         input.step,
         preference,
-        !!user.emailVerifiedAt,
         input.complete ? await isEligible(user) : false,
         input.complete === true,
       );

@@ -1,5 +1,6 @@
 import { pesos } from '../expenses/economic-terms';
 import { ReputationLabel } from '../ratings/reputation-label';
+import { useSavedTrips } from '../mobility/saved-trips-screen';
 import { useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { StyleSheet, useWindowDimensions } from 'react-native';
@@ -17,7 +18,7 @@ import {
 } from '../../components/ui/protected-page';
 import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
-import { Link, Pressable, Text, View } from '../../theme/primitives';
+import { Link, Pressable, Text, TextInput, View } from '../../theme/primitives';
 import { Icon } from '../../components/ui/icon';
 import { initials } from '../../components/navigation/app-navigation';
 import { RouteGeometryPreview } from './route-preview';
@@ -59,7 +60,13 @@ export function useTripFeed(tab: FeedTab, userId: string | undefined) {
   });
 }
 
-function TripCard({ trip }: { trip: TripFeedCard }) {
+function TripCard({
+  trip,
+  saved = false,
+}: {
+  trip: TripFeedCard;
+  saved?: boolean;
+}) {
   const recommendation = trip.recommendation;
   return (
     <View style={styles.card}>
@@ -68,10 +75,18 @@ function TripCard({ trip }: { trip: TripFeedCard }) {
         <Text style={styles.seats}>
           {trip.availableSeats === 1
             ? 'Última plaza'
-            : `${trip.availableSeats} plazas`}
+            : trip.availableSeats === 0
+              ? 'Completo'
+              : `${trip.availableSeats} plazas`}
         </Text>
       </View>
       <Text style={styles.date}>{tripDate(trip.departureAt)}</Text>
+      {trip.estimatedDepartureAt && (
+        <Text style={[styles.kind, styles.potential]}>
+          Retrasado · Salida estimada {tripDate(trip.estimatedDepartureAt)}
+        </Text>
+      )}
+      {saved && <Text style={styles.kind}>Guardado</Text>}
       <View style={styles.route}>
         <View style={styles.stop}>
           <View style={[styles.dot, styles.originDot]} />
@@ -138,14 +153,20 @@ function TripCard({ trip }: { trip: TripFeedCard }) {
   );
 }
 
-export function TripCards({ trips }: { trips: TripFeedCard[] }) {
+export function TripCards({
+  trips,
+  savedIds,
+}: {
+  trips: TripFeedCard[];
+  savedIds?: ReadonlySet<string>;
+}) {
   const { width } = useWindowDimensions();
   const columns = width >= 1000;
   return (
     <View style={styles.grid}>
       {trips.map((trip) => (
         <View key={trip.id} style={columns ? styles.half : styles.full}>
-          <TripCard trip={trip} />
+          <TripCard trip={trip} saved={savedIds?.has(trip.id)} />
         </View>
       ))}
     </View>
@@ -158,15 +179,25 @@ export function TripFeedScreen() {
   const [mode, setMode] = useState<'list' | 'map'>('list');
   const [vehicleType, setVehicleType] = useState<VehicleType | 'all'>('all');
   const [selected, setSelected] = useState<string | null>(null);
+  const [contribution, setContribution] = useState('');
+  const contributionIsValid =
+    !contribution ||
+    (/^\d+$/.test(contribution) && Number(contribution) <= 2_147_483_647);
+  const limit =
+    contribution && contributionIsValid ? Number(contribution) : null;
   const query = useTripFeed(
     tab,
     user?.capabilities.passenger ? user.id : undefined,
   );
+  const saved = useSavedTrips();
+  const savedIds = new Set(saved.data?.map(({ tripId }) => tripId));
   const all = query.data?.pages.flatMap(({ items }) => items) ?? [];
-  const trips =
-    vehicleType === 'all'
-      ? all
-      : all.filter((trip) => trip.vehicle.type === vehicleType);
+  const trips = all.filter(
+    (trip) =>
+      (vehicleType === 'all' || trip.vehicle.type === vehicleType) &&
+      (limit === null ||
+        (trip.economics?.suggestedContributionCop ?? 0) <= limit),
+  );
   const active = trips.find(({ id }) => id === selected) ?? trips[0];
   const details = useQuery({
     queryKey: ['trip-detail', active?.id, user?.id],
@@ -239,6 +270,26 @@ export function TripFeedScreen() {
           ))}
         </View>
       </View>
+      <View style={styles.contributionFilter}>
+        <Text nativeID="feed-contribution-label" style={s.text}>
+          Aporte máximo en resultados cargados (COP)
+        </Text>
+        <TextInput
+          aria-labelledby="feed-contribution-label"
+          accessibilityLabel="Aporte máximo en resultados cargados (COP)"
+          inputMode="numeric"
+          maxLength={10}
+          value={contribution}
+          onChangeText={setContribution}
+          placeholder="Sin límite"
+          style={styles.contributionInput}
+        />
+        {!contributionIsValid && (
+          <Text accessibilityRole="alert" style={s.error}>
+            Escribe un monto entero en pesos colombianos.
+          </Text>
+        )}
+      </View>
       {query.isPending && <Text style={s.text}>Cargando viajes…</Text>}
       {query.error && (
         <View style={s.section}>
@@ -254,7 +305,7 @@ export function TripFeedScreen() {
           />
         </View>
       )}
-      {mode === 'list' && <TripCards trips={trips} />}
+      {mode === 'list' && <TripCards trips={trips} savedIds={savedIds} />}
       {mode === 'map' && active && (
         <View style={styles.mapResults}>
           {details.isPending && (
@@ -289,7 +340,7 @@ export function TripFeedScreen() {
               </Pressable>
             ))}
           </View>
-          <TripCard trip={active} />
+          <TripCard trip={active} saved={savedIds.has(active.id)} />
         </View>
       )}
       {empty && (
@@ -355,6 +406,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mapResults: { gap: 12 },
+  contributionFilter: { gap: 5, alignItems: 'flex-start' },
+  contributionInput: {
+    minHeight: 44,
+    minWidth: 150,
+    paddingHorizontal: 12,
+    borderRadius: radii.control,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
   tab: {
     minHeight: 44,
     justifyContent: 'center',

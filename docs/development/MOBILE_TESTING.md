@@ -159,3 +159,8 @@ rotación y revocación, aviso de prueba, enlace con sesión cerrada, reconsulta
 tras ingresar y repetir con un recurso ajeno. Registra modelo, sistema, versión
 de Expo Go o build, estado de permisos y resultado sin copiar tokens ni datos
 privados. La prueba física queda pendiente de dispositivo.
+
+Para este corte, crea dos cuentas de ensayo por dominio declarado. Verifica
+registro sin correo, vehículo, ruta con maniobras, confirmación, QR, GPS
+voluntario, pérdida de señal, pausa fuera del primer plano y descenso.
+La recepción push se comprueba en un development build autorizado.

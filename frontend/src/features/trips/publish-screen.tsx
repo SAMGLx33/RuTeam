@@ -211,10 +211,15 @@ export function PublishScreen() {
       !scheduleId &&
       !!priorId &&
       !!user?.capabilities.driver &&
-      (!editTripId || (!!edited && !edited.descriptiveEditsOnly)),
+      (!editTripId ||
+        (edited?.canEdit === true && !edited.descriptiveEditsOnly)),
     staleTime: 0,
   });
-  if (!scheduleId && editTripId && (!edited || edited.descriptiveEditsOnly))
+  if (
+    !scheduleId &&
+    editTripId &&
+    (!edited || !edited.canEdit || edited.descriptiveEditsOnly)
+  )
     return (
       <ProtectedPage title="Editar viaje publicado" requires="driver">
         <Text
@@ -223,10 +228,10 @@ export function PublishScreen() {
           }
         >
           {mine.error?.message ??
-            (edited?.descriptiveEditsOnly
+            (edited?.canEdit && edited.descriptiveEditsOnly
               ? 'El viaje tiene participaciones, grupos o propuestas. Puedes editar la descripción en Mis viajes.'
               : mine.isSuccess
-                ? 'El viaje propio no está disponible.'
+                ? 'Esta publicación no admite cambios. Consulta su estado en Mis viajes.'
                 : 'Cargando publicación…')}
         </Text>
       </ProtectedPage>
@@ -335,7 +340,7 @@ function PublishForm({
     | {
         key: string;
         option: Pick<RouteOption, 'geometry' | 'durationMinutes'> &
-          Partial<Pick<RouteOption, 'routingSelection'>>;
+          Partial<Pick<RouteOption, 'routingSelection' | 'maneuvers'>>;
       }
     | undefined
   >(
@@ -345,6 +350,7 @@ function PublishForm({
         option: {
           geometry: template.itinerary.geometry,
           routingSelection: template.itinerary.routingSelection,
+          maneuvers: template.itinerary.maneuvers,
           durationMinutes: template.estimatedDurationMinutes,
         },
       },
@@ -650,6 +656,10 @@ function PublishForm({
         edited || !chosen?.routingSelection
           ? Number(values.estimatedDurationMinutes)
           : chosen.durationMinutes;
+      const routingSelection =
+        chosen?.durationMinutes === submittedMinutes
+          ? chosen.routingSelection
+          : undefined;
       setConfirmedPublic(false);
       setPreview({
         recurrence,
@@ -667,10 +677,8 @@ function PublishForm({
             ...route,
             description: values.description.trim(),
             geometry: chosen?.geometry,
-            routingSelection:
-              chosen?.durationMinutes === submittedMinutes
-                ? chosen.routingSelection
-                : undefined,
+            routingSelection,
+            maneuvers: routingSelection ? chosen?.maneuvers : undefined,
           },
         },
       });
@@ -684,7 +692,9 @@ function PublishForm({
   const activeIndex = publishSteps.findIndex(({ id }) => id === step);
   const activeTitle =
     step === 'review'
-      ? 'Resumen para publicar'
+      ? edited
+        ? 'Resumen de los cambios'
+        : 'Resumen para publicar'
       : publishSteps[activeIndex].label;
   const busy = economicsPreview.isPending || save.isPending;
   const draft = preview?.draft;
@@ -758,124 +768,6 @@ function PublishForm({
               >
                 <Text style={w.title}>{activeTitle}</Text>
               </View>
-          {save.isSuccess ? (
-            <Text accessibilityLiveRegion="polite">
-              {save.data?.schedule
-                ? 'Recurrencia guardada. Consulta las fechas generadas en Viajes recurrentes.'
-                : edited
-                  ? 'Cambios guardados en el viaje.'
-                  : 'Viaje publicado. Ya aparece en Mis viajes.'}
-            </Text>
-          ) : (
-            <>
-              <Choice
-                label="Confirmo que la ruta y los puntos son públicos y no incluyen domicilios ni datos privados"
-                checkbox
-                checked={confirmedPublic}
-                onPress={() => setConfirmedPublic(!confirmedPublic)}
-              />
-              <Button
-                title={
-                  save.isPending
-                    ? 'Guardando…'
-                    : preview.recurrence
-                      ? 'Guardar recurrencia'
-                      : edited
-                        ? 'Confirmar cambios'
-                        : 'Confirmar publicación'
-                }
-                disabled={!confirmedPublic || save.isPending}
-                onPress={() => save.mutate(preview)}
-              />
-              <Button
-                title="Editar antes de publicar"
-                secondary
-                disabled={save.isPending}
-                onPress={() => {
-                  save.reset();
-                  setPreview(undefined);
-                }}
-              />
-            </>
-          )}
-        </>
-      ) : (
-        <>
-          <Text style={s.text}>
-            Define los puntos públicos del viaje desde o hacia la USC. La salida
-            requiere más de 30 minutos de anticipación.
-          </Text>
-          <View style={s.section}>
-            <Text style={s.title}>Vehículo propio</Text>
-            {vehicles.data &&
-              !vehicles.data.some(({ eligibleNow }) => eligibleNow) && (
-                <Text>
-                  Registra un vehículo y consulta los requisitos vigentes para
-                  conducir.
-                </Text>
-              )}
-            {vehicles.data?.map((item) => (
-              <Choice
-                key={item.id}
-                label={`Vehículo ${item.plate} · ${item.passengerCapacity} plazas · ${item.verificationStatus === 'VERIFIED' ? 'verificado' : item.verificationStatus === 'DECLARED' ? 'declarado' : 'sin vigencia verificada'}`}
-                checked={selected?.id === item.id}
-                onPress={() => setVehicleId(item.id)}
-              />
-            ))}
-            {selected?.type === 'MOTORCYCLE' && (
-              <Choice
-                checkbox
-                label="Casco de pasajero incluido"
-                checked={helmet}
-                onPress={() => setHelmet(!helmet)}
-              />
-            )}
-          </View>
-          <View style={s.section}>
-            <Text style={s.title}>Sentido del viaje</Text>
-            <Choice
-              label="Desde la USC"
-              checked={direction === 'DESDE_USC'}
-              onPress={() => {
-                form.setValue('direction', 'DESDE_USC');
-                form.getValues('stops').forEach(({ access }, index) => {
-                  if (access === 'PICKUP' || access === 'BOTH')
-                    form.setValue(`stops.${index}.access`, 'DROPOFF');
-                });
-              }}
-            />
-            <Choice
-              label="Hacia la USC"
-              checked={direction === 'HACIA_USC'}
-              onPress={() => form.setValue('direction', 'HACIA_USC')}
-            />
-          </View>
-          <PointEditor
-            title="Origen"
-            institutional={direction === 'DESDE_USC'}
-            name="origin"
-            control={form.control}
-            catalog={catalog}
-          />
-          <PointEditor
-            title="Destino"
-            institutional={direction === 'HACIA_USC'}
-            name="destination"
-            control={form.control}
-            catalog={catalog}
-          />
-          {!schedule && !edited && (
-            <View style={s.section}>
-              <Choice
-                label="Viaje individual"
-                checked={!isRecurring}
-                onPress={() => setIsRecurring(false)}
-              />
-              <Choice
-                label="Viaje recurrente"
-                checked={isRecurring}
-                onPress={() => setIsRecurring(true)}
-              />
             </View>
             {step === 'schedule' && (
               <>
@@ -912,7 +804,7 @@ function PublishForm({
                   <Text role="heading" aria-level={3} style={w.groupTitle}>
                     Programación
                   </Text>
-                  {!schedule && (
+                  {!schedule && !edited && (
                     <View style={w.group}>
                       <Choice
                         label="Viaje individual"
@@ -1295,7 +1187,9 @@ function PublishForm({
                   <Text accessibilityLiveRegion="polite" style={w.success}>
                     {save.data?.schedule
                       ? 'Recurrencia guardada. Consulta las fechas generadas en Viajes recurrentes.'
-                      : 'Viaje publicado. Ya aparece en Mis viajes.'}
+                      : edited
+                        ? 'Cambios guardados en el viaje.'
+                        : 'Viaje publicado. Ya aparece en Mis viajes.'}
                   </Text>
                 ) : (
                   <Choice
@@ -1318,7 +1212,11 @@ function PublishForm({
                   <View style={w.action}>
                     <Button
                       title={
-                        step === 'review' ? 'Editar antes de publicar' : 'Atrás'
+                        step === 'review'
+                          ? edited
+                            ? 'Volver a editar'
+                            : 'Editar antes de publicar'
+                          : 'Atrás'
                       }
                       secondary
                       disabled={busy}
@@ -1372,7 +1270,9 @@ function PublishForm({
                           ? 'Guardando…'
                           : preview.recurrence
                             ? 'Guardar recurrencia'
-                            : 'Confirmar publicación'
+                            : edited
+                              ? 'Confirmar cambios'
+                              : 'Confirmar publicación'
                       }
                       disabled={!confirmedPublic || busy}
                       onPress={() => save.mutate(preview)}

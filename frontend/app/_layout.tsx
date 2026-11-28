@@ -33,10 +33,8 @@ export default function RootLayout() {
         <SessionProvider>
           <AppearanceProvider>
             <Screens />
+            <NotificationNavigation />
           </AppearanceProvider>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }} />
-          <NotificationNavigation />
         </SessionProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

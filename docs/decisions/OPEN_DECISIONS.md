@@ -9,7 +9,7 @@ Las tablas del 13/24 se conservan en [historia](../history/2026-11-24-guides.md)
 
 | Tema / antecedente                  | Decisión vigente                                                                                                                                                                                                                                                              |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Acceso y roles; RF-002/017          | Sólo estudiantes vigentes, una identidad, pasajero/conductor como capacidades compatibles. Sin ADMIN de producto, login/panel/endpoints/revisiones/seed administrativos                                                                                                       |
+| Acceso y roles; RF-002/017          | Acceso académico por dominio declarado; una identidad, pasajero/conductor como capacidades compatibles. Sin ADMIN de producto, login/panel/endpoints/revisiones/seed administrativos                                                                                          |
 | Autoridad y vínculo USC; RF-003/029 | Conductor fija el desplazamiento. DESDE_USC o HACIA_USC, con USC como extremo institucional. Externo→externo prohibido incluso pasando por campus. Ya no requiere ratificación de PO                                                                                          |
 | Participación; RF-006               | Confirmación ordinaria directa con cupos transaccionales; conductor no aprueba cada confirmación. Buscar no crea viajes ni solicitudes de transporte                                                                                                                          |
 | Propuestas                          | Sólo recogida HACIA_USC, decisión separada del propietario, compatible con geometría/condiciones. Aceptación no ocupa plaza ni confirma                                                                                                                                       |
@@ -146,3 +146,7 @@ impiden la edición de condiciones esenciales. El PO conserva la definición de
 penalidades, sanciones, restricciones de género y reglas de conservación. La
 configuración y recepción efectiva de push requiere un dispositivo físico y un
 proyecto autorizado.
+
+El ingreso académico queda decidido. La fuente USC queda pendiente para el
+modo oficial. La recuperación sin titularidad comprobada y la validación de
+push y navegación en un teléfono permanecen pendientes.

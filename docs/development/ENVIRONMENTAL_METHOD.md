@@ -34,3 +34,6 @@ el punto de descenso del cálculo fue confirmado o previsto. Ambos usan la dista
 de la geometría publicada y los segmentos autorizados. Una lectura GPS individual
 no acredita kilómetros recorridos. Los cierres históricos permanecen con su
 metodología, distancias y factores originales.
+
+Las maniobras y la muestra GPS orientan durante el viaje. La atribución
+ambiental usa geometría publicada y procedencia del descenso registrado.

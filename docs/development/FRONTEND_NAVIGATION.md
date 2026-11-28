@@ -19,3 +19,9 @@ actuales de página ni NestJS por recurso. El modo del inicio es estado de vista
 Se inicializa según la preferencia actual únicamente si el conductor está autorizado.
 Cuenta limitada y onboarding no muestran navegación protegida. Los accesos
 directos conservan su autorización y redirección original.
+
+## Flujo académico integrado
+
+Registro y cuenta pasan al onboarding retomable. La configuración de movilidad
+puede posponerse. Viajes incluye guardados y agenda. Operación del conductor
+comparte mapa, GPS voluntario, maniobras y manifiesto.

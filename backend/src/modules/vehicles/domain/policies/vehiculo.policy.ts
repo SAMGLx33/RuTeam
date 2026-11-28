@@ -35,16 +35,15 @@ export class VehiculoPolicy {
   static esPublicable(
     document: DocumentSnapshot | null,
     through: Date,
+    allowDeclared = false,
   ): boolean {
-    const status = this.estadoDocumental(document, through);
-    return (
-      status === 'VERIFIED' ||
-      (status === 'DECLARED' && document?.demo === true)
-    );
+    const status = this.estadoDocumental(document, through, allowDeclared);
+    return status === 'VERIFIED' || status === 'DECLARED';
   }
   static estadoDocumental(
     document: DocumentSnapshot | null,
     through: Date,
+    allowDeclared = false,
   ): 'DECLARED' | 'VERIFIED' | 'EXPIRED' | 'UNVERIFIED' {
     if (!document) return 'UNVERIFIED';
     if (!(document.expiresAt.getTime() > through.getTime())) return 'EXPIRED';
@@ -53,7 +52,10 @@ export class VehiculoPolicy {
       document.reviewStatus === 'APPROVED'
     )
       return 'VERIFIED';
-    if (document.demo && document.verificationSource === 'SELF_DECLARED')
+    if (
+      (document.demo || allowDeclared) &&
+      document.verificationSource === 'SELF_DECLARED'
+    )
       return 'DECLARED';
     return 'UNVERIFIED';
   }

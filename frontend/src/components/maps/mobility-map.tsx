@@ -82,6 +82,7 @@ export function MobilityMap({
   onPick,
   allowTiles = true,
   locate = false,
+  followPoint,
 }: {
   label: string;
   geometry?: RouteGeometry | null;
@@ -91,12 +92,14 @@ export function MobilityMap({
   onPick?: (coordinates: Coordinates) => void;
   allowTiles?: boolean;
   locate?: boolean;
+  followPoint?: Coordinates;
 }) {
   const { palette } = useAppearance();
   const [width, setWidth] = useState(0);
   const [camera, setCamera] = useState<Camera | null>(null);
   const [selection, setSelection] = useState<string | null>(null);
   const [privateViewport, setPrivateViewport] = useState(false);
+  const [following, setFollowing] = useState(false);
   const [position, setPosition] = useState<Coordinates | null>(null);
   const [locationError, setLocationError] = useState('');
   const [locating, setLocating] = useState(false);
@@ -114,11 +117,29 @@ export function MobilityMap({
     worldPoint(point.longitude, point.latitude),
   );
   const fitted = fitCamera([...line, ...markerWorld], reference, width, height);
-  const active = camera ?? fitted;
-  const [gestures] = useState(() => createMapGestures(fitted, setCamera));
+  const follows = following && followPoint && valid(followPoint);
+  const active = follows
+    ? {
+        center: worldPoint(followPoint.longitude, followPoint.latitude),
+        zoom: camera?.zoom ?? 16,
+      }
+    : (camera ?? fitted);
+  const [gestures] = useState(() =>
+    createMapGestures(fitted, (next) => {
+      setFollowing(false);
+      setCamera(next);
+    }),
+  );
+  const {
+    center: { x: activeX, y: activeY },
+    zoom: activeZoom,
+  } = active;
   useEffect(() => {
-    gestures.setActive(active);
-  }, [active, gestures]);
+    gestures.setActive({
+      center: { x: activeX, y: activeY },
+      zoom: activeZoom,
+    });
+  }, [activeX, activeY, activeZoom, gestures]);
   const count = 2 ** active.zoom;
   const scale = count * tileSize;
   const left = active.center.x * scale - width / 2;
@@ -257,7 +278,11 @@ export function MobilityMap({
           {tiles.map(({ key, uri, x, y }) => (
             <Image
               key={key}
-              source={{ uri }}
+              source={
+                Platform.OS === 'web'
+                  ? { uri }
+                  : { uri, headers: { 'User-Agent': 'RuTeam/1.0' } }
+              }
               onLoad={() => rememberTile(key, 'loaded')}
               onError={() => rememberTile(key, 'failed')}
               style={[styles.tile, { left: x, top: y }]}
@@ -358,6 +383,7 @@ export function MobilityMap({
             icon="maximize"
             onPress={() => {
               setCamera(null);
+              setFollowing(false);
               setPrivateViewport(false);
             }}
           />
@@ -373,6 +399,16 @@ export function MobilityMap({
             disabled={active.zoom <= 3}
             onPress={() => zoomBy(-1)}
           />
+          {followPoint && (
+            <IconButton
+              label={follows ? 'Explorar mapa' : 'Seguir ubicación'}
+              icon="crosshair"
+              onPress={() => {
+                setCamera(follows ? active : null);
+                setFollowing(!follows);
+              }}
+            />
+          )}
           {locate && (
             <IconButton
               label="Localizar mi posición"

@@ -153,3 +153,8 @@ edición y una carrera entre viajes. `daily-mobility.e2e` cubre guardados, lugar
 y recordatorios. `connectivity.spec` cubre reconexión web y
 `evolution.spec` retoma enlaces internos. Los pasos y evidencias del dispositivo
 se consignan en la [guía móvil](MOBILE_TESTING.md).
+
+La integración añade `declared-access.e2e` y `institutional-registration.spec`
+para cuentas ordinarias. La ruta y sus maniobras se comprueban en pruebas de
+OSRM, selección firmada y tiempos de campus. `route-progress.test.mts` cubre
+calidad de posición y continuidad. PostgreSQL y suites web corren en secuencia.

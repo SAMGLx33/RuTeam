@@ -108,8 +108,10 @@ export class RatingsRepository {
     action: (
       trip: RatedTrip,
       unit: {
-        membership: () => ReturnType<
-          import('../../reservations/infrastructure/repositories/reservations.repository.js').ReservationUnit['memberships']
+        eligibleMembers: (
+          now: Date,
+        ) => ReturnType<
+          import('../../reservations/infrastructure/repositories/reservations.repository.js').ReservationUnit['eligibleMembers']
         >;
         submit: (
           rateeId: string,
@@ -124,7 +126,7 @@ export class RatingsRepository {
       const trip = await selectTrip(tx, tripId, actorId);
       if (!trip) throw new Error('Viaje no disponible dentro del bloqueo');
       return action(trip, {
-        membership: () => reservations.memberships([actorId]),
+        eligibleMembers: (now) => reservations.eligibleMembers([actorId], now),
         submit: async (rateeId, capacity, stars, comment) => {
           const createdAt = new Date();
           const saved = await tx.tripRating.createMany({

@@ -4,6 +4,7 @@ import type {
   CampusMeetingPoint,
   MobilityStatistics,
   NotificationPage,
+  PendingActivity,
   ReservationView,
   TripOperation,
   TripSummary,
@@ -25,8 +26,9 @@ import { Icon } from '../../components/ui/icon';
 import { api } from '../../services/api/client';
 import { breakpoints, colors, radii } from '../../theme/tokens';
 import { Link, Pressable, Text, View } from '../../theme/primitives';
-import { colors } from '../../theme/tokens';
 import { notificationContent } from './notification-content';
+import { upcomingTrip } from './upcoming-trip';
+import { useSavedTrips } from '../mobility/saved-trips-screen';
 import { TripCards, tripDate, useTripFeed } from '../trips/trip-feed';
 
 type TravelContext = 'passenger' | 'driver';
@@ -68,36 +70,25 @@ export function HomeScreen({ user }: { user: Account }) {
     queryFn: () => api<NotificationPage>('/notifications'),
     refetchInterval: 30000,
   });
-  const nextParticipation = next.data
-    ?.filter(
+  const saved = useSavedTrips();
+  const activity = useQuery({
+    queryKey: ['activity', user.id],
+    queryFn: () => api<PendingActivity[]>('/mobility/activity'),
+    refetchInterval: 30_000,
+  });
+  const nextParticipation = upcomingTrip(
+    (next.data ?? []).filter(
       (item) =>
-        item.status === 'CONFIRMED' &&
-        (item.tripStatus === 'EN_CURSO' ||
-          (item.tripStatus === 'PROGRAMADO' &&
-            Date.parse(item.departureAt) > now)),
-    )
-    .sort(
-      (a, b) =>
-        Number(b.tripStatus === 'EN_CURSO') -
-          Number(a.tripStatus === 'EN_CURSO') ||
-        Date.parse(a.departureAt) - Date.parse(b.departureAt),
-    )[0];
-  const upcoming = (trips.data ?? [])
-    .filter(
-      (trip) =>
-        trip.status === 'EN_CURSO' ||
-        (trip.status === 'PROGRAMADO' && Date.parse(trip.departureAt) > now),
-    )
-    .sort(
-      (a, b) =>
-        Number(b.status === 'EN_CURSO') - Number(a.status === 'EN_CURSO') ||
-        Date.parse(a.departureAt) - Date.parse(b.departureAt),
-    );
-  const nextTrip = upcoming[0];
+        item.status === 'CONFIRMED' && !item.noShowAt && !item.droppedOffAt,
+    ),
+    now,
+  );
+  const nextTrip = upcomingTrip(trips.data ?? [], now);
   const passengerTripId = nextParticipation?.tripId;
   const operation = useQuery({
     queryKey: ['trip-operation', user.id, passengerTripId],
     enabled: !driving && !!passengerTripId,
+    refetchInterval: 30_000,
     queryFn: () => api<TripOperation>(`/trips/${passengerTripId}/operation`),
   });
 
@@ -155,6 +146,18 @@ export function HomeScreen({ user }: { user: Account }) {
   const relevantId = driving ? nextTrip?.id : passengerTripId;
   const hasTrip = driving ? !!nextTrip : !!nextParticipation;
   const currentQuery = driving ? trips : next;
+  const active = driving
+    ? nextTrip?.status === 'EN_CURSO'
+    : nextParticipation?.tripStatus === 'EN_CURSO';
+  const operationHref = relevantId
+    ? {
+        pathname: '/trip-operation/[tripId]' as const,
+        params: { tripId: relevantId },
+      }
+    : null;
+  const pickupEstimate = operation.data?.participation?.pickupEstimatedAt;
+  const pending = activity.data?.filter(({ optional }) => !optional) ?? [];
+  const savedIds = new Set(saved.data?.map(({ tripId }) => tripId));
 
   const reminders = unread
     .filter(({ kind, available }) => available && kind.endsWith('_REMINDER'))
@@ -214,27 +217,6 @@ export function HomeScreen({ user }: { user: Account }) {
             }
           />
           {campuses.error && (
-      {reminders.length > 0 && (
-        <View style={s.section}>
-          <Text style={s.title}>Recordatorios</Text>
-          {reminders.map((notice) => (
-            <Link
-              key={notice.id}
-              href={`/open/notice/${notice.id}`}
-              style={s.link}
-            >
-              {notificationContent(notice).title}
-            </Link>
-          ))}
-        </View>
-      )}
-      {user.capabilities.driverAccess && (
-        <View style={s.section}>
-          <Text style={s.title}>Tus próximos viajes publicados</Text>
-          {!user.capabilities.driver && (
-            <Text style={s.text}>Revisa tus documentos antes de publicar.</Text>
-          )}
-          {trips.error && (
             <Text accessibilityRole="alert" style={s.error}>
               No pudimos consultar los puntos USC.
             </Text>
@@ -242,7 +224,13 @@ export function HomeScreen({ user }: { user: Account }) {
         </View>
         <View style={[styles.side, wide && styles.sideWide]}>
           <BottomSheet
-            title={driving ? 'Próximo viaje publicado' : 'Próximo viaje'}
+            title={
+              active
+                ? 'Viaje en curso'
+                : driving
+                  ? 'Próximo viaje publicado'
+                  : 'Próximo viaje'
+            }
           >
             {currentQuery.isPending && (
               <Text style={s.text}>Consultando tus viajes…</Text>
@@ -267,7 +255,20 @@ export function HomeScreen({ user }: { user: Account }) {
                 <Text style={styles.place}>
                   {nextTrip.origin.label} → {nextTrip.destination.name}
                 </Text>
-                <Text style={s.text}>{tripDate(nextTrip.departureAt)}</Text>
+                <Text style={s.text}>
+                  Salida programada · {tripDate(nextTrip.departureAt)}
+                </Text>
+                {nextTrip.estimatedDepartureAt && (
+                  <Text style={styles.place}>
+                    Nueva salida estimada ·{' '}
+                    {tripDate(nextTrip.estimatedDepartureAt)}
+                  </Text>
+                )}
+                {nextTrip.startedAt && (
+                  <Text style={s.text}>
+                    Inicio efectivo · {tripDate(nextTrip.startedAt)}
+                  </Text>
+                )}
                 <Text style={s.text}>
                   {nextTrip.occupiedSeats}/{nextTrip.offeredSeats} plazas
                   ocupadas
@@ -281,8 +282,22 @@ export function HomeScreen({ user }: { user: Account }) {
                   {nextParticipation.dropoff.label}
                 </Text>
                 <Text style={s.text}>
-                  {tripDate(nextParticipation.departureAt)}
+                  Salida programada · {tripDate(nextParticipation.departureAt)}
                 </Text>
+                {nextParticipation.estimatedDepartureAt && (
+                  <Text style={styles.place}>
+                    Nueva salida estimada ·{' '}
+                    {tripDate(nextParticipation.estimatedDepartureAt)}
+                  </Text>
+                )}
+                {!nextParticipation.boardedAt && (
+                  <Text style={s.text}>
+                    Recogida en {nextParticipation.pickup.label}
+                    {pickupEstimate
+                      ? ` · Hora estimada ${tripDate(pickupEstimate)}`
+                      : ''}
+                  </Text>
+                )}
                 {nextParticipation.pickup.instructions && (
                   <Text style={s.text}>
                     {nextParticipation.pickup.instructions}
@@ -290,7 +305,11 @@ export function HomeScreen({ user }: { user: Account }) {
                 )}
               </View>
             )}
-            {driving ? (
+            {active && operationHref && !currentQuery.error ? (
+              <Link href={operationHref} style={styles.cta}>
+                {driving ? 'Continuar operación' : 'Seguir mi viaje'}
+              </Link>
+            ) : driving ? (
               <Link href="/publish" style={styles.cta}>
                 Publicar viaje
               </Link>
@@ -301,14 +320,8 @@ export function HomeScreen({ user }: { user: Account }) {
                 onPress={() => router.push('/available-trips')}
               />
             )}
-            {relevantId && !currentQuery.error && (
-              <Link
-                href={{
-                  pathname: '/trip-operation/[tripId]',
-                  params: { tripId: relevantId },
-                }}
-                style={s.link}
-              >
+            {!active && operationHref && !currentQuery.error && (
+              <Link href={operationHref} style={s.link}>
                 Ver detalles del viaje
               </Link>
             )}
@@ -328,28 +341,47 @@ export function HomeScreen({ user }: { user: Account }) {
             )}
           </BottomSheet>
           <View style={s.section}>
-            <Text style={s.title}>{driving ? 'Actividad' : 'Para ti'}</Text>
-            {driving ? (
-              <Link href="/agenda" style={s.link}>
-                Agenda de viajes
-              </Link>
-            ) : (
+            <Text role="heading" aria-level={2} style={s.title}>
+              Actividad
+            </Text>
+            {pending.length > 0 && (
               <Text style={s.text}>
-                {matches.length
-                  ? 'Consulta tus coincidencias debajo.'
-                  : recommended.isPending
-                    ? 'Buscando viajes compatibles…'
-                    : recommended.error
-                      ? 'No se pudieron cargar las recomendaciones.'
-                      : 'Todavía no hay viajes compatibles con tus horarios habituales.'}
+                {pending.length === 1
+                  ? '1 actividad pendiente'
+                  : `${pending.length} actividades pendientes`}
               </Text>
             )}
+            <Link href="/agenda" style={s.link}>
+              Agenda de viajes
+            </Link>
             <Link href="/activity" style={s.link}>
               Mis actividades
             </Link>
+            {!driving && (
+              <Link href="/saved-trips" style={s.link}>
+                Viajes guardados
+                {saved.data?.length ? ` · ${saved.data.length}` : ''}
+              </Link>
+            )}
           </View>
         </View>
       </View>
+      {reminders.length > 0 && (
+        <View style={s.section}>
+          <Text role="heading" aria-level={2} style={s.title}>
+            Recordatorios
+          </Text>
+          {reminders.map((notice) => (
+            <Link
+              key={notice.id}
+              href={`/open/notice/${notice.id}`}
+              style={s.link}
+            >
+              {notificationContent(notice).title}
+            </Link>
+          ))}
+        </View>
+      )}
       {user.capabilities.driverAccess && !user.capabilities.driver && (
         <View style={s.section}>
           <Text style={s.title}>Conducción</Text>
@@ -381,7 +413,7 @@ export function HomeScreen({ user }: { user: Account }) {
           {recommended.error.message}
         </Text>
       )}
-      <TripCards trips={matches} />
+      <TripCards trips={matches} savedIds={savedIds} />
       {!recommended.isPending && !recommended.error && !matches.length && (
         <Link href="/mobility" style={s.link}>
           Ajustar preferencias

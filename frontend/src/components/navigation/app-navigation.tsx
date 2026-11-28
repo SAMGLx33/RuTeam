@@ -36,7 +36,9 @@ function sectionFor(path: string): (typeof sections)[number]['route'] {
   if (path === '/') return '/';
   if (path === '/chat' || path.startsWith('/chat/')) return '/chat';
   if (
-    ['/available-trips', '/search-trips', '/publish'].includes(path) ||
+    ['/available-trips', '/search-trips', '/saved-trips', '/publish'].includes(
+      path,
+    ) ||
     path.startsWith('/trip/')
   )
     return '/available-trips';

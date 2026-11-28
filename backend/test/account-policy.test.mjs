@@ -16,6 +16,16 @@ test('correo institucional se normaliza y otros estamentos no se acreditan por d
   expect(() =>
     normalizeAccountEmail('student@usc.edu.co.attacker.invalid'),
   ).toThrow();
+  for (const malformed of [
+    'uno..dos@usc.edu.co',
+    '.inicio@usc.edu.co',
+    'fin.@usc.edu.co',
+    'user@@usc.edu.co',
+    '@usc.edu.co',
+    'alias@correo.usc.edu.co',
+    'estudiante@fakeusc.edu.co',
+  ])
+    expect(() => normalizeAccountEmail(malformed)).toThrow();
   expect(() => normalizeAccountEmail('student@another.invalid')).toThrow();
   expect(() =>
     normalizeAccountEmail('ana@student-fixtures.ruteam.invalid'),
@@ -36,27 +46,14 @@ test('scrypt usa sal aleatoria, resiste contraseña equivocada y no almacena tex
   expect(await verifyPassword(password, 'hash-invalido')).toBe(false);
 });
 test('onboarding persistente no permite saltos ni completar sin elegibilidad', () => {
+  expect(() => validateOnboardingTransition(0, 4, null, false, true)).toThrow();
+  expect(() => validateOnboardingTransition(1, 2, null, true, false)).toThrow();
   expect(() =>
-    validateOnboardingTransition(0, 4, null, false, false, true),
+    validateOnboardingTransition(3, 4, 'PASSENGER', false, true),
   ).toThrow();
-  expect(() =>
-    validateOnboardingTransition(1, 2, null, true, true, false),
-  ).toThrow();
-  expect(() =>
-    validateOnboardingTransition(3, 4, 'PASSENGER', true, false, true),
-  ).toThrow();
+  expect(validateOnboardingTransition(3, 4, 'PASSENGER', true, true)).toBe(4);
   expect(
-    validateOnboardingTransition(3, 4, 'PASSENGER', true, true, true),
-  ).toBe(4);
-  expect(
-    validateOnboardingTransition(
-      4,
-      1,
-      'DRIVER_AND_PASSENGER',
-      true,
-      true,
-      false,
-    ),
+    validateOnboardingTransition(4, 1, 'DRIVER_AND_PASSENGER', true, false),
   ).toBe(4);
 });
 const fixtureEnv = {
@@ -101,7 +98,6 @@ const accountService = (user, environment = fixtureEnv) => {
   return new AccountService(
     repository,
     auth,
-    provider,
     { isReady: () => false },
     environment,
   );
@@ -116,13 +112,16 @@ test('una cuenta real no utiliza acreditación sintética aunque el proveedor re
   });
 });
 test('preferencia conductor no valida documentos declarados de una cuenta real', async () => {
-  const account = await accountService({
-    ...ordinaryAccount,
-    membership: {
-      ...ordinaryAccount.membership,
-      verifiedBy: 'AUTHORIZED_TEST_SOURCE',
+  const account = await accountService(
+    {
+      ...ordinaryAccount,
+      membership: {
+        ...ordinaryAccount.membership,
+        verifiedBy: 'AUTHORIZED_TEST_SOURCE',
+      },
     },
-  }).account('ordinary');
+    { ...fixtureEnv, VERIFICATION_PROVIDER: 'official' },
+  ).account('ordinary');
   expect(account.capabilities).toEqual({
     passenger: true,
     driverAccess: true,

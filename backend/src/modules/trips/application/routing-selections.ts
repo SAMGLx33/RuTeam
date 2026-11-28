@@ -6,6 +6,7 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 import type { RouteGeometry, RouteOption, TripPoint } from '@ruteam/contracts';
+import { routeManeuversSchema } from '../domain/route-maneuvers.js';
 import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import { DomainPolicyError } from '../../../common/errors/domain-policy.error.js';
 
@@ -16,7 +17,12 @@ type SelectedRoute = {
   legs: number[];
   distance: number;
   minutes: number;
+  guidance?: string;
 };
+
+function maneuversScope(value: ReturnType<typeof routeManeuversSchema.parse>) {
+  return createHash('sha256').update(JSON.stringify(value)).digest('base64url');
+}
 
 function routeScope(
   actorId: string,
@@ -52,12 +58,14 @@ export class RoutingSelections {
   ): RouteOption {
     const legs = route.legDurationsSeconds;
     if (!legs) return route;
+    const guidance = routeManeuversSchema.safeParse(route.maneuvers).data;
     const selection: SelectedRoute = {
       until: Math.floor(now / 1000) + ttlSeconds,
       scope: routeScope(actorId, stops, route.geometry),
       legs,
       distance: route.distanceMeters,
       minutes: route.durationMinutes,
+      ...(guidance && { guidance: maneuversScope(guidance) }),
     };
     const body = Buffer.from(JSON.stringify(selection)).toString('base64url');
     return { ...route, routingSelection: `${body}.${this.signature(body)}` };
@@ -70,7 +78,10 @@ export class RoutingSelections {
     geometry: RouteGeometry | undefined,
     durationMinutes: number,
     now = Date.now(),
-  ): SelectedRoute {
+    maneuvers?: unknown,
+  ): SelectedRoute & {
+    maneuvers?: ReturnType<typeof routeManeuversSchema.parse>;
+  } {
     const failure =
       'La alternativa vial expiró o cambió. Consulta y selecciona la ruta nuevamente.';
     const parts = token.split('.');
@@ -96,6 +107,15 @@ export class RoutingSelections {
       choice.legs.length !== stops.length - 1
     )
       throw new DomainPolicyError(failure);
+    if (maneuvers !== undefined) {
+      const material = routeManeuversSchema.safeParse(maneuvers);
+      if (
+        !material.success ||
+        choice.guidance !== maneuversScope(material.data)
+      )
+        throw new DomainPolicyError(failure);
+      return { ...choice, maneuvers: material.data };
+    }
     return choice;
   }
 

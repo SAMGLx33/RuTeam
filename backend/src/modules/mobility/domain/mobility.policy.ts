@@ -1,4 +1,9 @@
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import {
+  locallyEligible,
+  usesDeclaredDomain,
+  type AccessActor,
+  type AccessConfiguration,
+} from '../../institutional-membership/domain/access-policy.js';
 import type {
   RouteGeometry,
   RouteStop,
@@ -148,36 +153,15 @@ export function matchMobility(
   };
 }
 
-export interface RecommendationAccess {
-  demo: boolean;
-  NODE_ENV: string;
-  VERIFICATION_PROVIDER: string;
-}
-export interface RecommendationActor {
-  demoIdentity: string | null;
-  disabledAt: Date | null;
-  emailVerifiedAt: Date | null;
-  membership: {
-    status: string;
-    group?: string;
-    validUntil: Date;
-    verifiedBy: string;
-  } | null;
-}
+export type RecommendationAccess = AccessConfiguration;
 export function recommendationActorEligible(
-  actor: RecommendationActor,
+  actor: AccessActor,
   access: RecommendationAccess,
   now: Date,
 ): boolean {
-  // La fuente oficial del monolito aún falla cerrada; una fila de matrícula no acredita su procedencia.
+  // A database row alone does not vouch for an authorized provider's current answer.
   return (
-    access.NODE_ENV !== 'production' &&
-    access.demo &&
-    access.VERIFICATION_PROVIDER === 'demo' &&
-    actor.demoIdentity !== null &&
-    !actor.disabledAt &&
-    !!actor.emailVerifiedAt &&
-    actor.membership?.verifiedBy === 'DEMO' &&
-    isActiveMembership(actor.membership, now)
+    usesDeclaredDomain(actor, access) ||
+    (actor.demoIdentity !== null && locallyEligible(actor, access, now))
   );
 }

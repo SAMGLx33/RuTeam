@@ -2,7 +2,7 @@
 
 Definición vigente del 25 de noviembre de 2026, ampliada por el encargo de
 transformación integral del producto (incrementos A–G) y por la consolidación
-funcional del 26 de noviembre de 2026. Prevalece sobre interpretaciones
+funcional del 26 de noviembre y por la integración académica del 27 de noviembre de 2026. Prevalece sobre interpretaciones
 históricas incompatibles. Consultarla antes de cambiar dominio, permisos o navegación.
 Las reglas siguientes son requisitos y decisiones; su estado de ejecución se acredita
 por incremento en PROGRESS, TRACEABILITY y EVIDENCE. Esta ampliación documental no
@@ -10,14 +10,14 @@ revalida las 117 pruebas ni la experiencia visual del corte anterior.
 
 ## Propósito y experiencia integrada
 
-RuTeam conecta estudiantes vigentes USC con desplazamientos que otro estudiante ya
+RuTeam conecta cuentas del dominio USC con desplazamientos que otra persona ya
 planea conducir. El conductor publica condiciones y recorrido; el pasajero descubre
 viajes, recibe recomendaciones y confirma directamente. Buscar o guardar preferencias
 no crea una solicitud de transporte. No hay asignación de conductor ni administración.
 Una sola app Expo Router web/móvil consume la API Nest MVC y PostgreSQL reales.
 
-La experiencia normal comienza con iniciar sesión o crear cuenta, continúa con verificación
-y onboarding persistente y conduce a un inicio útil según capacidades. Perfil y formularios
+La experiencia académica comienza con iniciar sesión o crear cuenta, continúa
+con incorporación persistente y conduce a un inicio útil según capacidades. Perfil y formularios
 viven en sus secciones; el inicio contiene viajes/datos reales, no una colección de enlaces.
 Sin funcionalidades disponibles se informa su estado; no inventar estadísticas o acciones.
 
@@ -34,7 +34,7 @@ Sin funcionalidades disponibles se informa su estado; no inventar estadísticas 
 ## Identidad y elegibilidad
 
 - **RN-IDENTIDAD-01.** Una identidad individual, sin cuentas duplicadas. Todos los
-  usuarios autorizados al producto de viajes son estudiantes vigentes USC. Pasajero y
+  usuarios autorizados satisfacen la política de acceso configurada. Pasajero y
   conductor son capacidades compatibles. La preferencia de uso (pasajero o conductor
   y pasajero) no concede permisos. Conducir requiere habilitación efectiva y vehículo
   propio o autorización admitida por la política. No administración de producto.
@@ -58,7 +58,7 @@ Sin funcionalidades disponibles se informa su estado; no inventar estadísticas 
   mismo formulario y ciclo de sesión; entrega de correo y acreditación sintéticas sólo
   en adaptadores de desarrollo/test aislados, imposibles de activar en producción.
 - **RN-ONBOARDING-01.** Incorporación progresiva persistida y retomable: identidad mínima,
-  verificación, preferencia funcional y movilidad opcional; habilitación de conducción
+  preferencia funcional y movilidad opcional; habilitación de conducción
   sólo para quien la elige. Omitir movilidad no oculta todos los viajes. Un pasajero puede
   iniciar luego «Convertirme en conductor» sin crear otra cuenta ni obtener permisos por
   cambiar una preferencia. Backend deriva capacidades actuales en cada operación.
@@ -66,7 +66,7 @@ Sin funcionalidades disponibles se informa su estado; no inventar estadísticas 
   capacidad validados por Nest. Una declaración no acredita verificación oficial.
   Validación externa de licencia y SOAT pendiente de acceso autorizado.
 - **RN-CAPACIDAD-CONDUCTOR-01.** Conducción inhabilitada por documentos no implica pérdida
-  de capacidad pasajero si matrícula sigue vigente. No publicar hasta cumplir condiciones;
+  de capacidad pasajero si conserva el acceso a RuTeam. No publicar hasta cumplir condiciones;
   permitir renovación propia e historial autorizado. Gestión de recursos existentes siempre
   verifica propietario y seguridad/estado; no asignar permisos sólo por mostrar navegación.
 
@@ -247,3 +247,12 @@ Guardados, plazas observadas, agenda, lugares habituales y límite voluntario de
 aporte complementan la búsqueda. Nest protege estos datos del usuario. El
 seguimiento periódico requiere consentimiento y primer plano. Expo Go conserva
 la bandeja interna. El push remoto se prueba en un development build configurado.
+
+## RF-001 en la versión académica integrada
+
+El acceso de la versión actual utiliza una dirección institucional declarada
+con dominio exacto @usc.edu.co. Registro, inicio de sesión e incorporación
+funcionan sin confirmación por correo ni acreditación oficial de matrícula.
+La política no demuestra titularidad del correo ni vigencia estudiantil.
+Las cuentas suspendidas o revocadas siguen restringidas. Nest exige titularidad,
+vigencia y condiciones de conducción para publicar.

@@ -13,12 +13,16 @@ import type {
   TripTrackingView,
 } from '@ruteam/contracts';
 import { api, ApiError } from '../../services/api/client';
+import type { NavigationFix } from '../trips/route-progress';
 
 const sendIntervalMs = 15000;
 const sampleLifetimeMs = 120000;
 
 type Fix = Pick<LocationObject, 'timestamp'> & {
-  coords: Pick<LocationObject['coords'], 'accuracy' | 'latitude' | 'longitude'>;
+  coords: Pick<
+    LocationObject['coords'],
+    'accuracy' | 'latitude' | 'longitude' | 'heading' | 'speed'
+  >;
 };
 
 async function watchForegroundPosition(
@@ -46,12 +50,14 @@ interface Watch {
   timer?: ReturnType<typeof setTimeout>;
   pending?: TripDriverLocationInput;
   sending?: boolean;
+  lastObserved?: number;
 }
 
 export function useLocationSharing(
   path: string,
   authorized: boolean,
   refresh: () => void,
+  observe?: (fix: NavigationFix | null) => void,
 ) {
   const watch = useRef<Watch>(null);
   const nextSendAt = useRef(0);
@@ -69,7 +75,8 @@ export function useLocationSharing(
     current.subscription?.remove();
     clearTimeout(current.timer);
     setState('paused');
-  }, []);
+    observe?.(null);
+  }, [observe]);
 
   useFocusEffect(useCallback(() => pause, [pause]));
   useEffect(() => {
@@ -171,6 +178,17 @@ export function useLocationSharing(
             !Number.isFinite(timestamp)
           )
             return;
+          if (observe && timestamp - (current.lastObserved ?? 0) >= 1000) {
+            current.lastObserved = timestamp;
+            observe({
+              timestamp,
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              accuracy: coords.accuracy,
+              heading: coords.heading,
+              speed: coords.speed,
+            });
+          }
           const capturedAt = new Date(timestamp).toISOString();
           if (
             capturedAt <=

@@ -1,3 +1,4 @@
+import { participationCandidates } from '../../../institutional-membership/infrastructure/participation-candidates.js';
 import { suppressedNotices } from '../../notifications/notification-preferences.js';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
@@ -100,19 +101,7 @@ function jobUnit(
           latitude: { not: null },
           longitude: { not: null },
           vehicleTypes: { has: trip.vehicle.type },
-          user: {
-            disabledAt: null,
-            emailVerifiedAt: { not: null },
-            demoIdentity: { not: null },
-            membership: {
-              is: {
-                status: 'ACTIVE',
-                group: 'STUDENT',
-                verifiedBy: 'DEMO',
-                validUntil: { gt: now },
-              },
-            },
-          },
+          user: participationCandidates(access, now),
           ...(job.cursor && { id: { gt: job.cursor } }),
         },
         include: profileInclude,

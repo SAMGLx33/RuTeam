@@ -96,6 +96,7 @@ y mantiene la atribución configurada. Una posición privada no determina solici
 de teselas remotas. No añadir rutas, permisos ni operaciones de negocio para
 completar una maqueta. Consultar DESIGN_SYSTEM, FRONTEND_NAVIGATION, MAP_EXPERIENCE
 y FRONTEND_UX_INTEGRATION en docs/development.
+
 ## Operación, conexión y dispositivos
 
 Mostrar salida programada, nueva estimación, inicio efectivo y vencimiento como
@@ -103,3 +104,9 @@ hechos distintos. Conservar la versión vista al empezar a editar. Una acción s
 respuesta se reconcilia con el backend antes de confirmar al usuario su resultado.
 GPS en primer plano y adaptador de notificaciones tienen disponibilidad por
 plataforma. Consultar la [guía de dispositivos](../docs/development/MOBILE_TESTING.md).
+
+## Registro y navegación vial
+
+El formulario académico presenta el estado de dominio declarado. Mantener una
+sola navegación con tema, sesión y avisos. El GPS estima avance desde la vista
+operativa con permiso de primer plano. Cada llegada se registra por acción autorizada.

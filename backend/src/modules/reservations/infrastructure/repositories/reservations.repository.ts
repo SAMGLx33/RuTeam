@@ -1,9 +1,17 @@
+import {
+  locallyEligible,
+  type AccessConfiguration,
+} from '../../../institutional-membership/domain/access-policy.js';
+import {
+  ENVIRONMENT,
+  type Environment,
+} from '../../../../config/environment.js';
 import { hasActivityConflict } from '../../../trips/infrastructure/student-schedule.js';
 import { segmentWindow } from '../../../trips/domain/activity-window.js';
 import { participationStage } from '../../domain/participation-stage.js';
 import { recordEmissions } from '../../../mobility/infrastructure/record-emissions.js';
 import { publicEconomicTerms } from '../../../expenses/domain/expense-policy.js';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   ReservationView,
   ReservationStatus,
@@ -35,6 +43,7 @@ const viewInclude = {
       status: true,
       departureAt: true,
       estimatedDepartureAt: true,
+      expiredAt: true,
       suggestedContributionCop: true,
       compensationMethods: true,
       driver: { select: { profile: { select: { displayName: true } } } },
@@ -72,6 +81,8 @@ export function reservationView(
     pickup: meetingPointView(row.pickup),
     dropoff: meetingPointView(row.dropoff),
     departureAt: row.trip.departureAt.toISOString(),
+    estimatedDepartureAt: row.trip.estimatedDepartureAt?.toISOString() ?? null,
+    expiredAt: row.trip.expiredAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     confirmedAt: row.confirmedAt?.toISOString() ?? null,
     boardedAt: row.boardedAt?.toISOString() ?? null,
@@ -87,7 +98,11 @@ export function reservationView(
   };
 }
 
-export function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
+export function reservationUnit(
+  tx: Prisma.TransactionClient,
+  tripId: string,
+  access?: AccessConfiguration,
+) {
   async function upcoming(stopId: string) {
     const next = await tx.tripStop.findFirst({
       where: { tripId, reachedAt: null },
@@ -227,13 +242,14 @@ export function reservationUnit(tx: Prisma.TransactionClient, tripId: string) {
         where: { id, tripId },
         include: { ...viewInclude, members: { select: { userId: true } } },
       }),
-    memberships: (ids: string[]) =>
-      tx.institutionalMembership.findMany({
-        where: {
-          userId: { in: ids },
-          user: { disabledAt: null, emailVerifiedAt: { not: null } },
-        },
-      }),
+    eligibleMembers: async (ids: string[], now: Date) => {
+      if (!access) return [];
+      const users = await tx.user.findMany({
+        where: { id: { in: ids } },
+        include: { membership: true },
+      });
+      return users.filter((actor) => locallyEligible(actor, access, now));
+    },
     activeForMember: (userId: string) =>
       tx.reservation.findFirst({
         where: { tripId, status: 'CONFIRMED', members: { some: { userId } } },
@@ -527,7 +543,10 @@ export type ReservationUnit = ReturnType<typeof reservationUnit>;
 
 @Injectable()
 export class ReservationsRepository {
-  constructor(private readonly db: PrismaService) {}
+  constructor(
+    private readonly db: PrismaService,
+    @Inject(ENVIRONMENT) private readonly env: Environment,
+  ) {}
 
   withTripLock<T>(
     tripId: string,
@@ -550,7 +569,7 @@ export class ReservationsRepository {
         { id: string }[]
       >`SELECT id FROM "Trip" WHERE id = ${tripId}::uuid FOR UPDATE`;
       if (!locked.length) throw new NotFoundException('Viaje inexistente');
-      return operation(reservationUnit(tx, tripId), tx);
+      return operation(reservationUnit(tx, tripId, this.env), tx);
     });
   }
 

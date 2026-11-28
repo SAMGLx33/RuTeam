@@ -48,6 +48,7 @@ export default defineConfig({
         CORS_ORIGINS: 'http://localhost:8082',
         DEMO_MODE: 'true',
         VERIFICATION_PROVIDER: 'demo',
+        INSTITUTIONAL_ACCESS_MODE: 'DECLARED_DOMAIN',
         // Browser coverage uses seeded, verified accounts and never real SMTP.
         SMTP_HOST: '127.0.0.1',
         SMTP_PORT: '1',

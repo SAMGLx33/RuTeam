@@ -1,3 +1,4 @@
+import { usesDeclaredDomain } from '../../institutional-membership/domain/access-policy.js';
 import {
   ConflictException,
   ForbiddenException,
@@ -15,6 +16,7 @@ import {
   recordTripNotice,
 } from '../../mobility/infrastructure/trip-notices.js';
 import { ViajeService } from './trips.service.js';
+import { routeManeuversSchema } from '../domain/route-maneuvers.js';
 import { planItinerary, type PlannedItinerary } from './plan-itinerary.js';
 import {
   dayKey,
@@ -85,7 +87,8 @@ export class RecurringTripsService {
     previous?: PlannedItinerary,
   ) {
     const dates = validateRecurrence(input, now);
-    const { routingSelection, ...itinerary } = input.template.itinerary;
+    const { routingSelection, maneuvers, ...itinerary } =
+      input.template.itinerary;
     const template = { ...input.template, itinerary };
     await this.trips.publicationTerms(
       driverId,
@@ -96,7 +99,7 @@ export class RecurringTripsService {
     );
     const planned = await this.trips.prepareRoute(
       driverId,
-      { ...template, itinerary: { ...itinerary, routingSelection } },
+      { ...template, itinerary: { ...itinerary, routingSelection, maneuvers } },
       unit,
     );
     if (
@@ -184,14 +187,13 @@ export class RecurringTripsService {
         'Cambió el catálogo del recorrido. Revisa y guarda la plantilla.',
       );
     planned.distanceMeters = saved.distanceMeters;
+    planned.maneuvers = routeManeuversSchema.safeParse(saved.maneuvers).data;
     for (const [index, stop] of planned.stops.entries())
       stop.estimatedOffsetSeconds = saved.stops[index].estimatedOffsetSeconds;
     return planned;
   }
 
   async generate(driverId: string, id: string, now: Date) {
-    // This provider also protects interactive student resources. A worker has no session.
-    const verified = await this.verification.verify(driverId);
     return this.repository.withDriver(
       driverId,
       async (unit, publication, tx) => {
@@ -223,6 +225,9 @@ export class RecurringTripsService {
           })
           .slice(0, 4);
         const actor = batch.length ? await publication.actor() : null;
+        const isDeclared = !!actor && usesDeclaredDomain(actor, this.env);
+        const verified =
+          !!actor && !isDeclared && (await this.verification.verify(driverId));
         let unpublished = false;
         for (const slot of batch) {
           const template =
@@ -233,10 +238,12 @@ export class RecurringTripsService {
           };
           try {
             if (
-              !verified ||
-              !actor?.emailVerifiedAt ||
-              !actor.membership ||
-              actor.membership.validUntil <= slot.departureAt
+              !actor ||
+              (!isDeclared &&
+                (!verified ||
+                  !actor.emailVerifiedAt ||
+                  !actor.membership ||
+                  actor.membership.validUntil <= slot.departureAt))
             )
               throw new ForbiddenException(
                 'Matrícula USC sin acreditación vigente para esta fecha',
@@ -359,6 +366,7 @@ export class RecurringTripsService {
     const saved: PlannedItinerary = {
       ...planned,
       distanceMeters: source.routeDistanceMeters ?? undefined,
+      maneuvers: routeManeuversSchema.safeParse(source.routeManeuvers).data,
       stops: source.stops.map((stop) => ({
         ...stop,
         reachedAt: null,
@@ -380,6 +388,7 @@ export class RecurringTripsService {
         ...template,
         itinerary: {
           ...template.itinerary,
+          maneuvers: planned.maneuvers,
           routingSelection: this.trips.signSavedRoute(
             driverId,
             planned,

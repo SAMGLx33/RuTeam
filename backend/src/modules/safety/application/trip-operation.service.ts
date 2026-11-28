@@ -1,5 +1,6 @@
 import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import { departureState } from '../../trips/domain/departure-state.js';
+import { routeManeuversSchema } from '../../trips/domain/route-maneuvers.js';
 import { tripWindow } from '../../trips/domain/activity-window.js';
 import { participationStage } from '../../reservations/domain/participation-stage.js';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
@@ -71,6 +72,9 @@ export class TripOperationService {
       vehicle: trip.vehicle,
       progress: { current, next, reached: reached.length, total: stops.length },
       itinerary: presentItinerary(trip),
+      ...(owner && {
+        maneuvers: routeManeuversSchema.safeParse(trip.routeManeuvers).data,
+      }),
       participation: reservation
         ? {
             id: reservation.id,

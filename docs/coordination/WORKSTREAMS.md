@@ -102,3 +102,9 @@ Movilidad coordina estimación, agenda, actividad y preferencias. Viajes y Reser
 | Safety, Chat y Realtime | GPS voluntario, permisos por recurso y reconexión.             | POR_ASIGNAR     |
 | Cliente Expo            | Dispositivos y enlaces de avisos, con prueba física pendiente. | POR_ASIGNAR     |
 | Integración             | Migraciones, contratos, prueba aislada y documentación.        | POR_ASIGNAR     |
+
+## Integración de producto
+
+`task/trip-operations` integra acceso académico, operación y rediseño de Expo,
+y navegación vial. Revisores humanos POR_ASIGNAR. Prueba física y promoción
+siguen el protocolo de integración.

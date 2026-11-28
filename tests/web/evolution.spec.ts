@@ -77,7 +77,7 @@ test('agenda, SSE, preferencias y enlaces a avisos propios', async ({
     },
   });
   expect(published.status()).toBe(201);
-  const { id, itinerary } = await published.json();
+  const { id, itinerary, departureAt } = await published.json();
   const initial = await page.request.get(api + '/notification-settings', {
     headers: web,
   });
@@ -85,11 +85,51 @@ test('agenda, SSE, preferencias y enlaces a avisos propios', async ({
   const { preferences } = await initial.json();
 
   try {
+    const bogotaOffset = 5 * 3600_000;
+    const estimated = new Date(
+      Date.parse(departureAt) + 20 * 60_000 - bogotaOffset,
+    )
+      .toISOString()
+      .slice(0, 16)
+      .replace('T', ' ');
+    await page.goto('/my-trips');
+    const ownedTrip = page.getByTestId(`driver-trip-${id}`);
+    await ownedTrip.getByRole('button', { name: 'Informar demora' }).click();
+    await ownedTrip
+      .getByLabel('Nueva salida estimada en Colombia')
+      .fill(estimated);
+    const update = page.waitForResponse((receipt) =>
+      receipt.url().endsWith(`/trips/${id}/delay`),
+    );
+    await ownedTrip.getByRole('button', { name: 'Guardar demora' }).click();
+    expect((await update).ok()).toBe(true);
+
+    await page.goto('/');
+    await expect(
+      page.getByText('Salida programada ·', { exact: false }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Nueva salida estimada ·', { exact: false }),
+    ).toBeVisible();
+
+    await page.goto('/trip/' + id);
+    const summary = page.getByTestId('trip-detail-summary');
+    await expect(
+      summary.getByText('Salida programada ·', { exact: false }),
+    ).toBeVisible();
+    await expect(
+      summary.getByText('Nueva salida estimada ·', { exact: false }),
+    ).toBeVisible();
+
+    await page.goto('/');
     await page
       .getByRole('link', { name: 'Agenda de viajes', exact: true })
       .click();
     await expect(
       page.getByRole('heading', { name: 'Agenda de viajes' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Retraso · Salida estimada', { exact: false }),
     ).toBeVisible();
     await page
       .locator('a[href="/trip-operation/' + id + '"]:visible')
@@ -124,6 +164,11 @@ test('agenda, SSE, preferencias y enlaces a avisos propios', async ({
       },
     );
     expect(joined.status()).toBe(201);
+    const booked = await joined.json();
+    expect(booked.departureAt).toBe(departureAt);
+    expect(booked.estimatedDepartureAt).toBe(
+      new Date(estimated.replace(' ', 'T') + ':00-05:00').toISOString(),
+    );
     await expect(
       page.getByText('Pendientes en otras paradas · 1', { exact: true }),
     ).toBeVisible({ timeout: 8000 });

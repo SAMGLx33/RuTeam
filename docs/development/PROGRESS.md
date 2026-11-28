@@ -168,6 +168,7 @@ compartido, publicación guiada y pantallas de viaje/actividad/mensajes reorgani
 Conserva API y datos locales, con cartografía optativa y puntos de integración para
 el otro frente. Revisar el [inventario de integración](FRONTEND_UX_INTEGRATION.md)
 y el [handoff](../handoffs/2026-11-27_frontend-ux-redesign.md).
+
 ## Operación y movilidad cotidiana del 27/11/2026
 
 Incrementos en `task/trip-operations`, desde la base integrada `2b69336`.
@@ -186,3 +187,13 @@ reconexión y registro nativo opcional quedan integrados en una sola app Expo.
 La regresión integral aprobó 224 pruebas Jest y 18 Playwright. El smoke
 aprobó 6 verificaciones. PostgreSQL verificó 31 checksums de migración y
 Expo Doctor aprobó 18 comprobaciones. La prueba física queda pendiente.
+
+## Integración de producto del 27/11/2026
+
+En `task/trip-operations` se corrigió la composición funcional del merge #8.
+La versión académica admite el dominio USC declarado y mantiene matrícula,
+buzón, sesión y conducción como condiciones distintas. La operación del
+conductor presenta maniobras de la ruta firmada y avance GPS estimado.
+
+- [Integración de producto](PRODUCT_INTEGRATION.md)
+- [Handoff y pruebas](../handoffs/2026-11-27_trip-operations_integracion-producto.md)

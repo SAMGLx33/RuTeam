@@ -70,6 +70,8 @@ test('detalle guarda un viaje y lugares privados se reutilizan al buscar', async
   const errors: Error[] = [];
   page.on('pageerror', (error) => errors.push(error));
   let place: FrequentPlaceView | undefined;
+  let booking: { id: string; auth: Record<string, string> } | undefined;
+  const tripLink = `/trip/${trip.id}`;
   try {
     await page.goto('/');
     await page
@@ -94,9 +96,61 @@ test('detalle guarda un viaje y lugares privados se reutilizan al buscar', async
       path: `/tmp/ruteam-daily-saved-${testInfo.project.name}.png`,
     });
     await page.reload();
-    await expect(page.locator(`a[href="/trip/${trip.id}"]`)).toBeVisible();
+    await expect(page.locator(`a[href="${tripLink}"]`)).toBeVisible();
+
+    await page.goto('/');
+    await page
+      .getByRole('link', { name: 'Viajes guardados · 1', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/saved-trips$/);
+
+    await page.goto('/available-trips');
+    await page.getByRole('tab', { name: 'Todos', exact: true }).click();
+    const card = page.locator(`a[href="${tripLink}"]`).locator('..');
+    await expect(card.getByText('Guardado', { exact: true })).toBeVisible();
+
+    const bookingLogin = await submitFixtureLogin(() =>
+      request.post(api + '/auth/login', {
+        headers: { 'x-ruteam-client': 'native' },
+        data: { email: 'ana@student-fixtures.ruteam.invalid', password },
+      }),
+    );
+    expect(bookingLogin.ok()).toBe(true);
+    const auth = {
+      'x-ruteam-client': 'native',
+      Authorization: 'Bearer ' + (await bookingLogin.json()).token,
+    };
+    const pickupId = trip.itinerary?.stops[0].id;
+    const dropoffId = trip.itinerary?.stops.at(-1)?.id;
+    const booked = await request.post(
+      api + '/trips/' + trip.id + '/participations',
+      {
+        headers: auth,
+        data: { pickupId, dropoffId },
+      },
+    );
+    expect(booked.status()).toBe(201);
+    booking = { id: (await booked.json()).id, auth };
+
+    await page.goto('/saved-trips');
+    await expect(
+      page.getByText('Sin plazas disponibles', { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Avisarme si se libera una plaza' })
+      .click();
+    const cancelAlert = page.getByRole('button', {
+      name: 'Cancelar aviso de plaza',
+    });
+    await expect(cancelAlert).toBeVisible();
+    await page.reload();
+    await expect(cancelAlert).toBeVisible();
+    await cancelAlert.click();
+    await expect(
+      page.getByRole('button', { name: 'Avisarme si se libera una plaza' }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Quitar de guardados' }).click();
-    await expect(page.locator(`a[href="/trip/${trip.id}"]`)).toHaveCount(0);
+    await expect(page.locator(`a[href="${tripLink}"]`)).toHaveCount(0);
 
     const entered = await page.request.post(api + '/mobility/frequent-places', {
       headers: web,
@@ -137,6 +191,10 @@ test('detalle guarda un viaje y lugares privados se reutilizan al buscar', async
     );
     expect(errors).toEqual([]);
   } finally {
+    if (booking)
+      await request.post(api + '/participations/' + booking.id + '/cancel', {
+        headers: booking.auth,
+      });
     if (place)
       await page.request.delete(api + '/mobility/frequent-places/' + place.id, {
         headers: web,

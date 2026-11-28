@@ -1,4 +1,8 @@
-import type { RouteGeometry, RouteStop } from '@ruteam/contracts';
+import type {
+  RouteGeometry,
+  RouteManeuver,
+  RouteStop,
+} from '@ruteam/contracts';
 import { DomainPolicyError } from '../../../common/errors/domain-policy.error.js';
 import type {
   ItineraryDto,
@@ -17,6 +21,7 @@ export interface PlannedItinerary {
   description: string;
   geometry?: RouteGeometry;
   distanceMeters?: number;
+  maneuvers?: RouteManeuver[];
 }
 
 async function resolvePoint(input: MeetingPointDto, unit: PublicationUnit) {

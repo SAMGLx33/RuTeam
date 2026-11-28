@@ -1,5 +1,4 @@
-import type { Href } from 'expo-router';
-import { Link, useLocalSearchParams, type Href } from 'expo-router';
+import { useLocalSearchParams, type Href } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -17,7 +16,7 @@ import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
 import { Link, Pressable, Text, View } from '../../theme/primitives';
 import { colors } from '../../theme/tokens';
-import { tripStatusLabel } from '../trips/route-preview';
+import { travelTime, tripStatusLabel } from '../trips/route-preview';
 
 const agendaLabel: Record<AgendaEntry['kind'], string> = {
   PUBLISHED: 'Viaje publicado',
@@ -119,13 +118,14 @@ export function ActivityScreen() {
     queryFn: () => api<PendingActivity[]>('/mobility/activity'),
     refetchInterval: 30000,
   });
+  const items = focus
+    ? activity.data?.filter(({ id }) => id === focus)
+    : activity.data;
   const sections = activitySections
-    .filter(({ id }) => filter === 'all' || id === filter)
+    .filter(({ id }) => focus || filter === 'all' || id === filter)
     .map((section) => ({
       ...section,
-      items:
-        activity.data?.filter((item) => item.optional === section.optional) ??
-        [],
+      items: items?.filter((item) => item.optional === section.optional) ?? [],
     }))
     .filter(({ items }) => items.length > 0);
   return (
@@ -159,12 +159,21 @@ export function ActivityScreen() {
           {activity.error.message}
         </Text>
       )}
-      {activity.data?.length === 0 && (
+      {focus && (
+        <Link href="/activity" style={styles.actionLink}>
+          Ver todas mis actividades
+        </Link>
+      )}
+      {items?.length === 0 && (
         <View style={s.section}>
-          <Text style={s.text}>No tienes actividades para revisar.</Text>
+          <Text style={s.text}>
+            {focus
+              ? 'Esta actividad ya no está pendiente para tu cuenta.'
+              : 'No tienes actividades para revisar.'}
+          </Text>
         </View>
       )}
-      {!!activity.data?.length && sections.length === 0 && (
+      {!!items?.length && sections.length === 0 && (
         <View style={s.section}>
           <Text style={s.text} accessibilityLiveRegion="polite">
             {filter === 'required'
@@ -295,9 +304,43 @@ export function AgendaScreen() {
                   <Text style={styles.entryStatus}>
                     {entry.status === 'WITHDRAWN'
                       ? 'Participación retirada'
-                      : tripStatusLabel[entry.status]}
+                      : entry.status === 'EXPIRED'
+                        ? 'Viaje vencido'
+                        : tripStatusLabel[entry.status]}
                   </Text>
                 )}
+                {entry.estimatedDepartureAt && (
+                  <Text style={styles.detail}>
+                    Retraso · Salida estimada{' '}
+                    {travelTime(entry.estimatedDepartureAt)}
+                  </Text>
+                )}
+                {entry.kind === 'PARTICIPATION' && (
+                  <>
+                    <Text style={styles.detail}>
+                      {entry.pickupAt
+                        ? `Recogida prevista ${travelTime(entry.pickupAt)}`
+                        : 'Recogida sin hora estimada'}
+                    </Text>
+                    <Text style={styles.detail}>
+                      {entry.dropoffAt
+                        ? `Descenso estimado ${travelTime(entry.dropoffAt)}`
+                        : 'Descenso sin hora estimada'}
+                    </Text>
+                  </>
+                )}
+                {entry.conflictWithTripIds?.map((tripId) => (
+                  <Link
+                    key={tripId}
+                    href={{
+                      pathname: '/trip-operation/[tripId]',
+                      params: { tripId },
+                    }}
+                    style={styles.actionLink}
+                  >
+                    Ver viaje con posible conflicto de horario
+                  </Link>
+                ))}
                 {entry.failure && (
                   <Text style={styles.detail}>{entry.failure}</Text>
                 )}

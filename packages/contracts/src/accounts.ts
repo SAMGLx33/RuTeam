@@ -1,6 +1,9 @@
 export type UsagePreference = 'PASSENGER' | 'DRIVER_AND_PASSENGER';
 
+export type InstitutionalAccessMode = 'DECLARED_DOMAIN' | 'OFFICIAL';
+
 export type StudentEligibilityStatus =
+  | 'DECLARED'
   | 'PENDING_VERIFICATION'
   | 'VERIFIED_CURRENT'
   | 'INELIGIBLE'
@@ -12,6 +15,7 @@ export interface Account {
   email: string;
   profile: { displayName: string };
   emailVerified: boolean;
+  institutionalAccess: InstitutionalAccessMode;
   usagePreference: UsagePreference | null;
   onboarding: { step: number; completed: boolean };
   eligibility: {
@@ -42,6 +46,7 @@ export interface OnboardingInput {
 }
 export interface AccessConfiguration {
   accountEmailAvailable: boolean;
+  institutionalAccess: InstitutionalAccessMode;
 }
 
 export interface AccountLifecycleStatus {
@@ -71,4 +76,10 @@ export interface AccountSettings extends AccountLifecycleStatus {
   futureTrips: number;
   futureParticipations: number;
   activeSchedules: number;
+}
+
+export interface RegistrationReceipt {
+  message: string;
+  institutionalAccess: InstitutionalAccessMode;
+  emailDeliveryAvailable: boolean;
 }

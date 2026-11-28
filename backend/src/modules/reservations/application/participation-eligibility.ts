@@ -1,20 +1,35 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
 import type { ReservationUnit } from '../infrastructure/repositories/reservations.repository.js';
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import {
+  canSubmitDeclaredDocuments,
+  locallyEligible,
+  type AccessConfiguration,
+} from '../../institutional-membership/domain/access-policy.js';
 import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
 import { tripWindow } from '../../trips/domain/activity-window.js';
 import { tripDirection } from '../../trips/domain/models/driver-route.js';
 import { presentStops } from '../../trips/infrastructure/repositories/trips.repository.js';
 
 export type BookableTrip = Awaited<ReturnType<ReservationUnit['trip']>>;
-export function checkDriver(trip: BookableTrip, now: Date): void {
+export function checkDriver(
+  trip: BookableTrip,
+  now: Date,
+  access: AccessConfiguration,
+): void {
+  const documents = canSubmitDeclaredDocuments(trip.driver, access);
   if (
-    trip.driver.disabledAt ||
-    !isActiveMembership(trip.driver.membership, now) ||
-    !VehiculoPolicy.esPublicable(trip.vehicle.document, tripWindow(trip).end) ||
+    !locallyEligible(trip.driver, access, now) ||
+    (!trip.driver.demoIdentity &&
+      (trip.vehicle.document?.demo || trip.driver.driverEligibility?.demo)) ||
+    !VehiculoPolicy.esPublicable(
+      trip.vehicle.document,
+      tripWindow(trip).end,
+      documents,
+    ) ||
     !VehiculoPolicy.esPublicable(
       trip.driver.driverEligibility,
       tripWindow(trip).end,
+      documents,
     ) ||
     (trip.driver.driverEligibility?.category !== 'BOTH' &&
       trip.driver.driverEligibility?.category !== trip.vehicle.type)
@@ -38,10 +53,9 @@ export async function checkMembers(
   memberIds: string[],
   now: Date,
 ) {
-  const memberships = await unit.memberships(memberIds);
-  if (
-    memberships.length !== memberIds.length ||
-    memberships.some((membership) => !isActiveMembership(membership, now))
-  )
-    throw new ForbiddenException('Se requiere condición de estudiante vigente');
+  const eligible = await unit.eligibleMembers(memberIds, now);
+  if (eligible.length !== memberIds.length)
+    throw new ForbiddenException(
+      'Una cuenta no reúne las condiciones de acceso a RuTeam',
+    );
 }

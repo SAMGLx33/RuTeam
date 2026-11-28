@@ -5,6 +5,10 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
+import {
+  declaredAccessEnabled,
+  fixtureAccessEnabled,
+} from '../../institutional-membership/domain/access-policy.js';
 import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import { MobilityReminderRepository } from '../infrastructure/repositories/mobility-reminder.repository.js';
 import { SavedMobilityService } from './saved-mobility.service.js';
@@ -35,9 +39,7 @@ export class DailyMobilityWorker implements OnModuleInit, OnModuleDestroy {
   async tick(now = new Date()) {
     if (
       this.running ||
-      this.env.NODE_ENV === 'production' ||
-      !this.env.demo ||
-      this.env.VERIFICATION_PROVIDER !== 'demo'
+      (!declaredAccessEnabled(this.env) && !fixtureAccessEnabled(this.env))
     )
       return;
     this.running = true;

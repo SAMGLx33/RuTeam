@@ -2,6 +2,7 @@ import type { TripSummary } from './index.js';
 import type {
   ParticipationStage,
   ReservationStatus,
+  RouteManeuver,
   RouteStop,
   TripItinerary,
 } from './routes.js';
@@ -26,6 +27,7 @@ export interface TripOperation {
     total: number;
   };
   itinerary: TripItinerary | null;
+  maneuvers?: RouteManeuver[];
   participation: {
     id: string;
     status: ReservationStatus;

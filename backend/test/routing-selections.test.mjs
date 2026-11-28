@@ -38,3 +38,43 @@ test('firma los tramos temporales sólo para el conductor y la alternativa exact
       choice.verify(token, actor, points, line, duration, now),
     ).toThrow(/expiró o cambió/);
 });
+
+test('la firma también vincula las indicaciones asociadas con la alternativa publicada', () => {
+  const maneuvers = [
+    {
+      order: 0,
+      leg: 0,
+      kind: 'DEPART',
+      modifier: null,
+      street: 'Calle Pública',
+      latitude: 3.4,
+      longitude: -76.55,
+      geometry,
+      distanceMeters: 8000,
+      durationSeconds: 1200,
+      stopPosition: 0,
+    },
+  ];
+  const { routingSelection } = choice.offer(
+    'driver',
+    stops,
+    { ...route, maneuvers },
+    1000000,
+  );
+  expect(
+    choice.verify(
+      routingSelection,
+      'driver',
+      stops,
+      geometry,
+      20,
+      1010000,
+      maneuvers,
+    ),
+  ).toMatchObject({ legs: [600, 600], distance: 8000 });
+  expect(() =>
+    choice.verify(routingSelection, 'driver', stops, geometry, 20, 1010000, [
+      { ...maneuvers[0], street: 'Otra vía' },
+    ]),
+  ).toThrow(/expiró o cambió/);
+});

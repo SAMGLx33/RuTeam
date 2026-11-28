@@ -1,9 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ENVIRONMENT,
+  type Environment,
+} from '../../../../config/environment.js';
+import {
+  declaredAccessEnabled,
+  declaredEmailPattern,
+  fixtureAccessEnabled,
+} from '../../../institutional-membership/domain/access-policy.js';
+import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service.js';
 
 @Injectable()
 export class MobilityReminderRepository {
-  constructor(private readonly db: PrismaService) {}
+  constructor(
+    private readonly db: PrismaService,
+    @Inject(ENVIRONMENT) private readonly env: Environment,
+  ) {}
 
   deliverDue(now: Date) {
     // Sources retain the due times. The inbox identity is the persistent delivery receipt.
@@ -11,18 +23,25 @@ export class MobilityReminderRepository {
     const upper = new Date(+now + 60 * 60_000);
     const lower = new Date(+now - 360 * 60_000);
     return this.db.$executeRaw`
-      WITH upcoming AS (
+      WITH eligible_accounts AS (
+        SELECT u.id, u."notificationPreferences"
+        FROM "User" u LEFT JOIN "InstitutionalMembership" m ON m."userId"=u.id
+        WHERE u."disabledAt" IS NULL AND (
+          (${declaredAccessEnabled(this.env)} AND u."demoIdentity" IS NULL AND m.status IS DISTINCT FROM 'REVOKED'
+            AND lower(btrim(u.email)) ~ ${declaredEmailPattern}
+            AND length(split_part(btrim(u.email), '@', 1)) <= 64)
+          OR
+          (${fixtureAccessEnabled(this.env)} AND u."demoIdentity" IS NOT NULL AND u."emailVerifiedAt" IS NOT NULL
+            AND m.status='ACTIVE' AND m."group"='STUDENT' AND m."verifiedBy"='DEMO' AND m."validUntil">${now})
+        )
+      ), upcoming AS (
         SELECT t.id, t."driverId", t."offeredSeats", t."occupiedSeats", t."departureAt", t.status,
           COALESCE(t."startedAt", t."estimatedDepartureAt", t."departureAt") AS departure
         FROM "Trip" t
-        JOIN "User" driver ON driver.id=t."driverId"
-        JOIN "InstitutionalMembership" membership ON membership."userId"=driver.id
+        JOIN eligible_accounts driver ON driver.id=t."driverId"
         WHERE t.status IN ('PROGRAMADO','EN_CURSO') AND t."expiredAt" IS NULL
           AND COALESCE(t."startedAt", t."estimatedDepartureAt", t."departureAt") BETWEEN ${lower} AND ${upper}
-          AND driver."disabledAt" IS NULL AND driver."emailVerifiedAt" IS NOT NULL
-          AND driver."demoIdentity" IS NOT NULL AND membership.status='ACTIVE'
-          AND membership."group"='STUDENT' AND membership."verifiedBy"='DEMO'
-          AND membership."validUntil">${now}
+
       ), source AS (
         SELECT "driverId" AS recipient, id AS trip, 'TRIP_DEPARTURE_REMINDER' AS kind,
           '' AS key, departure AS event_at FROM upcoming WHERE status='PROGRAMADO'
@@ -51,11 +70,8 @@ export class MobilityReminderRepository {
         WHERE d."expiresAt" BETWEEN ${now} AND ${upper}
       ), eligible AS (
         SELECT s.recipient, s.trip, s.kind, concat(s.key, ':', EXTRACT(EPOCH FROM s.event_at)) AS key, s.event_at
-        FROM source s JOIN "User" u ON u.id=s.recipient
-        JOIN "InstitutionalMembership" m ON m."userId"=u.id
-        WHERE u."disabledAt" IS NULL AND u."emailVerifiedAt" IS NOT NULL AND u."demoIdentity" IS NOT NULL
-          AND m.status='ACTIVE' AND m."group"='STUDENT' AND m."verifiedBy"='DEMO' AND m."validUntil">${now}
-          AND u."notificationPreferences"->'reminders' IS DISTINCT FROM 'false'::jsonb
+        FROM source s JOIN eligible_accounts u ON u.id=s.recipient
+        WHERE u."notificationPreferences"->'reminders' IS DISTINCT FROM 'false'::jsonb
           AND s.event_at>${now} AND s.event_at<=${now}::timestamptz + make_interval(mins => CASE u."notificationPreferences"->'reminderLeadMinutes'
             WHEN '15'::jsonb THEN 15 WHEN '60'::jsonb THEN 60 ELSE 30 END)
       )

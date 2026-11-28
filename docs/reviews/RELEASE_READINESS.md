@@ -244,3 +244,10 @@ credenciales del proyecto. La vigencia institucional oficial, verificación
 documental externa, atención institucional de incidencias, pagos, sanciones,
 restricciones de género y eliminación irreversible conservan sus decisiones
 pendientes.
+
+## Integración de producto del 27/11/2026
+
+El corte académico usa dominio USC declarado. El modo oficial queda sujeto a
+la fuente acreditada. Se reprodujeron pruebas PostgreSQL y consultas públicas
+a Photon, OSRM y OSM en Cali. Consultar [evidencia de integración](../handoffs/2026-11-27_trip-operations_integracion-producto.md).
+GPS físico y recepción push requieren teléfono y configuración autorizada.

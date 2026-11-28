@@ -63,6 +63,7 @@ export interface SavedTripView {
   tripId: string;
   direction: import('./routes.js').TripDirection | null;
   departureAt: string;
+  estimatedDepartureAt?: string | null;
   availability: SavedTripAvailability;
   availableSeats: number;
   alertRequested: boolean;

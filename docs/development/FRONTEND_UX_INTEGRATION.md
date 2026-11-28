@@ -1,6 +1,6 @@
 # Integración del rediseño de frontend
 
-Base `feature@2b69336`. Trabajo local en `task/frontend-ux-redesign`.
+Base `feature@2b69336`. Corte histórico del rediseño en `task/frontend-ux-redesign`. Estado integrado en [PRODUCT_INTEGRATION](PRODUCT_INTEGRATION.md).
 
 ## Cortes de implementación
 

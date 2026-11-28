@@ -2,7 +2,11 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { BadRequestException } from '@nestjs/common';
 import { isUUID } from 'class-validator';
 import type { TripSearchPage } from '@ruteam/contracts';
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import {
+  canSubmitDeclaredDocuments,
+  locallyEligible,
+  type AccessConfiguration,
+} from '../../institutional-membership/domain/access-policy.js';
 import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
 import type { SearchTripsDto } from '../dto/search-trips.dto.js';
 import {
@@ -79,6 +83,7 @@ export async function searchTrips(
   repository: ViajeRepository,
   actorId: string,
   data: SearchTripsDto,
+  access: AccessConfiguration,
 ): Promise<TripSearchPage> {
   const from = parsePreference(data.from);
   const to = parsePreference(data.to);
@@ -120,16 +125,19 @@ export async function searchTrips(
     });
     for (const trip of candidates) {
       cursor = { departureAt: trip.departureAt, id: trip.id };
+      const declaredDocs = canSubmitDeclaredDocuments(trip.driver, access);
       if (
         trip.offeredSeats - trip.occupiedSeats < seats ||
-        !isActiveMembership(trip.driver.membership, now) ||
+        !locallyEligible(trip.driver, access, now) ||
         !VehiculoPolicy.esPublicable(
           trip.driver.driverEligibility,
           trip.expectedEndAt,
+          declaredDocs,
         ) ||
         !VehiculoPolicy.esPublicable(
           trip.vehicle.document,
           trip.expectedEndAt,
+          declaredDocs,
         ) ||
         (trip.driver.driverEligibility?.category !== 'BOTH' &&
           trip.driver.driverEligibility?.category !== trip.vehicle.type)

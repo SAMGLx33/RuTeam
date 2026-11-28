@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import type { Href } from 'expo-router';
-import { Link } from 'expo-router';
 import {
   useInfiniteQuery,
   useMutation,
@@ -8,8 +6,6 @@ import {
 } from '@tanstack/react-query';
 import { StyleSheet } from 'react-native';
 import type { NotificationPage, TripNotificationView } from '@ruteam/contracts';
-import { Text, View } from 'react-native';
-import type { NotificationPage } from '@ruteam/contracts';
 import { Button } from '../../components/ui/button';
 import {
   ProtectedPage,
@@ -19,6 +15,7 @@ import { useSession } from '../../providers/session-provider';
 import { api } from '../../services/api/client';
 import { Link, Pressable, Text, View } from '../../theme/primitives';
 import { colors } from '../../theme/tokens';
+import { notificationContent } from './notification-content';
 
 const noticeDay = new Intl.DateTimeFormat('es-CO', {
   timeZone: 'America/Bogota',
@@ -33,8 +30,6 @@ const noticeFilters = [
   { id: 'all', label: 'Todos' },
   { id: 'unread', label: 'Sin leer' },
 ] as const;
-
-import { notificationContent } from './notification-content';
 
 export function NotificationsScreen() {
   const { user } = useSession();
@@ -157,21 +152,27 @@ export function NotificationsScreen() {
                   {!item.available && (
                     <Text style={styles.meta}>{content.unavailable}</Text>
                   )}
+                  {item.kind === 'SEAT_AVAILABLE' && item.available && (
+                    <Text style={styles.meta}>
+                      La disponibilidad puede cambiar antes de confirmar.
+                    </Text>
+                  )}
                   <View style={styles.links}>
-                    {(item.kind === 'TRIP_MATCH' || item.available) && (
-                      <Link
-                        href={content.href}
-                        style={[
-                          styles.actionLink,
-                          !item.readAt && styles.unreadAction,
-                        ]}
-                        onPress={() => {
-                          if (!item.readAt) read.mutate(item.id);
-                        }}
-                      >
-                        {content.action}
-                      </Link>
-                    )}
+                    {content.href &&
+                      (item.kind === 'TRIP_MATCH' || item.available) && (
+                        <Link
+                          href={{
+                            pathname: '/open/[...target]',
+                            params: { target: ['notice', item.id] },
+                          }}
+                          style={[
+                            styles.actionLink,
+                            !item.readAt && styles.unreadAction,
+                          ]}
+                        >
+                          {content.action}
+                        </Link>
+                      )}
                     {!item.readAt && (
                       <Pressable
                         accessibilityRole="button"

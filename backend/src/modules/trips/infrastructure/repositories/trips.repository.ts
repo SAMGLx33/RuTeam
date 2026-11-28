@@ -206,7 +206,10 @@ function publicationUnit(tx: Prisma.TransactionClient, driverId: string) {
               coordinates: itinerary.geometry.coordinates,
             }
           : Prisma.DbNull,
-        routeDistanceMeters: itinerary.distanceMeters,
+        routeManeuvers: itinerary.maneuvers
+          ? (itinerary.maneuvers as unknown as Prisma.InputJsonArray)
+          : Prisma.DbNull,
+        routeDistanceMeters: itinerary.distanceMeters ?? null,
         originLabel: origin.label,
         originLatitude: origin.latitude,
         originLongitude: origin.longitude,

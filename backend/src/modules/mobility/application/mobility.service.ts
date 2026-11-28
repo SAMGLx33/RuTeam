@@ -18,7 +18,7 @@ import type {
   TripFeedCard,
   TripDetail,
 } from '@ruteam/contracts';
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import { canSubmitDeclaredDocuments } from '../../institutional-membership/domain/access-policy.js';
 import { tripWindow } from '../../trips/domain/activity-window.js';
 import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
 import {
@@ -85,6 +85,7 @@ export function marketOpen(
   access: RecommendationAccess,
 ): boolean {
   const window = tripWindow(trip);
+  const documents = canSubmitDeclaredDocuments(trip.driver, access);
   return (
     recommendationActorEligible(trip.driver, access, now) &&
     (!trip.vehicle.document?.demo || trip.driver.demoIdentity !== null) &&
@@ -96,9 +97,12 @@ export function marketOpen(
     !trip.expiredAt &&
     trip.departureAt > now &&
     trip.offeredSeats <= trip.vehicle.passengerCapacity &&
-    isActiveMembership(trip.driver.membership, now) &&
-    VehiculoPolicy.esPublicable(trip.vehicle.document, window.end) &&
-    VehiculoPolicy.esPublicable(trip.driver.driverEligibility, window.end) &&
+    VehiculoPolicy.esPublicable(trip.vehicle.document, window.end, documents) &&
+    VehiculoPolicy.esPublicable(
+      trip.driver.driverEligibility,
+      window.end,
+      documents,
+    ) &&
     (trip.driver.driverEligibility?.category === 'BOTH' ||
       trip.driver.driverEligibility?.category === trip.vehicle.type)
   );
@@ -192,6 +196,7 @@ function feedCard(
         ? 'Encuentro dentro de la USC'
         : 'Encuentro público del recorrido',
     departureAt: trip.departureAt.toISOString(),
+    estimatedDepartureAt: trip.estimatedDepartureAt?.toISOString() ?? null,
     estimatedDurationMinutes: trip.estimatedDurationMinutes,
     availableSeats: trip.offeredSeats - trip.occupiedSeats,
     providesHelmet: trip.providesHelmet,
@@ -343,6 +348,8 @@ export class MobilityService {
       status: trip.status,
       terminationReason: trip.terminationReason,
       expectedEndAt: trip.expectedEndAt.toISOString(),
+      estimatedDepartureAt: trip.estimatedDepartureAt?.toISOString() ?? null,
+      expiredAt: trip.expiredAt?.toISOString() ?? null,
       offeredSeats: trip.offeredSeats,
       occupiedSeats: trip.occupiedSeats,
       isDriver,

@@ -19,6 +19,7 @@ import {
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import type {
   RouteGeometry,
+  RouteManeuver,
   StopAccess,
   TripDirection,
 } from '@ruteam/contracts';
@@ -132,6 +133,14 @@ export class ItineraryDto {
   @IsString()
   @Length(10, 524)
   routingSelection?: string;
+
+  @ApiPropertyOptional({
+    description: 'Indicaciones devueltas por OSRM para la selección firmada',
+  })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsArray()
+  @ArrayMaxSize(150)
+  maneuvers?: RouteManeuver[];
 
   @ApiProperty({ enum: [true] })
   @Equals(true)

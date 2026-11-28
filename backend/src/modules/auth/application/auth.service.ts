@@ -12,7 +12,14 @@ import {
   AuthRepository,
   type SessionUser,
 } from '../infrastructure/repositories/auth.repository.js';
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import type { StudentEligibilityStatus } from '@ruteam/contracts';
+import {
+  canSubmitDeclaredDocuments,
+  fixtureAccessEnabled,
+  locallyEligible,
+  matchesInstitutionalSource,
+  usesDeclaredDomain,
+} from '../../institutional-membership/domain/access-policy.js';
 import { VehiculoPolicy } from '../../vehicles/domain/policies/vehiculo.policy.js';
 export interface SessionPrincipal {
   userId: string;
@@ -27,6 +34,7 @@ export class AuthService {
   ) {}
   accessConfiguration() {
     return {
+      institutionalAccess: this.env.INSTITUTIONAL_ACCESS_MODE ?? 'OFFICIAL',
       institutionalAuthentication: 'UNAVAILABLE' as const,
       studentEligibilityVerification: 'UNAVAILABLE' as const,
       reason:
@@ -87,17 +95,18 @@ export class AuthService {
       throw new ForbiddenException(
         'Las cuentas sintéticas están aisladas del entorno real',
       );
-    if (
-      requireActiveMembership &&
-      (!actor.emailVerifiedAt ||
-        !isActiveMembership(actor.membership, new Date()) ||
-        (actor.membership?.verifiedBy === 'DEMO' &&
-          !this.syntheticAllowed(actor)) ||
-        !(await this.verification.verify(session.userId)))
-    )
-      throw new ForbiddenException(
-        'Acceso reservado a cuentas con correo confirmado y matrícula vigente',
-      );
+    if (requireActiveMembership) {
+      const status = await this.institutionalStatus(actor);
+      if (
+        status !== 'DECLARED' &&
+        (!actor.emailVerifiedAt || status !== 'VERIFIED_CURRENT')
+      )
+        throw new ForbiddenException(
+          'La cuenta no reúne las condiciones de acceso de RuTeam',
+        );
+      if (status === 'DECLARED' && !actor.declaredDomainAccessAt)
+        await this.repository.noteDeclaredUse(actor.id);
+    }
     return { userId: session.userId, sessionId: session.id };
   }
   async currentUser(userId: string) {
@@ -109,25 +118,59 @@ export class AuthService {
     await this.repository.revokeSession(sessionId);
   }
   syntheticAllowed(user: Pick<SessionUser, 'demoIdentity'>): boolean {
+    return user.demoIdentity != null && fixtureAccessEnabled(this.env);
+  }
+
+  usesDeclaredAccess(user: SessionUser) {
+    return usesDeclaredDomain(user, this.env);
+  }
+
+  async institutionalStatus(
+    user: SessionUser,
+  ): Promise<StudentEligibilityStatus> {
+    const membership = user.membership;
+    const now = new Date();
+    if (user.disabledAt || membership?.status === 'REVOKED') return 'REVOKED';
+    if (this.usesDeclaredAccess(user)) return 'DECLARED';
+    if (!membership) return 'PENDING_VERIFICATION';
+    if (membership.group !== 'STUDENT' || membership.status !== 'ACTIVE')
+      return 'INELIGIBLE';
+    if (membership.validUntil <= now) return 'EXPIRED';
+    // The institutional result and evidence of mailbox ownership are separate.
+    if (!matchesInstitutionalSource(user, this.env))
+      return 'PENDING_VERIFICATION';
+    try {
+      return (await this.verification.verify(user.id))
+        ? 'VERIFIED_CURRENT'
+        : 'INELIGIBLE';
+    } catch {
+      return 'PENDING_VERIFICATION';
+    }
+  }
+
+  canUseProduct(user: SessionUser, status: StudentEligibilityStatus) {
     return (
-      user.demoIdentity != null &&
-      this.env.NODE_ENV !== 'production' &&
-      this.env.demo &&
-      this.env.VERIFICATION_PROVIDER === 'demo'
+      status === 'DECLARED' ||
+      (!!user.emailVerifiedAt && status === 'VERIFIED_CURRENT')
     );
   }
   capabilitiesFor(user: SessionUser, eligible: boolean) {
     const synthetic = this.syntheticAllowed(user);
+    const declaredDocuments = canSubmitDeclaredDocuments(user, this.env);
     const license = user.driverEligibility;
     const driver =
       eligible &&
       !!license &&
       (!license.demo || synthetic) &&
-      VehiculoPolicy.esPublicable(license, new Date()) &&
+      VehiculoPolicy.esPublicable(license, new Date(), declaredDocuments) &&
       user.vehicles.some(
         (vehicle) =>
           (!vehicle.document?.demo || synthetic) &&
-          VehiculoPolicy.esPublicable(vehicle.document, new Date()) &&
+          VehiculoPolicy.esPublicable(
+            vehicle.document,
+            new Date(),
+            declaredDocuments,
+          ) &&
           (license.category === 'BOTH' || license.category === vehicle.type),
       );
     return {
@@ -140,7 +183,11 @@ export class AuthService {
       driver,
     };
   }
-  async createIdentitySession(userId: string, expectedPasswordHash: string) {
+  async createIdentitySession(
+    userId: string,
+    expectedPasswordHash: string,
+    declaredAccess = false,
+  ) {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(
       Date.now() + this.env.SESSION_TTL_SECONDS * 1000,
@@ -151,6 +198,7 @@ export class AuthService {
         expectedPasswordHash,
         this.hash(token),
         expiresAt,
+        declaredAccess,
       ))
     )
       throw new UnauthorizedException('Credenciales inválidas');
@@ -160,13 +208,9 @@ export class AuthService {
     return createHash('sha256').update(token).digest('hex');
   }
   private presentUser(user: SessionUser) {
-    if (
-      user.disabledAt ||
-      !user.profile ||
-      !user.membership ||
-      !isActiveMembership(user.membership, new Date())
-    )
-      throw new ForbiddenException('Afiliación o perfil no disponible');
+    if (!user.profile || !locallyEligible(user, this.env, new Date()))
+      throw new ForbiddenException('Cuenta o perfil no disponible');
+    const membership = this.usesDeclaredAccess(user) ? null : user.membership;
     return {
       id: user.id,
       email: user.email,
@@ -175,14 +219,15 @@ export class AuthService {
         driver: this.capabilitiesFor(user, true).driver,
       },
       profile: { displayName: user.profile.displayName },
-      membership: {
-        status: 'ACTIVE' as const,
-        group: user.membership.group,
-        verifiedBy: user.membership.verifiedBy,
-        validUntil: user.membership.validUntil.toISOString(),
-      },
-      demo:
-        this.syntheticAllowed(user) && user.membership.verifiedBy === 'DEMO',
+      membership: membership
+        ? {
+            status: 'ACTIVE' as const,
+            group: membership.group,
+            verifiedBy: membership.verifiedBy,
+            validUntil: membership.validUntil.toISOString(),
+          }
+        : null,
+      demo: this.syntheticAllowed(user) && membership?.verifiedBy === 'DEMO',
     };
   }
 }

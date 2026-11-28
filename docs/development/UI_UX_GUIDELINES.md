@@ -31,3 +31,7 @@ al punto de encuentro. RuTeam mantiene sus nombres, colores, acuerdos y pantalla
 [BlaBlaCar](https://www.blablacar.co.uk/apps-mobile) ·
 [Google Maps](https://developers.google.com/maps/documentation/urls/get-started) ·
 [Waze](https://developers.google.com/waze/deeplinks).
+
+Presentar «Acceso por dominio USC declarado». Las instrucciones viales,
+la posición observada y las paradas registradas tienen significados distintos.
+La operación indica cuándo actuar con el vehículo detenido.

@@ -9,6 +9,7 @@ const input = { pickupId: 'pickup', dropoffId: 'dropoff' };
 const membership = {
   status: 'ACTIVE',
   group: 'STUDENT',
+  verifiedBy: 'DEMO',
   validUntil: hours(100),
 };
 const document = {
@@ -31,7 +32,12 @@ beforeEach(() => {
     occupiedSeats: 0,
     startedAt: null,
     finishedAt: null,
-    driver: { membership, driverEligibility: { ...document, category: 'CAR' } },
+    driver: {
+      demoIdentity: 'driver',
+      emailVerifiedAt: now(),
+      membership,
+      driverEligibility: { ...document, category: 'CAR' },
+    },
     vehicle: { type: 'CAR', document },
     stops: [
       {
@@ -83,7 +89,10 @@ beforeEach(() => {
   });
   unit = {
     trip: async () => trip,
-    memberships: async () => [membership],
+    eligibleMembers: async () =>
+      membership.status === 'ACTIVE' && membership.validUntil > now()
+        ? [{ id: actor }]
+        : [],
     activeForMember: async () => row,
     conflictFor: async () => false,
     awaitingDropoff: async () => 0,
@@ -138,7 +147,12 @@ beforeEach(() => {
       withTripLock: async (_id, operation) => operation(unit),
       tripForRequest: async () => trip.id,
     },
-    { TRIP_EXPIRATION_GRACE_MINUTES: 30 },
+    {
+      TRIP_EXPIRATION_GRACE_MINUTES: 30,
+      NODE_ENV: 'test',
+      demo: true,
+      VERIFICATION_PROVIDER: 'demo',
+    },
   );
   unit.fixture = view;
 });
@@ -188,7 +202,7 @@ test('viaje lleno, pasado o cerrado y estudiante no vigente no crean plazas', as
     status: 409,
   });
   trip.departureAt = hours(1);
-  unit.memberships = async () => [{ ...membership, status: 'INACTIVE' }];
+  unit.eligibleMembers = async () => [];
   await expect(service.confirm(actor, trip.id, input)).rejects.toMatchObject({
     status: 403,
   });

@@ -9,7 +9,10 @@ import { ENVIRONMENT, type Environment } from '../../../config/environment.js';
 import { Prisma } from '../../../generated/prisma/client.js';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service.js';
 import { InstitutionalVerificationProvider } from '../../../infrastructure/verification/institutional-verification.provider.js';
-import { isActiveMembership } from '../../institutional-membership/domain/membership.policy.js';
+import {
+  locallyEligible,
+  usesDeclaredDomain,
+} from '../../institutional-membership/domain/access-policy.js';
 import { suppressedNotices } from './notification-preferences.js';
 
 const endpoint = 'https://exp.host/--/api/v2/push/';
@@ -133,11 +136,8 @@ export class ExpoPushDelivery implements OnModuleInit, OnModuleDestroy {
       !device.revokedAt &&
       !session.revokedAt &&
       session.expiresAt > now &&
-      !actor.disabledAt &&
-      !!actor.emailVerifiedAt &&
       actor.id === notice.recipientId &&
-      isActiveMembership(actor.membership, now) &&
-      (!actor.demoIdentity || this.env.demo) &&
+      locallyEligible(actor, this.env, now) &&
       !suppressedNotices(actor.notificationPreferences).includes(notice.kind);
     if (
       !allowed ||
@@ -194,7 +194,10 @@ export class ExpoPushDelivery implements OnModuleInit, OnModuleDestroy {
 
     try {
       if (stage === 'PENDING') {
-        if (!(await this.verification.verify(actor.id))) {
+        if (
+          !usesDeclaredDomain(actor, this.env) &&
+          !(await this.verification.verify(actor.id))
+        ) {
           await commit({ stage: 'FAILED' });
           return;
         }

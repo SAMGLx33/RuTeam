@@ -11,9 +11,9 @@ TypeScript strict, contratos compartidos; sin segundo frontend ni microservicios
 - Modelo: entidades, invariantes, políticas y casos de uso; repositorios/infraestructura
   persisten. Controladores delgados traducen HTTP/DTO/actor. Vista: React/Expo,
   interacción y estados visuales; Nest conserva autoridad de elegibilidad y cupos.
-- Identidad: una cuenta estudiantil y dos capacidades compatibles. Separar control de
-  correo, autenticación, estamento, matrícula y conducción. Provider institucional
-  autorizado pendiente; real falla cerrado. DEMO sólo aislado en desarrollo/tests.
+- Identidad: una cuenta y dos capacidades compatibles. La instalación académica
+  admite dominio declarado. El modo oficial falla cerrado sin fuente. Correo,
+  autenticación, matrícula y conducción permanecen separados.
 - Sesión: opaca, hash en BD, expiración y revocación. Cookie HttpOnly/SameSite web,
   SecureStore nativo, Origin/cabecera/CORS y límites. Logout propio tras baja sin acceso
   a datos. Seguridad productiva exige TLS/cookies seguras y fuente institucional real.
